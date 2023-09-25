@@ -8,7 +8,6 @@ class Vendors(Client):
     """Class for Accounts APIs."""
 
     GET_VENDORS = '/AccountsPayable/Api/V1/Vendor.svc/vendors'
-    GET_VENDOR_TYPES = '/AccountsPayable/Api/V1/Vendor.svc/vendors/types'
 
 
     def get_all(self):
@@ -18,12 +17,3 @@ class Vendors(Client):
         """
 
         return self._query_get_all(Vendors.GET_VENDORS)
-
-
-    def get_vendor_types(self):
-        """
-        Get Vendor Types
-        :return: List of Dicts in Vendor Types Schema
-        """
-
-        return self._query_get_all(Vendors.GET_VENDOR_TYPES)

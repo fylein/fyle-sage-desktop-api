@@ -9,6 +9,5 @@ from .documents import Documents
 __all__ = [
     'Accounts',
     'Vendors',
-    'Jobs',
-    'Documents'
+    'Jobs'
 ]
