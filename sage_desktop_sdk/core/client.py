@@ -75,7 +75,6 @@ class Client:
         """
         
         request_url = '{0}{1}'.format(self.__api_url, url)
-        print('request url', request_url)
         api_headers = {
             'Cookie': self.__cookie,
             'Accept': 'application/json'
