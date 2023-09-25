@@ -2,7 +2,7 @@
 Sage Desktop Vendors
 """
 from sage_desktop_sdk.core.client import Client
-from sage_desktop_sdk.core.schema.read_only import Vendor, VendorType
+
 
 class Vendors(Client):
     """Class for Accounts APIs."""
