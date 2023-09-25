@@ -10,6 +10,18 @@ class Account:
     name: int
 
 
+    @classmethod
+    def from_dict(cls, account_dict):
+        return cls(
+            id=account_dict['Id'],
+            code=account_dict['Code'],
+            version=account_dict['Version'],
+            is_active=account_dict['IsActive'],
+            is_archived=account_dict['IsArchived'],
+            name=account_dict['Name'],
+        )
+
+
 @dataclass
 class Vendor:
     id: str
@@ -27,6 +39,25 @@ class Vendor:
     type_id: str
 
 
+    @classmethod
+    def from_dict(cls, vendor_dict):
+        return cls(
+            id=vendor_dict['Id'],
+            version=vendor_dict['Version'],
+            code=vendor_dict['Code'],
+            created_on_utc=vendor_dict['CreatedOnUtc'],
+            default_expense_account=vendor_dict['DefaultExpenseAccount'],
+            default_standard_costcode=vendor_dict['DefaultStandardCostCode'],
+            default_standard_category=vendor_dict['DefaultStandardCategory'],
+            has_external_id=vendor_dict['HasExternalId'],
+            invoice_tax_type=vendor_dict['InvoiceTaxType'],
+            is_active=vendor_dict['IsActive'],
+            is_archived=vendor_dict['IsArchived'],
+            name=vendor_dict['Name'],
+            type_id=vendor_dict['TypeId']
+        )
+
+
 @dataclass
 class VendorType:
     id: str
@@ -34,9 +65,13 @@ class VendorType:
     name: str
 
     @classmethod
-    def generate_vendor_type(cls, vendor_types):
-        for vendor_type_dict in vendor_types:
-            yield cls(**vendor_type_dict)
+    def from_dict(cls, vendor_type):
+        return cls(
+            id=vendor_type['Id'],
+            version=vendor_type['Version'],
+            name=vendor_type['Name']
+        )
+
 
 @dataclass
 class Commitment:
@@ -58,17 +93,53 @@ class Commitment:
     is_archived: bool
     is_closed: bool
     is_commited: bool
-    is_committed: bool
     job_id: str
-    retainagePercent: float
+    retainage_percent: float
     name: str
-    shipToAddress1: str
-    shipToAddress2: str
-    shipToCity: str
-    shipToPostalCode: str
-    shipToState: str
+    ship_to_address1: str
+    ship_to_address2: str
+    ship_to_city: str
+    ship_to_postal_code: str
+    ship_to_state: str
     tax: float
     type: int
-    vendorId: str
+    vendor_id: str
     was_printed: bool
     tax_group_id: str
+
+
+    @classmethod
+    def from_dict(cls, commitment):
+        return cls(
+            id=commitment['Id'],
+            version=commitment['Version'],
+            amount=commitment['Amount'],
+            amount_approved=commitment['AmountApproved'],
+            amount_retained=commitment['AmountRetained'],
+            amount_invoiced=commitment['AmountInvoiced'],
+            amount_original=commitment['AmountOriginal'],
+            amount_paid=commitment['AmountPaid'],
+            amount_pending=commitment['AmountPending'],
+            code=commitment['Code'],
+            created_on_utc=commitment['CreatedOnUtc'],
+            date=commitment['Date'],
+            description=commitment['Description'],
+            has_external_id=commitment['HasExternalId'],
+            is_active=commitment['IsActive'],
+            is_archived=commitment['IsArchived'],
+            is_closed=commitment['IsClosed'],
+            is_commited=commitment['IsCommited'],
+            job_id=commitment['JobId'],
+            retainage_percent=commitment['RetainagePercent'],
+            name=commitment['Name'],
+            ship_to_address1=commitment['ShipToAddress1'],
+            ship_to_address2=commitment['ShipToAddress2'],
+            ship_to_city=commitment['ShipToCity'],
+            ship_to_postal_code=commitment['ShipToPostalCode'],
+            ship_to_state=commitment['ShipToState'],
+            tax=commitment['Tax'],
+            type=commitment['Type'],
+            vendor_id=commitment['VendorId'],
+            was_printed=commitment['WasPrinted'],
+            tax_group_id=commitment['TaxGroupId']
+        )

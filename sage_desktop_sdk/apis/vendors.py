@@ -16,8 +16,9 @@ class Vendors(Client):
         Get all Vendors
         :return: List of Dicts in Vendors Schema
         """
-
-        return self._query_get_all(Vendors.GET_VENDORS)
+        vendors = self._query_get_all(Vendors.GET_VENDORS)
+        for vendor in vendors:
+            yield Vendor.from_dict(vendor)
 
 
     def get_vendor_types(self):
@@ -25,5 +26,6 @@ class Vendors(Client):
         Get Vendor Types
         :return: List of Dicts in Vendor Types Schema
         """
-
-        return self._query_get_all(Vendors.GET_VENDOR_TYPES)
+        vendor_types = self._query_get_all(Vendors.GET_VENDOR_TYPES)
+        for vendor_type in vendor_types:
+            yield VendorType.from_dict(vendor_type)
