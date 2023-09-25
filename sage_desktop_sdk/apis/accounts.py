@@ -10,17 +10,6 @@ class Accounts(Client):
 
     GET_ACCOUNTS = '/GeneralLedger/Api/V1/Account.svc/accounts'
 
-    @classmethod
-    def generate_accounts(cls, account_data):
-        for account in account_data:
-            yield Account(
-                id=account['Id'],
-                code=account['Code'],
-                version=account['Version'],
-                is_active=account['IsActive'],
-                is_archived=account['IsArchived'],
-                name=account['Name'],
-            )
 
     def get_all(self):
         """
@@ -29,4 +18,5 @@ class Accounts(Client):
         """
 
         accounts = self._query_get_all(Accounts.GET_ACCOUNTS)        
-        return self.generate_accounts(accounts)
+        for account in accounts:
+            yield Account.from_dict(account)
