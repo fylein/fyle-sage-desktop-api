@@ -2,6 +2,8 @@
 import requests
 import json
 from typing import List, Dict
+from sage_desktop_sdk.exceptions import *
+
 
 class Client:
     """
@@ -36,7 +38,7 @@ class Client:
         self.__api_url = "https://{0}".format(indentifier)
 
 
-    def set_authentication_cookie(self, api_key: str, api_secret: str):
+    def update_cookie(self, api_key: str, api_secret: str):
         """
         Sets the cookies for APIs
         :param api_key: Sage API Key
@@ -58,15 +60,11 @@ class Client:
             "Password": self.__user_password, 
             "Username": self.__user_id
         })
-
+        
         authentication_url = self.__api_url + '/Api/Security/V3/Session.svc/authenticate'
         response = requests.request("POST", url=authentication_url, headers=request_header, data=api_data)
-        return response.headers.get('Set-Cookie')
+        self.__cookie = response.headers.get('Set-Cookie')
 
-
-    def set_cookie(self, cookie: str):
-        self.__cookie = cookie
- 
 
     def _query_get_all(self, url: str) -> List[Dict]:
         """
@@ -75,13 +73,30 @@ class Client:
         :param object_type: type of object
         :return: list of objects
         """
-    
+        
         request_url = '{0}{1}'.format(self.__api_url, url)
-
         api_headers = {
             'Cookie': self.__cookie,
             'Accept': 'application/json'
         }
 
         response = requests.get(url=request_url, headers=api_headers)
-        return response
+        
+        if response.status_code == 200:
+            data = json.loads(response.text)
+            return data
+        
+        if response.status_code == 400:
+            raise WrongParamsError('Some of the parameters are wrong', response.text)
+
+        if response.status_code == 406:
+            print('heee', response.text)
+            raise NotAcceptableClientError('Forbidden, the user has insufficient privilege', response.text)
+
+        if response.status_code == 404:
+            raise NotFoundItemError('Not found item with ID', response.text)
+
+        if response.status_code == 500:
+            raise InternalServerError('Internal server error', response.text)
+
+        raise SageDesktopSDKError('Error: {0}'.format(response.status_code), response.text)

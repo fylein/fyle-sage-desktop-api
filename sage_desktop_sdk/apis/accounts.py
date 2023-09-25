@@ -9,7 +9,7 @@ class Accounts(Client):
 
     GET_ACCOUNTS = '/GeneralLedger/Api/V1/Account.svc/accounts'
 
-    def get(self):
+    def get_all(self):
         """
         Get all Attachables
         :return: List of Dicts in Attachable Schema
