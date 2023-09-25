@@ -90,7 +90,6 @@ class Client:
             raise WrongParamsError('Some of the parameters are wrong', response.text)
 
         if response.status_code == 406:
-            print('heee', response.text)
             raise NotAcceptableClientError('Forbidden, the user has insufficient privilege', response.text)
 
         if response.status_code == 404:
