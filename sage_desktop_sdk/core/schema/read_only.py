@@ -25,11 +25,6 @@ class Vendor:
     is_archived: bool
     name: str
     type_id: str
-    
-    @classmethod
-    def generate_vendors(cls, vendors):
-        for vendor_dict in vendors:
-            yield cls(**vendor_dict)
 
 
 @dataclass
@@ -37,8 +32,3 @@ class VendorType:
     id: str
     version: int
     name: str
-
-    @classmethod
-    def generate_vendor_type(cls, vendor_types):
-        for vendor_type_dict in vendor_types:
-            yield cls(**vendor_type_dict)
