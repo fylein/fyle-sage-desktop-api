@@ -11,7 +11,7 @@ class Documents(Client):
 
     GET_DOCUMENTS = '/Api/V1/Document.svc/document?id={}'
     POST_DOCUMENT = '/documentmanagement/Api/V1/Document.svc/document'
-    POST_DOCUMENT_EXPORT = '/Api/V1/Document.svc/document/actions/export?document={}'
+    POST_DOCUMENT_EXPORT = '/DocumentManagement/Api/V1/Document.svc/document/actions/export?document={}'
 
 
     def get(self, document_id: str):

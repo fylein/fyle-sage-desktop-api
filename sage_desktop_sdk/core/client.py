@@ -149,7 +149,8 @@ class Client:
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         }
-
+        
+        print('request url', request_url)
         response = requests.post(url=request_url, headers=api_headers, data=data)
 
         if response.status_code == 200:
