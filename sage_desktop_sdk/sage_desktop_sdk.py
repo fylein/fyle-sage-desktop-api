@@ -6,7 +6,7 @@ import base64
 import requests
 
 from .exceptions import *
-from .apis import Accounts, Vendors, Jobs
+from .apis import Accounts, Vendors, Jobs, Commitments
 from .core.client import Client
 
 
@@ -35,6 +35,7 @@ class SageDesktopSDK:
         self.accounts = Accounts()
         self.vendors = Vendors()
         self.jobs = Jobs()
+        self.commitments = Commitments()
 
         self.update_api_url()
         self.update_user_id_and_password()
@@ -46,16 +47,18 @@ class SageDesktopSDK:
         self.accounts.set_user_id_and_password(self.__user_name, self.__password)
         self.vendors.set_user_id_and_password(self.__user_name, self.__password)
         self.jobs.set_user_id_and_password(self.__user_name, self.__password)
-
+        self.commitments.set_user_id_and_password(self.__user_name, self.__password)
     
     def update_api_url(self):
         self.client.set_api_url(self.__indentifier)
         self.accounts.set_api_url(self.__indentifier)
         self.vendors.set_api_url(self.__indentifier)
         self.jobs.set_api_url(self.__indentifier)
+        self.commitments.set_api_url(self.__indentifier)
 
     def update_cookie(self):
         self.client.update_cookie(self.__api_key, self.__api_secret)
         self.accounts.update_cookie(self.__api_key, self.__api_secret)
         self.vendors.update_cookie(self.__api_key, self.__api_secret)
         self.jobs.update_cookie(self.__api_key, self.__api_secret)
+        self.commitments.update_cookie(self.__api_key, self.__api_secret)

@@ -37,7 +37,8 @@ class Vendor:
     is_archived: bool
     name: str
     type_id: str
-    
+
+
     @classmethod
     def from_dict(cls, vendor_dict):
         return cls(
@@ -69,4 +70,76 @@ class VendorType:
             id=vendor_type['Id'],
             version=vendor_type['Version'],
             name=vendor_type['Name']
+        )
+
+
+@dataclass
+class Commitment:
+    id: str
+    version: str
+    amount: int
+    amount_approved: float
+    amount_retained: float
+    amount_invoiced: float
+    amount_original: float
+    amount_paid: float
+    amount_pending: float
+    code: int
+    created_on_utc: str
+    date: str
+    description: str 
+    has_external_id: bool
+    is_active: bool
+    is_archived: bool
+    is_closed: bool
+    is_commited: bool
+    job_id: str
+    retainage_percent: float
+    name: str
+    ship_to_address1: str
+    ship_to_address2: str
+    ship_to_city: str
+    ship_to_postal_code: str
+    ship_to_state: str
+    tax: float
+    type: int
+    vendor_id: str
+    was_printed: bool
+    tax_group_id: str
+
+
+    @classmethod
+    def from_dict(cls, commitment):
+        return cls(
+            id=commitment['Id'],
+            version=commitment['Version'],
+            amount=commitment['Amount'],
+            amount_approved=commitment['AmountApproved'],
+            amount_retained=commitment['AmountRetained'],
+            amount_invoiced=commitment['AmountInvoiced'],
+            amount_original=commitment['AmountOriginal'],
+            amount_paid=commitment['AmountPaid'],
+            amount_pending=commitment['AmountPending'],
+            code=commitment['Code'],
+            created_on_utc=commitment['CreatedOnUtc'],
+            date=commitment['Date'],
+            description=commitment['Description'],
+            has_external_id=commitment['HasExternalId'],
+            is_active=commitment['IsActive'],
+            is_archived=commitment['IsArchived'],
+            is_closed=commitment['IsClosed'],
+            is_commited=commitment['IsCommited'],
+            job_id=commitment['JobId'],
+            retainage_percent=commitment['RetainagePercent'],
+            name=commitment['Name'],
+            ship_to_address1=commitment['ShipToAddress1'],
+            ship_to_address2=commitment['ShipToAddress2'],
+            ship_to_city=commitment['ShipToCity'],
+            ship_to_postal_code=commitment['ShipToPostalCode'],
+            ship_to_state=commitment['ShipToState'],
+            tax=commitment['Tax'],
+            type=commitment['Type'],
+            vendor_id=commitment['VendorId'],
+            was_printed=commitment['WasPrinted'],
+            tax_group_id=commitment['TaxGroupId']
         )
