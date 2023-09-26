@@ -2,6 +2,7 @@
 Sage Desktop Categories
 """
 from sage_desktop_sdk.core.client import Client
+from sage_desktop_sdk.core.schema.read_only import Account
 
 
 class Accounts(Client):
@@ -14,4 +15,6 @@ class Accounts(Client):
         Get all Attachables
         :return: List of Dicts in Attachable Schema
         """
-        return self._query_get_all(Accounts.GET_ACCOUNTS)
+        accounts = self._query_get_all(Accounts.GET_ACCOUNTS)        
+        for account in accounts:
+            yield Account.from_dict(account)
