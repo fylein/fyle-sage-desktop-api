@@ -48,3 +48,23 @@ class DocumentPostPayload:
     DocumentTypeId: str
     Snapshot: Snapshot
     ExternalUrl: str
+
+
+@dataclass
+class DirectCost:
+    AccountingDate: str
+    Amount: float
+    Code: int
+    CategoryId: str
+    CostCodeId: str
+    CreditAccountId: str
+    DebitAccountId: str
+    Description: str
+    JobId: str
+    Reference1: str
+    Reference2: str
+    Tag: str
+    TransactionDate: str
+    StandardCategoryId: str
+    TransactionType: int
+    UnitCost: float
