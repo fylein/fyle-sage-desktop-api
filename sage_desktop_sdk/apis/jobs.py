@@ -2,6 +2,7 @@
 Sage Desktop Jobs
 """
 from sage_desktop_sdk.core.client import Client
+from sage_desktop_sdk.core.schema.read_only import Jobs, CostCode, Category
 
 
 class Jobs(Client):
@@ -17,15 +18,19 @@ class Jobs(Client):
         Get all Jobs
         :return: List of Dicts in Jobs Schema
         """
-        return self._query_get_all(Jobs.GET_JOBS)
+        jobs =  self._query_get_all(Jobs.GET_JOBS)
+        for job in jobs:
+            yield Jobs.from_dict(job)
 
-    
+
     def get_all_costcodes(self):
         """
         Get all Cost Codes
         :return: List of Dicts in cost code Schema
         """
-        return self._query_get_all(Jobs.GET_COST_CODES)
+        costcodes =  self._query_get_all(Jobs.GET_COST_CODES)
+        for costcode in costcodes:
+            yield CostCode.from_dict(costcode)
 
 
     def get_all_categoreis(self):
@@ -33,4 +38,6 @@ class Jobs(Client):
         Get all Categories
         :return: List of Dicts in Cstegories Schema
         """
-        return self._query_get_all(Jobs.GET_CATEGORIES)
+        categories =  self._query_get_all(Jobs.GET_CATEGORIES)
+        for category in categories:
+            yield Category.from_dict(category)
