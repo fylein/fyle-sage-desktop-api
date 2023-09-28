@@ -276,3 +276,13 @@ class Category:
             is_archived=category_dict['IsArchived'],
             name=category_dict['Name']
         )
+
+
+@dataclass
+class OperationStatusResponse:
+    Id: str
+    CreatedOn: str
+    TransmittedOn: str
+    ReceivedOn: str
+    DisabledOn: str
+    CompletedOn: str

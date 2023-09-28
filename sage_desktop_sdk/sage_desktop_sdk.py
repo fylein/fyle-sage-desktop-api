@@ -2,7 +2,7 @@
 Sage Desktop Python Connector
 """
 from .exceptions import *
-from .apis import Accounts, Vendors, Jobs, Commitments, Documents
+from .apis import Accounts, Vendors, Jobs, Commitments, Documents, OperationStatus
 from .core.client import Client
 
 
@@ -33,6 +33,7 @@ class SageDesktopSDK:
         self.jobs = Jobs()
         self.commitments = Commitments()
         self.documents = Documents()
+        self.operation_status = OperationStatus()
 
         self.update_api_url()
         self.update_user_id_and_password()
@@ -46,6 +47,7 @@ class SageDesktopSDK:
         self.jobs.set_user_id_and_password(self.__user_name, self.__password)
         self.commitments.set_user_id_and_password(self.__user_name, self.__password)
         self.documents.set_user_id_and_password(self.__user_name, self.__password)
+        self.operation_status.set_user_id_and_password(self.__user_name, self.__password)
 
 
     def update_api_url(self):
@@ -55,6 +57,7 @@ class SageDesktopSDK:
         self.jobs.set_api_url(self.__indentifier)
         self.commitments.set_api_url(self.__indentifier)
         self.documents.set_api_url(self.__indentifier)
+        self.operation_status.set_api_url(self.__indentifier)
 
 
     def update_cookie(self):
@@ -64,3 +67,4 @@ class SageDesktopSDK:
         self.jobs.update_cookie(self.__api_key, self.__api_secret)
         self.commitments.update_cookie(self.__api_key, self.__api_secret)
         self.documents.update_cookie(self.__api_key, self.__api_secret)
+        self.operation_status.update_cookie(self.__api_key, self.__api_secret)
