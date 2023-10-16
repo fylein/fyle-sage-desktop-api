@@ -91,21 +91,6 @@ TEMPLATES = [
     },
 ]
 
-<<<<<<< HEAD
-WSGI_APPLICATION = 'sage_desktop_api.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-=======
 # Will uncomment this in the next pr, after setting up users and permissions
 
 # FYLE_REST_AUTH_SERIALIZERS = {
@@ -186,7 +171,6 @@ DATABASES['cache_db'] = {
 DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
 
 
->>>>>>> 450fe7b6780b2eea0e3e246ef0695013fcd830c3
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -207,8 +191,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-<<<<<<< HEAD
-=======
 # Fyle Settings
 API_URL = os.environ.get('API_URL')
 FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')
@@ -220,8 +202,6 @@ FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
 
 
-
->>>>>>> 450fe7b6780b2eea0e3e246ef0695013fcd830c3
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
