@@ -11,12 +11,15 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+
+import dj_database_url
+
 import os
+import sys
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -42,6 +45,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Installed Apps
+    'rest_framework',
+    'corsheaders',
+    'django_q',
+    'fyle_rest_auth',
+    'fyle_accounting_mappings',
+
     # User Created Apps
     'apps.users',
     'apps.workspaces',
@@ -52,6 +62,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'request_logging.middleware.LoggingMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,9 +73,14 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'sage_desktop_api.logging_middleware.ErrorHandlerMiddleware',
 ]
 
 ROOT_URLCONF = 'sage_desktop_api.urls'
+APPEND_SLASH = False
+
+AUTH_USER_MODEL = 'users.User'
+
 
 TEMPLATES = [
     {
@@ -79,18 +98,51 @@ TEMPLATES = [
     },
 ]
 
+FYLE_REST_AUTH_SERIALIZERS = {
+    'USER_DETAILS_SERIALIZER': 'apps.users.serializers.UserSerializer'
+}
+
+FYLE_REST_AUTH_SETTINGS = {
+    'async_update_user': True
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        'apps.workspaces.permissions.WorkspacePermissions'
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'fyle_rest_auth.authentication.FyleJWTAuthentication',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 100
+}
+
+
 WSGI_APPLICATION = 'sage_desktop_api.wsgi.application'
+
+SERVICE_NAME = os.environ.get('SERVICE_NAME')
 
 
 # Database
-# https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
+# Defaulting django engine for qcluster
+if len(sys.argv) > 0 and sys.argv[1] == 'qcluster':
+    DATABASES = {
+        'default': dj_database_url.config()
     }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(engine='django_db_geventpool.backends.postgresql_psycopg2')
+    }
+
+DATABASES['cache_db'] = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': 'cache.db'
 }
+
+DATABASE_ROUTERS = ['fyle_intacct_api.cache_router.CacheRouter']
+
 
 
 # Password validation
