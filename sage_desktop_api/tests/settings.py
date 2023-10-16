@@ -10,9 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
-import sys
-
-import dj_database_url
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -154,18 +151,15 @@ SERVICE_NAME = os.environ.get('SERVICE_NAME')
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 # Defaulting django engine for qcluster
-if len(sys.argv) > 0 and sys.argv[1] == 'qcluster':
-    DATABASES = {
-        'default': dj_database_url.config()
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT'),
     }
-else:
-    DATABASES = {
-        'default': dj_database_url.config(engine='django_db_geventpool.backends.postgresql_psycopg2')
-    }
-
-DATABASES['cache_db'] = {
-    'ENGINE': 'django.db.backends.sqlite3',
-    'NAME': 'cache.db'
 }
 
 DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']

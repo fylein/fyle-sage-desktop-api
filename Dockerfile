@@ -20,8 +20,7 @@ RUN if [ "$CI" = "ENABLED" ]; then \
 
 # Installing requirements
 COPY requirements.txt /tmp/requirements.txt
-RUN pip install --upgrade pip && pip install -r /tmp/requirements.txt && pip install pylint-django==2.3.0
-
+RUN pip install --upgrade pip && pip install -r /tmp/requirements.txt && pip install flake8
 
 # Copy Project to the container
 RUN mkdir -p /fyle-sage-desktop-api
@@ -29,7 +28,7 @@ COPY . /fyle-sage-desktop-api/
 WORKDIR /fyle-sage-desktop-api
 
 # Do linting checks
-#RUN pylint --load-plugins pylint_django --rcfile=.pylintrc apps/**.py
+RUN flake8 .
 
 # Expose development port
 EXPOSE 8000
