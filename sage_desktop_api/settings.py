@@ -41,6 +41,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # User Created Apps
+    'apps.users',
+    'apps.workspaces',
+    'apps.fyle',
+    'apps.sage300',
+    'apps.accounting_exports',
+    'apps.mappings'
 ]
 
 MIDDLEWARE = [
