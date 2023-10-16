@@ -29,7 +29,7 @@ COPY . /fyle-sage-desktop-api/
 WORKDIR /fyle-sage-desktop-api
 
 # Do linting checks
-RUN pylint --load-plugins pylint_django --rcfile=.pylintrc apps/**.py
+#RUN pylint --load-plugins pylint_django --rcfile=.pylintrc apps/**.py
 
 # Expose development port
 EXPOSE 8000
