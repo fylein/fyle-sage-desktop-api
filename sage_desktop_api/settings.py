@@ -9,13 +9,10 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-
-from pathlib import Path
-
-import dj_database_url
-
 import os
 import sys
+
+import dj_database_url
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -49,8 +46,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_q',
-    'fyle_rest_auth',
-    'fyle_accounting_mappings',
+    # 'fyle_rest_auth',
+    # 'fyle_accounting_mappings',
 
     # User Created Apps
     'apps.users',
@@ -73,13 +70,13 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'sage_desktop_api.logging_middleware.ErrorHandlerMiddleware',
+    #'sage_desktop_api.logging_middleware.ErrorHandlerMiddleware',
 ]
 
 ROOT_URLCONF = 'sage_desktop_api.urls'
 APPEND_SLASH = False
 
-AUTH_USER_MODEL = 'users.User'
+#AUTH_USER_MODEL = 'users.User'
 
 
 TEMPLATES = [
@@ -98,24 +95,58 @@ TEMPLATES = [
     },
 ]
 
-FYLE_REST_AUTH_SERIALIZERS = {
-    'USER_DETAILS_SERIALIZER': 'apps.users.serializers.UserSerializer'
+# Will uncomment this in the next pr, after setting up users and permissions
+
+# FYLE_REST_AUTH_SERIALIZERS = {
+#     'USER_DETAILS_SERIALIZER': 'apps.users.serializers.UserSerializer'
+# }
+
+# FYLE_REST_AUTH_SETTINGS = {
+#     'async_update_user': True
+# }
+
+# REST_FRAMEWORK = {
+#     'DEFAULT_PERMISSION_CLASSES': (
+#         'rest_framework.permissions.IsAuthenticated',
+#         'apps.workspaces.permissions.WorkspacePermissions'
+#     ),
+#     'DEFAULT_AUTHENTICATION_CLASSES': (
+#         'fyle_rest_auth.authentication.FyleJWTAuthentication',
+#     ),
+#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+#     'PAGE_SIZE': 100
+# }
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'auth_cache',
+    }
 }
 
-FYLE_REST_AUTH_SETTINGS = {
-    'async_update_user': True
-}
-
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-        'apps.workspaces.permissions.WorkspacePermissions'
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'fyle_rest_auth.authentication.FyleJWTAuthentication',
-    ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 100
+Q_CLUSTER = {
+    'name': 'sage_desktop_api',
+    'save_limit': 0,
+    'retry': 14400,
+    'timeout': 3600,
+    'catch_up': False,
+    'workers': 4,
+    # How many tasks are kept in memory by a single cluster.
+    # Helps balance the workload and the memory overhead of each individual cluster
+    'queue_limit': 10,
+    'cached': False,
+    'orm': 'default',
+    'ack_failures': True,
+    'poll': 1,
+    'max_attempts': 1,
+    'attempt_count': 1,
+    # The number of tasks a worker will process before recycling.
+    # Useful to release memory resources on a regular basis.
+    'recycle': 50,
+    # The maximum resident set size in kilobytes before a worker will recycle and release resources.
+    # Useful for limiting memory usage.
+    'max_rss': 100000 # 100mb
 }
 
 
@@ -141,7 +172,7 @@ DATABASES['cache_db'] = {
     'NAME': 'cache.db'
 }
 
-DATABASE_ROUTERS = ['fyle_intacct_api.cache_router.CacheRouter']
+DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
 
 
 
@@ -162,6 +193,18 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+
+# Fyle Settings
+API_URL = os.environ.get('API_URL')
+FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')
+FYLE_CLIENT_ID = os.environ.get('FYLE_CLIENT_ID')
+FYLE_CLIENT_SECRET = os.environ.get('FYLE_CLIENT_SECRET')
+FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
+FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
+FYLE_APP_URL = os.environ.get('APP_URL')
+FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
+
 
 
 # Internationalization
