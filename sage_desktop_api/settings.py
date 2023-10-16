@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_q',
     'fyle_rest_auth',
-    # 'fyle_accounting_mappings',
 
     # User Created Apps
     'apps.users',
@@ -76,7 +75,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'sage_desktop_api.urls'
 APPEND_SLASH = False
 
-#AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'users.User'
 
 
 TEMPLATES = [
@@ -95,15 +94,14 @@ TEMPLATES = [
     },
 ]
 
-# Will uncomment this in the next pr, after setting up users and permissions
 
-# FYLE_REST_AUTH_SERIALIZERS = {
-#     'USER_DETAILS_SERIALIZER': 'apps.users.serializers.UserSerializer'
-# }
+FYLE_REST_AUTH_SERIALIZERS = {
+    'USER_DETAILS_SERIALIZER': 'apps.users.serializers.UserSerializer'
+}
 
-# FYLE_REST_AUTH_SETTINGS = {
-#     'async_update_user': True
-# }
+FYLE_REST_AUTH_SETTINGS = {
+    'async_update_user': True
+}
 
 # REST_FRAMEWORK = {
 #     'DEFAULT_PERMISSION_CLASSES': (
