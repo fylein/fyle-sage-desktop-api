@@ -60,7 +60,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -76,7 +75,6 @@ ROOT_URLCONF = 'sage_desktop_api.urls'
 APPEND_SLASH = False
 
 AUTH_USER_MODEL = 'users.User'
-
 
 TEMPLATES = [
     {
@@ -202,7 +200,6 @@ FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
-
 
 
 # Internationalization
