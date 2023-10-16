@@ -1,0 +1,45 @@
+version: '3.7'
+
+services:
+  api:
+    build: 
+      context: ./
+      args: 
+        CI: ENABLED
+    entrypoint: bash run.sh
+    restart: unless-stopped
+    volumes:
+    - ./:/fyle-sage-desktop-api
+    depends_on:
+    - db
+    environment: 
+      SECRET_KEY: thisisthedjangosecretkey
+      ALLOWED_HOSTS: "*"
+      DEBUG: "False"
+      NO_WORKERS: 1
+      API_URL: ${API_URL}
+      DATABASE_URL: postgres://postgres:postgres@db:5432/sage_desktop_db
+      DB_HOST: db
+      FYLE_BASE_URL: 'https://sample.fyle.tech'
+      FYLE_CLIENT_ID: 'sample'
+      FYLE_CLIENT_SECRET: 'sample'
+      FYLE_REFRESH_TOKEN: 'sample.sample.sample'
+      SAGE_DESKTOP_USER_PASSWORD: 'sample'
+      SAGE_DESKTOP_USER_SENDER_ID: 'sample'
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      FYLE_TOKEN_URI: 'https://sample.fyle.tech'
+      FYLE_SERVER_URL: 'https://sample.fyle.tech'
+      FYLE_JOBS_URL: 'https://sample.fyle.tech'
+  db:
+    image: "postgres:15"
+    environment: 
+      POSTGRES_DB: dummy
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - data:/var/lib/postgresql/data/
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  api:
+  data:
