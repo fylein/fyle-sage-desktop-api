@@ -8,12 +8,14 @@ from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
 
 from apps.fyle.helpers import get_cluster_domain
+from sage_desktop_api.utils import assert_valid
 
 from .models import (
     User,
     Workspace,
     FyleCredential,
-    Sage300Credentials
+    Sage300Credentials,
+    ExportSettings
 )
 
 
@@ -77,3 +79,37 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sage300Credentials
         fields = '__all__'
+
+
+class ExportSettingsSerializer(serializers.ModelSerializer):
+    """
+    Export Settings serializer
+    """
+    class Meta:
+        model = ExportSettings
+        fields = '__all__'
+        read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
+
+    def create(self, validated_data):
+        """
+        Create Export Settings
+        """
+        assert_valid(validated_data, 'Body cannot be null')
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+    
+        export_settings = ExportSettings.objects.filter(
+            workspace_id=workspace_id).first()
+
+        export_settings, _ = ExportSettings.objects.update_or_create(
+            workspace_id=workspace_id,
+            defaults=validated_data
+        )
+
+        # Update workspace onboarding state
+        workspace = export_settings.workspace
+
+        if workspace.onboarding_state == 'EXPORT_SETTINGS':
+            workspace.onboarding_state = 'IMPORT_SETTINGS'
+            workspace.save()
+
+        return export_settings

@@ -10,8 +10,8 @@ from rest_framework import viewsets
 from django.conf import settings
 
 from sage_desktop_api.utils import assert_valid
-from apps.workspaces.models import Workspace, Sage300Credentials
-from apps.workspaces.serializers import WorkspaceSerializer, Sage300CredentialSerializer
+from apps.workspaces.models import Workspace, Sage300Credentials, ExportSettings
+from apps.workspaces.serializers import WorkspaceSerializer, Sage300CredentialSerializer, ExportSettingsSerializer
 
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from sage_desktop_sdk.exceptions import UserAccountLocked, InvalidUserCredentials, InvalidWebApiClientCredentials, WebApiClientLocked
@@ -182,3 +182,13 @@ class ConnectSage300View(viewsets.ViewSet):
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
+
+class ExportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+    """
+    Retrieve or Create Export Settings
+    """
+    serializer_class = ExportSettingsSerializer
+    lookup_field = 'workspace_id'
+
+    queryset = ExportSettings.objects.all()
