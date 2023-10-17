@@ -59,17 +59,19 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
+    # 'quickbooks_desktop_api.logging_middleware.ErrorHandlerMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsPostCsrfMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'sage_desktop_api.logging_middleware.ErrorHandlerMiddleware',
 ]
+
 
 ROOT_URLCONF = 'sage_desktop_api.urls'
 APPEND_SLASH = False
@@ -188,6 +190,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Fyle Settings
 API_URL = os.environ.get('API_URL')
