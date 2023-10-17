@@ -51,7 +51,6 @@ class Workspace(models.Model):
 
 
 class BaseModel(models.Model):
-    id = models.AutoField(primary_key=True)
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     created_at = models.CharField(max_length=255, null=True, blank=True)
     updated_at = models.CharField(max_length=255, null=True, blank=True)
