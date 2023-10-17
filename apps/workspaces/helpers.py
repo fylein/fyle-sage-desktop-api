@@ -21,20 +21,6 @@ class StringNullField(models.CharField):
         super(StringNullField, self).__init__(*args, **kwargs)
 
 
-class StringOptionsField(models.CharField):
-    description = "Custom String Field with Options"
-
-    def __init__(self, *args, **kwargs):
-        choices = kwargs.pop('choices', [])  # Retrieve choices from kwargs
-        max_length = kwargs.pop('max_length', 255)  # Retrieve max_length from kwarg
-        kwargs['null'] = True
-        super(StringOptionsField, self).__init__(
-            max_length=max_length,
-            choices=choices,
-            **kwargs
-        )
-
-
 class CustomDateTimeField(models.DateTimeField):
     description = "Custom DateTime Field with Auto-Add Now"
 

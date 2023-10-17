@@ -42,3 +42,23 @@ class Workspace(models.Model):
 
     class Meta:
         db_table = 'workspaces'
+
+
+class BaseModel(models.Model):
+    workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+    created_at = models.CharField(max_length=255, null=True, blank=True)
+    updated_at = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class FyleCredential(BaseModel):
+    """
+    Table to store Fyle credentials
+    """
+    refresh_token = models.TextField(help_text='Stores Fyle refresh token')
+    cluster_domain = models.CharField(max_length=255, help_text='Cluster domain', null=True)
+
+    class Meta:
+        db_table = 'fyle_credentials'
