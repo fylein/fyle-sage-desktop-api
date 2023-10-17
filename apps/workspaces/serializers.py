@@ -96,7 +96,7 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         """
         assert_valid(validated_data, 'Body cannot be null')
         workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
-    
+
         export_settings = ExportSettings.objects.filter(
             workspace_id=workspace_id).first()
 

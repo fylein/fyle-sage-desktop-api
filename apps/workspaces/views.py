@@ -74,6 +74,7 @@ class ReadyView(generics.RetrieveAPIView):
             status=status.HTTP_200_OK
         )
 
+
 class ConnectSage300View(viewsets.ViewSet):
     """
     Sage 300 Connect View

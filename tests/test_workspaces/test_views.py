@@ -84,17 +84,17 @@ def test_export_settings(api_client, test_connection):
 
     payload = {
         'reimbursable_expenses_export_type': 'PURCHASE_INVOICE',
-		'reimbursable_expense_state': 'PAYMENT_PROCESSING' ,
-		'reimbursable_expense_date': 'last_spent_at',
-		'reimbursable_expense_grouped_by': 'EXPENSE',
-		'credit_card_expense_export_type': 'PURCHASE_INVOICE',
-		'credit_card_expense_state':  'CLOSED',
-		'credit_card_expense_grouped_by': 'EXPENSE',
-		'credit_card_expense_date': 'created_at',
-		'default_ccc_account_name': 'credit card account',
-		'default_ccc_account_id': '12312',
-		'default_vendor_name': 'Nilesh',
-		'default_vendor_id': '123'
+        'reimbursable_expense_state': 'PAYMENT_PROCESSING',
+        'reimbursable_expense_date': 'last_spent_at',
+        'reimbursable_expense_grouped_by': 'EXPENSE',
+        'credit_card_expense_export_type': 'PURCHASE_INVOICE',
+        'credit_card_expense_state':  'CLOSED',
+        'credit_card_expense_grouped_by': 'EXPENSE',
+        'credit_card_expense_date': 'created_at',
+        'default_ccc_account_name': 'credit card account',
+        'default_ccc_account_id': '12312',
+        'default_vendor_name': 'Nilesh',
+        'default_vendor_id': '123'
     }
 
     response = api_client.post(url, payload)

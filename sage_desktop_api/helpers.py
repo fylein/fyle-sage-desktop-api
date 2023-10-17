@@ -45,6 +45,7 @@ class StringOptionsField(models.CharField):
             **kwargs
         )
 
+
 class BooleanFalseField(models.BooleanField):
     description = "Custom Boolean Field with Default True"
 

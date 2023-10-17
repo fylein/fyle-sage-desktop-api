@@ -122,10 +122,11 @@ CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES = (
     ('CREATED_AT', 'created_at')
 )
 
+
 class ExportSettings(BaseModel):
     """
     Table to store export settings
-    """    
+    """
     # Reimbursable Expenses Export Settings
     reimbursable_expenses_export_type = StringOptionsField(
         choices=REIMBURSABLE_EXPENSE_EXPORT_TYPE_CHOICES,
@@ -141,7 +142,6 @@ class ExportSettings(BaseModel):
     reimbursable_expense_grouped_by = StringOptionsField(
         choices=REIMBURSABLE_EXPENSES_GROUPED_BY_CHOICES
     )
-    
     # Credit Card Expenses Export Settings
     credit_card_expense_export_type = StringOptionsField(
         choices=CREDIT_CARD_EXPENSE_EXPORT_TYPE_CHOICES
@@ -152,10 +152,10 @@ class ExportSettings(BaseModel):
     default_credit_card_account_name = StringNullField(help_text='Credit card account name')
     default_credit_card_account_id = StringNullField(help_text='Credit Card Account ID')
     credit_card_expense_grouped_by = StringOptionsField(
-				choices=CREDIT_CARD_EXPENSES_GROUPED_BY_CHOICES,
+        choices=CREDIT_CARD_EXPENSES_GROUPED_BY_CHOICES
     )
     credit_card_expense_date = StringOptionsField(
-        choices=CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES,
+        choices=CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES
     )
     default_vendor_name = StringNullField(help_text='default Vendor Name')
     default_vendor_id = StringNullField(help_text='default Vendor Id')
