@@ -9,5 +9,9 @@ __all__ = [
     'NotAcceptableClientError',
     'WrongParamsError',
     'NotFoundItemError',
-    'InternalServerError'
+    'InternalServerError',
+    'InvalidUserCredentials',
+    'InvalidWebApiClientCredentials',
+    'UserAccountLocked',
+    'WebApiClientLocked'
 ]

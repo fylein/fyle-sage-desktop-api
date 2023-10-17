@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
-from apps.workspaces.helpers import StringNotNullField, StringNullField, CustomDateTimeField, StringOptionsField
+from sage_desktop_api.helpers import StringNotNullField, StringNullField, CustomDateTimeField, StringOptionsField
 
 User = get_user_model()
 
@@ -62,3 +62,15 @@ class FyleCredential(BaseModel):
 
     class Meta:
         db_table = 'fyle_credentials'
+class Sage300Credentials(BaseModel):
+    """
+    Table to store Business Central credentials
+    """
+    identifier = StringNotNullField(help_text='sage300 identifier')
+    username = StringNotNullField(help_text='sage300 username')
+    password = StringNotNullField(help_text='sage300 password')
+    api_key = StringNotNullField(help_text='sage300 api key')
+    api_secret = StringNotNullField(help_text='sage300 api secret')
+
+    class Meta:
+        db_table = 'sage300_credentials'

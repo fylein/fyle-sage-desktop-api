@@ -12,7 +12,8 @@ from apps.fyle.helpers import get_cluster_domain
 from .models import (
     User,
     Workspace,
-    FyleCredential
+    FyleCredential,
+    Sage300Credentials
 )
 
 
@@ -67,3 +68,12 @@ class WorkspaceSerializer(serializers.ModelSerializer):
             )
 
         return workspace
+
+
+class Sage300CredentialSerializer(serializers.ModelSerializer):
+    """
+    Sage300 credential serializer
+    """
+    class Meta:
+        model = Sage300Credentials
+        fields = '__all__'
