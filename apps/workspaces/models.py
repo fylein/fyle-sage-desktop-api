@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
-from apps.workspaces.utils import StringNotNullField, StringNullField, CustomDateTimeField, StringOptionsField
+from apps.workspaces.helpers import StringNotNullField, StringNullField, CustomDateTimeField, StringOptionsField
 
 User = get_user_model()
 
@@ -37,6 +37,30 @@ class Workspace(models.Model):
         help_text='Onboarding status of the workspace'
     )
     sage300_accounts_last_synced_at = CustomDateTimeField(help_text='sage accounts last synced at time')
-
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
     class Meta:
         db_table = 'workspaces'
+
+
+class BaseModel(models.Model):
+	workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+	created_at = models.CharField(max_length=255, null=True, blank=True)
+	updated_at = models.CharField(max_length=255, null=True, blank=True)
+	
+	class Meta:
+	    abstract = True
+
+
+class Sage300Credentials(BaseModel):
+    """
+    Table to store Business Central credentials
+    """
+    identifier = StringNotNullField(help_text='sage300 identifier')
+    username = StringNotNullField(help_text='sage300 username')
+    password = StringNotNullField(help_text='sage300 password')
+    api_key = StringNotNullField(help_text='sage300 api key')
+    api_secret = StringNotNullField(help_text='sage300 api secret')
+
+    class Meta:
+        db_table = 'sage300_credentials'
