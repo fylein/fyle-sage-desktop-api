@@ -1,7 +1,13 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
-from sage_desktop_api.helpers import StringNotNullField, StringNullField, CustomDateTimeField, StringOptionsField
+from sage_desktop_api.helpers import (
+        StringNotNullField,
+        StringNullField,
+        CustomDateTimeField,
+        StringOptionsField,
+        BooleanFalseField
+    )
 
 User = get_user_model()
 
@@ -45,6 +51,7 @@ class Workspace(models.Model):
 
 
 class BaseModel(models.Model):
+    id = models.AutoField(primary_key=True)
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     created_at = models.CharField(max_length=255, null=True, blank=True)
     updated_at = models.CharField(max_length=255, null=True, blank=True)
@@ -65,3 +72,15 @@ class Sage300Credentials(BaseModel):
 
     class Meta:
         db_table = 'sage300_credentials'
+
+
+class ImportSetting(BaseModel):
+    """
+    Table to store Import setting
+    """
+
+    import_categories = BooleanFalseField(help_text='toggle for import of chart of accounts from sage300')
+    import_vendors_as_merchants = BooleanFalseField(help_text='toggle for import of vendors as merchant from sage300')
+    
+    class Meta:
+	    db_table = 'import_settings'

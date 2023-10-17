@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import status
 
 
-from apps.workspaces.models import Workspace, Sage300Credentials
-from apps.workspaces.serializers import Sage300CredentialSerializer
+from apps.workspaces.models import Workspace, Sage300Credentials, ImportSetting
+from apps.workspaces.serializers import Sage300CredentialSerializer, ImportSettingsSerializer
 
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from sage_desktop_sdk.exceptions import UserAccountLocked, InvalidUserCredentials, InvalidWebApiClientCredentials, WebApiClientLocked
@@ -120,3 +120,14 @@ class ConnectSage300View(viewsets.ViewSet):
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
+
+class ImportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+    """
+    Retrieve or Create Export Settings
+    """
+    serializer_class = ImportSettingsSerializer
+    lookup_field = 'workspace_id'
+
+    queryset = ImportSetting.objects.all()
+
