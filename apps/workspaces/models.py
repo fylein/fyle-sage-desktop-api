@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import ArrayField
 
 from sage_desktop_api.helpers import (
         StringNotNullField,
@@ -83,3 +84,20 @@ class ImportSetting(BaseModel):
     
     class Meta:
 	    db_table = 'import_settings'
+
+
+class AdvancedSetting(BaseModel):
+    """
+    Table to store advanced setting
+    """
+    expense_memo_structure = ArrayField(
+        models.CharField(max_length=255), help_text='Array of fields in memo', null=True
+    )
+    schedule_is_enabled = BooleanFalseField(help_text='Boolean to check if schedule is enabled')
+    schedule_start_datetime = CustomDateTimeField(help_text='Schedule start date and time')
+    schedule_id = StringNullField(help_text='Schedule id')
+    emails_selected = models.JSONField(default=list, help_text='Emails Selected For Email Notification',  null=True)
+    emails_added = models.JSONField(default=list, help_text='Emails Selected For Email Notification',  null=True)
+
+    class Meta:
+        db_table = 'advanced_settings'

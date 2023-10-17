@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Sage300Credentials, ImportSetting
+from .models import Sage300Credentials, ImportSetting, AdvancedSetting
 
 
 class Sage300CredentialSerializer(serializers.ModelSerializer):
@@ -41,3 +41,44 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
             workspace.save()
 
         return export_settings
+
+
+class AdvancedSettingSerializer(serializers.ModelSerializer):
+    """
+    Advanced Settings serializer
+    """
+    class Meta:
+        model = AdvancedSetting
+        fields = '__all__'
+        read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
+
+    def create(self, validated_data):
+        """
+        Create Advanced Settings
+        """
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+        advanced_setting = AdvancedSetting.objects.filter(
+            workspace_id=workspace_id).first()
+
+        if not advanced_setting:
+            if 'expense_memo_structure' not in validated_data:
+                validated_data['expense_memo_structure'] = [
+                    'employee_email',
+                    'merchant',
+                    'purpose',
+                    'report_number'
+                ]
+
+        advanced_setting, _ = AdvancedSetting.objects.update_or_create(
+            workspace_id=workspace_id,
+            defaults=validated_data
+        )
+
+        # Update workspace onboarding state
+        workspace = advanced_setting.workspace
+
+        if workspace.onboarding_state == 'ADVANCED_SETTINGS':
+            workspace.onboarding_state = 'COMPLETE'
+            workspace.save()
+
+        return advanced_setting

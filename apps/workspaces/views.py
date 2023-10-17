@@ -4,12 +4,24 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import status
 
-
-from apps.workspaces.models import Workspace, Sage300Credentials, ImportSetting
-from apps.workspaces.serializers import Sage300CredentialSerializer, ImportSettingsSerializer
-
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
-from sage_desktop_sdk.exceptions import UserAccountLocked, InvalidUserCredentials, InvalidWebApiClientCredentials, WebApiClientLocked
+from apps.workspaces.models import (
+    Workspace, 
+    Sage300Credentials,
+    ImportSetting,
+    AdvancedSetting
+)
+from apps.workspaces.serializers import (
+    Sage300CredentialSerializer,
+    ImportSettingsSerializer,
+    AdvancedSettingSerializer
+)
+from sage_desktop_sdk.exceptions import (
+    UserAccountLocked,
+    InvalidUserCredentials,
+    InvalidWebApiClientCredentials,
+    WebApiClientLocked
+)
 
 
 class ConnectSage300View(viewsets.ViewSet):
@@ -130,4 +142,15 @@ class ImportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
     lookup_field = 'workspace_id'
 
     queryset = ImportSetting.objects.all()
+
+
+class AdvancedSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+    """
+    Retrieve or Create Advanced Settings
+    """
+    serializer_class = AdvancedSettingSerializer
+    lookup_field = 'workspace_id'
+    lookup_url_kwarg = 'workspace_id'
+
+    queryset = AdvancedSetting.objects.all()
 

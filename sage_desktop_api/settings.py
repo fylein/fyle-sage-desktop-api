@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_q',
     'fyle_rest_auth',
+    'django_filters',
 
     # User Created Apps
     'apps.users',
@@ -59,7 +60,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
-    # 'quickbooks_desktop_api.logging_middleware.ErrorHandlerMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.middleware.common.CommonMiddleware',
