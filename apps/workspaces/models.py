@@ -1,10 +1,9 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
-from sage_desktop_api.helpers import StringNotNullField, StringNullField, CustomDateTimeField, StringOptionsField
+from sage_desktop_api.helpers import StringNotNullField, StringNullField, CustomDateTimeField, StringOptionsField, TextNotNullField
 
 User = get_user_model()
-
 
 ONBOARDING_STATE_CHOICES = (
     ('CONNECTION', 'CONNECTION'),
@@ -57,11 +56,13 @@ class FyleCredential(BaseModel):
     """
     Table to store Fyle credentials
     """
-    refresh_token = models.TextField(help_text='Stores Fyle refresh token')
-    cluster_domain = models.CharField(max_length=255, help_text='Cluster domain', null=True)
+    refresh_token = TextNotNullField(help_text='Fyle refresh token')
+    cluster_domain = StringNullField(help_text='Fyle cluster domain')
 
     class Meta:
         db_table = 'fyle_credentials'
+
+
 class Sage300Credentials(BaseModel):
     """
     Table to store Business Central credentials
