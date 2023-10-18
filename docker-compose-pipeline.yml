@@ -34,6 +34,8 @@ services:
       DB_PASSWORD: postgres
       DB_HOST: db
       DB_PORT: 5432
+      SD_API_KEY: 23234
+      SD_API_SECRET: 12312
   db:
     image: "postgres:15"
     environment: 
