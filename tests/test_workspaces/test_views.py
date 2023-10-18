@@ -22,7 +22,7 @@ def test_post_of_workspace(api_client, test_connection):
     assert response.status_code == 201
     assert workspace.name == response.data['name']
     assert workspace.org_id == response.data['org_id']
-    assert workspace.currency == response.data['currency']
+    assert workspace.fyle_currency == response.data['fyle_currency']
 
     response = json.loads(response.content)
 
@@ -55,7 +55,7 @@ def test_get_of_workspace(api_client, test_connection):
     assert response.status_code == 200
     assert response.data['name'] == 'Fyle For MS Dynamics Demo'
     assert response.data['org_id'] == 'orNoatdUnm1w'
-    assert response.data['currency'] == 'USD'
+    assert response.data['fyle_currency'] == 'USD'
 
 
 def test_export_settings(api_client, test_connection):
@@ -85,16 +85,18 @@ def test_export_settings(api_client, test_connection):
     payload = {
         'reimbursable_expenses_export_type': 'PURCHASE_INVOICE',
         'reimbursable_expense_state': 'PAYMENT_PROCESSING',
-        'reimbursable_expense_date': 'last_spent_at',
+        'reimbursable_expense_date': 'LAST_SPENT_AT',
         'reimbursable_expense_grouped_by': 'EXPENSE',
-        'credit_card_expense_export_type': 'PURCHASE_INVOICE',
-        'credit_card_expense_state':  'CLOSED',
+        'credit_card_expense_export_type': 'JOURNAL_ENTRY',
+        'credit_card_expense_state':  'PAID',
         'credit_card_expense_grouped_by': 'EXPENSE',
-        'credit_card_expense_date': 'created_at',
-        'default_ccc_account_name': 'credit card account',
-        'default_ccc_account_id': '12312',
+        'credit_card_expense_date': 'CREATED_AT',
+        'default_credit_card_account_name': 'credit card account',
+        'default_credit_card_account_id': '12312',
         'default_vendor_name': 'Nilesh',
-        'default_vendor_id': '123'
+        'default_vendor_id': '123',
+        'default_back_account_id': '123',
+        'default_bank_account_name': 'Bank account'
     }
 
     response = api_client.post(url, payload)
@@ -104,12 +106,12 @@ def test_export_settings(api_client, test_connection):
     assert response.status_code == 201
     assert export_settings.reimbursable_expenses_export_type == 'PURCHASE_INVOICE'
     assert export_settings.reimbursable_expense_state == 'PAYMENT_PROCESSING'
-    assert export_settings.reimbursable_expense_date == 'last_spent_at'
+    assert export_settings.reimbursable_expense_date == 'LAST_SPENT_AT'
     assert export_settings.reimbursable_expense_grouped_by == 'EXPENSE'
-    assert export_settings.credit_card_expense_export_type == 'PURCHASE_INVOICE'
-    assert export_settings.credit_card_expense_state == 'CLOSED'
+    assert export_settings.credit_card_expense_export_type == 'JOURNAL_ENTRY'
+    assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
-    assert export_settings.credit_card_expense_date == 'created_at'
+    assert export_settings.credit_card_expense_date == 'CREATED_AT'
     assert export_settings.default_credit_card_account_name == 'credit card account'
     assert export_settings.default_credit_card_account_id == '12312'
     assert export_settings.default_vendor_name == 'Nilesh'
@@ -120,12 +122,12 @@ def test_export_settings(api_client, test_connection):
     assert response.status_code == 200
     assert export_settings.reimbursable_expenses_export_type == 'PURCHASE_INVOICE'
     assert export_settings.reimbursable_expense_state == 'PAYMENT_PROCESSING'
-    assert export_settings.reimbursable_expense_date == 'last_spent_at'
+    assert export_settings.reimbursable_expense_date == 'LAST_SPENT_AT'
     assert export_settings.reimbursable_expense_grouped_by == 'EXPENSE'
-    assert export_settings.credit_card_expense_export_type == 'PURCHASE_INVOICE'
-    assert export_settings.credit_card_expense_state == 'CLOSED'
+    assert export_settings.credit_card_expense_export_type == 'JOURNAL_ENTRY'
+    assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
-    assert export_settings.credit_card_expense_date == 'created_at'
+    assert export_settings.credit_card_expense_date == 'CREATED_AT'
     assert export_settings.default_credit_card_account_name == 'credit card account'
     assert export_settings.default_credit_card_account_id == '12312'
     assert export_settings.default_vendor_name == 'Nilesh'
