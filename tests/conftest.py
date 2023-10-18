@@ -126,7 +126,7 @@ def create_temp_workspace():
             id=workspace_id,
             name='Fyle For Testing {}'.format(workspace_id),
             org_id='riseabovehate{}'.format(workspace_id),
-            reimbursable_last_synced_at=None,
+            last_synced_at=None,
             ccc_last_synced_at=None,
             created_at=datetime.now(tz=timezone.utc),
             updated_at=datetime.now(tz=timezone.utc)

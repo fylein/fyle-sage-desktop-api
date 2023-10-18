@@ -22,7 +22,7 @@ def test_post_of_workspace(api_client, test_connection):
     assert response.status_code == 201
     assert workspace.name == response.data['name']
     assert workspace.org_id == response.data['org_id']
-    assert workspace.currency == response.data['currency']
+    assert workspace.fyle_currency == response.data['fyle_currency']
 
     response = json.loads(response.content)
 
@@ -55,4 +55,4 @@ def test_get_of_workspace(api_client, test_connection):
     assert response.status_code == 200
     assert response.data['name'] == 'Fyle For MS Dynamics Demo'
     assert response.data['org_id'] == 'orNoatdUnm1w'
-    assert response.data['currency'] == 'USD'
+    assert response.data['fyle_currency'] == 'USD'
