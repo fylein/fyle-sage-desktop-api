@@ -132,7 +132,7 @@ class ExportSettings(BaseModel):
         choices=REIMBURSABLE_EXPENSE_EXPORT_TYPE_CHOICES,
     )
     default_bank_account_name = StringNullField(help_text='Bank account name')
-    default_back_account_id = models.CharField(max_length=255, help_text='Account ID')
+    default_back_account_id = StringNullField(help_text='Bank Account ID')
     reimbursable_expense_state = StringOptionsField(
         choices=REIMBURSABLE_EXPENSE_STATE_CHOICES
     )
@@ -159,7 +159,7 @@ class ExportSettings(BaseModel):
     )
     default_vendor_name = StringNullField(help_text='default Vendor Name')
     default_vendor_id = StringNullField(help_text='default Vendor Id')
-    auto_create_vendor = BooleanFalseField()
+    auto_create_vendor = BooleanFalseField(help_text='Auto create vendor')
 
     class Meta:
         db_table = 'export_settings'
