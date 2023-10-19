@@ -1,7 +1,7 @@
 """
 Fyle Serializers
 """
-
+import logging
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import status
@@ -9,6 +9,8 @@ from fyle_integrations_platform_connector import PlatformConnector
 from datetime import datetime, timezone
 from apps.workspaces.models import Workspace, FyleCredential
 
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 class ImportFyleAttributesSerializer(serializers.Serializer):
     """
@@ -46,5 +48,6 @@ class ImportFyleAttributesSerializer(serializers.Serializer):
         except FyleCredential.DoesNotExist:
             raise serializers.ValidationError({'message': 'Fyle credentials not found in workspace'}, code='invalid_login')
 
-        except Exception:
+        except Exception as exception:
+            logger.error('Something unexpected happened workspace_id: %s %s', workspace_id, exception)
             raise serializers.ValidationError()
