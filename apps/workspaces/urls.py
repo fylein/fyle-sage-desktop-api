@@ -12,7 +12,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import path
+from django.urls import path, include
 
 from apps.workspaces.views import (
     ReadyView,
@@ -30,5 +30,6 @@ urlpatterns = [
     path('<int:workspace_id>/credentials/sage_300/', Sage300CredsView.as_view(), name='sage300-creds'),
     path('<int:workspace_id>/export_settings/', ExportSettingView.as_view(), name='export-settings'),
     path('<int:workspace_id>/import_settings/', ImportSettingView.as_view(), name='import-settings'),
-    path('<int:workspace_id>/advanced_settings/', AdvancedSettingView.as_view(), name='advanced-settings')
+    path('<int:workspace_id>/advanced_settings/', AdvancedSettingView.as_view(), name='advanced-settings'),
+    path('<int:workspace_id>/fyle/', include('apps.fyle.urls')),
 ]

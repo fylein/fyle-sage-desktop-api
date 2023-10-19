@@ -8,9 +8,11 @@ from rest_framework.views import status
 from fyle_integrations_platform_connector import PlatformConnector
 from datetime import datetime, timezone
 from apps.workspaces.models import Workspace, FyleCredential
+from apps.fyle.models import ExpenseFilter
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
+
 
 class ImportFyleAttributesSerializer(serializers.Serializer):
     """
@@ -51,3 +53,21 @@ class ImportFyleAttributesSerializer(serializers.Serializer):
         except Exception as exception:
             logger.error('Something unexpected happened workspace_id: %s %s', workspace_id, exception)
             raise serializers.ValidationError()
+
+
+class ExpenseFilterSerializer(serializers.ModelSerializer):
+    """
+    Expense Filter Serializer
+    """
+
+    class Meta:
+        model = ExpenseFilter
+        fields = '__all__'
+        read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
+
+    def create(self, validated_data):
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+
+        expense_filter, _ = ExpenseFilter.objects.update_or_create(workspace_id=workspace_id, rank=validated_data['rank'], defaults=validated_data)
+
+        return expense_filter
