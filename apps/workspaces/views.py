@@ -7,16 +7,21 @@ from rest_framework.permissions import IsAuthenticated
 
 from fyle_rest_auth.utils import AuthUtils
 
+
 from sage_desktop_api.utils import assert_valid
 from apps.workspaces.models import (
     Workspace,
     Sage300Credentials,
-    ImportSetting
+    ExportSettings,
+    ImportSetting,
+    AdvancedSetting
 )
 from apps.workspaces.serializers import (
     WorkspaceSerializer,
     Sage300CredentialSerializer,
-    ImportSettingsSerializer
+    ExportSettingsSerializer,
+    ImportSettingsSerializer,
+    AdvancedSettingSerializer
 )
 
 
@@ -32,10 +37,6 @@ class WorkspaceView(generics.CreateAPIView, generics.RetrieveAPIView):
     Create Retrieve Workspaces
     """
     serializer_class = WorkspaceSerializer
-
-    permission_classes = [
-        IsAuthenticated
-    ]
 
     def get_object(self):
         """
@@ -88,6 +89,16 @@ class Sage300CredsView(generics.CreateAPIView, generics.RetrieveAPIView):
     queryset = Sage300Credentials.objects.all()
 
 
+class ExportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+    """
+    Retrieve or Create Export Settings
+    """
+    serializer_class = ExportSettingsSerializer
+    lookup_field = 'workspace_id'
+
+    queryset = ExportSettings.objects.all()
+
+
 class ImportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
     """
     Retrieve or Create Export Settings
@@ -96,3 +107,14 @@ class ImportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
     lookup_field = 'workspace_id'
 
     queryset = ImportSetting.objects.all()
+
+
+class AdvancedSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+    """
+    Retrieve or Create Advanced Settings
+    """
+    serializer_class = AdvancedSettingSerializer
+    lookup_field = 'workspace_id'
+    lookup_url_kwarg = 'workspace_id'
+
+    queryset = AdvancedSetting.objects.all()

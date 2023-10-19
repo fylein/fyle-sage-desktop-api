@@ -1,14 +1,17 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import ArrayField
 
-from sage_desktop_api.helpers import (
-        StringNotNullField,
-        StringNullField,
-        CustomDateTimeField,
-        StringOptionsField,
-        BooleanFalseField,
-        TextNotNullField
-    )
+from sage_desktop_api.models.fields import (
+    StringNotNullField,
+    StringNullField,
+    CustomDateTimeField,
+    StringOptionsField,
+    TextNotNullField,
+    BooleanFalseField,
+    IntegerNullField,
+    CustomJsonField,
+)
 
 User = get_user_model()
 
@@ -83,6 +86,93 @@ class Sage300Credentials(BaseModel):
         db_table = 'sage300_credentials'
 
 
+# Reimbursable Expense Choices
+REIMBURSABLE_EXPENSE_EXPORT_TYPE_CHOICES = (
+    ('PURCHASE_INVOICE', 'PURCHASE_INVOICE'),
+    ('DIRECT_COST', 'DIRECT_COST')
+)
+
+REIMBURSABLE_EXPENSE_STATE_CHOICES = (
+    ('PAYMENT_PROCESSING', 'PAYMENT_PROCESSING'),
+    ('CLOSED', 'CLOSED')
+)
+
+REIMBURSABLE_EXPENSES_GROUPED_BY_CHOICES = (
+    ('REPORT', 'report_id'),
+    ('EXPENSE', 'expense_id')
+)
+
+REIMBURSABLE_EXPENSES_DATE_TYPE_CHOICES = (
+    ('LAST_SPENT_AT', 'last_spent_at'),
+    ('CREATED_AT', 'created_at'),
+    ('SPENT_AT', 'spent_at')
+)
+
+# Credit Card Expense Choices
+CREDIT_CARD_EXPENSE_EXPORT_TYPE_CHOICES = (
+    ('JOURNAL_ENTRY', 'JOURNAL_ENTRY'),
+)
+
+CREDIT_CARD_EXPENSE_STATE_CHOICES = (
+    ('APPROVED', 'APPROVED'),
+    ('PAYMENT_PROCESSING', 'PAYMENT_PROCESSING'),
+    ('PAID', 'PAID')
+)
+
+CREDIT_CARD_EXPENSES_GROUPED_BY_CHOICES = (
+    ('REPORT', 'report_id'),
+    ('EXPENSE', 'expense_id')
+)
+
+CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES = (
+    ('LAST_SPENT_AT', 'last_spent_at'),
+    ('POSTED_AT', 'posted_at'),
+    ('CREATED_AT', 'created_at')
+)
+
+
+class ExportSettings(BaseModel):
+    """
+    Table to store export settings
+    """
+    # Reimbursable Expenses Export Settings
+    reimbursable_expenses_export_type = StringOptionsField(
+        choices=REIMBURSABLE_EXPENSE_EXPORT_TYPE_CHOICES,
+    )
+    default_bank_account_name = StringNullField(help_text='Bank account name')
+    default_back_account_id = StringNullField(help_text='Bank Account ID')
+    reimbursable_expense_state = StringOptionsField(
+        choices=REIMBURSABLE_EXPENSE_STATE_CHOICES
+    )
+    reimbursable_expense_date = StringOptionsField(
+        choices=REIMBURSABLE_EXPENSES_DATE_TYPE_CHOICES
+    )
+    reimbursable_expense_grouped_by = StringOptionsField(
+        choices=REIMBURSABLE_EXPENSES_GROUPED_BY_CHOICES
+    )
+    # Credit Card Expenses Export Settings
+    credit_card_expense_export_type = StringOptionsField(
+        choices=CREDIT_CARD_EXPENSE_EXPORT_TYPE_CHOICES
+    )
+    credit_card_expense_state = StringOptionsField(
+        choices=CREDIT_CARD_EXPENSE_STATE_CHOICES
+    )
+    default_credit_card_account_name = StringNullField(help_text='Credit card account name')
+    default_credit_card_account_id = StringNullField(help_text='Credit Card Account ID')
+    credit_card_expense_grouped_by = StringOptionsField(
+        choices=CREDIT_CARD_EXPENSES_GROUPED_BY_CHOICES
+    )
+    credit_card_expense_date = StringOptionsField(
+        choices=CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES
+    )
+    default_vendor_name = StringNullField(help_text='default Vendor Name')
+    default_vendor_id = StringNullField(help_text='default Vendor Id')
+    auto_create_vendor = BooleanFalseField(help_text='Auto create vendor')
+
+    class Meta:
+        db_table = 'export_settings'
+
+
 class ImportSetting(BaseModel):
     """
     Table to store Import setting
@@ -92,4 +182,22 @@ class ImportSetting(BaseModel):
     import_vendors_as_merchants = BooleanFalseField(help_text='toggle for import of vendors as merchant from sage300')
     
     class Meta:
-	    db_table = 'import_settings'
+        db_table = 'import_settings'
+
+
+class AdvancedSetting(BaseModel):
+    """
+    Table to store advanced setting
+    """
+    expense_memo_structure = ArrayField(
+        models.CharField(max_length=255), help_text='Array of fields in memo', null=True
+    )
+    schedule_is_enabled = BooleanFalseField(help_text='Boolean to check if schedule is enabled')
+    schedule_start_datetime = CustomDateTimeField(help_text='Schedule start date and time')
+    schedule_id = StringNullField(help_text='Schedule id')
+    interval_hours = IntegerNullField(help_text='Interval in hours')
+    emails_selected = CustomJsonField(help_text='Emails Selected For Email Notification')
+    emails_added = CustomJsonField(help_text='Emails Selected For Email Notification')
+
+    class Meta:
+        db_table = 'advanced_settings'
