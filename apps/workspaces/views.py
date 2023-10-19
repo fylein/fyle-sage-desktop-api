@@ -83,8 +83,6 @@ class Sage300CredsView(generics.CreateAPIView, generics.RetrieveAPIView):
     """
     Sage 300 Creds View
     """
-    authentication_classes = []
-    permission_classes = []
     serializer_class = Sage300CredentialSerializer
     lookup_field = 'workspace_id'
 

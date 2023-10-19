@@ -25,29 +25,42 @@ class SageDesktopConnector:
         self.workspace_id = workspace_id
 
 
+    def _create_destination_attribute(self, attribute_type, display_name, value, destination_id, active, detail):
+        return {
+            'attribute_type': attribute_type,
+            'display_name': display_name,
+            'value': value,
+            'destination_id': destination_id,
+            'active': active,
+            'detail': detail
+        }
+
+
+    def _sync_data(self, data, attribute_type, display_name, workspace_id, field_names):
+        destination_attributes = []
+
+        for item in data:
+            detail = {field: getattr(item, field) for field in field_names}
+            destination_attributes.append(self._create_destination_attribute(
+                attribute_type,
+                display_name,
+                item.name,
+                item.id,
+                item.is_active,
+                detail
+            ))
+
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
+            destination_attributes, attribute_type, workspace_id, True)
+
+
     def sync_accounts(self):
         """
         Get accounts
         """            
+
         accounts = self.connection.accounts.get_all()
-        account_attributes = []
-
-        for account in accounts:
-            account_attributes.append({
-                'attribute_type': 'ACCOUNT',
-                'display_name': 'accounts',
-                'value': account.name,
-                'destination_id': account.id,
-                'active': account.is_active,
-                'detail': {
-                    'code': account.code,
-                    'version': account.version
-                }
-            })
-        
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            account_attributes, 'ACCOUNT', self.workspace_id, True)
-
+        self._sync_data(accounts, 'ACCOUNT', 'accounts', self.workspace_id, ['code', 'version'])
         return []
 
 
@@ -55,30 +68,13 @@ class SageDesktopConnector:
         """
         Get Vendors
         """
+
         vendors = self.connection.vendors.get_all()
-        vendor_attributes = []
-        
-        for vendor in vendors:
-            vendor_attributes.append({
-                'attribute_type': 'VENDOR',
-                'display_name': 'vendor',
-                'value': vendor.name,
-                'destination_id': vendor.id,
-                'active': vendor.is_active,
-                'detail': {
-                    'code': vendor.code,
-                    'version': vendor.version,
-                    'default_expense_account': vendor.default_expense_account,
-                    'default_standard_category': vendor.default_standard_category,
-                    'default_standard_costcode': vendor.default_standard_costcode,
-                    'type_id': vendor.type_id,
-                    'created_on_utc': vendor.created_on_utc
-                }
-            })
-            
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            vendor_attributes, 'VENDOR', self.workspace_id, True)
-        
+        field_names = [
+            'code', 'version', 'default_expense_account', 'default_standard_category',
+            'default_standard_costcode', 'type_id', 'created_on_utc'
+        ]
+        self._sync_data(vendors, 'VENDOR', 'vendor', self.workspace_id, field_names)
         return []
 
 
@@ -88,27 +84,10 @@ class SageDesktopConnector:
         """
         
         jobs = self.connection.jobs.get_all_jobs()
-        job_attributes = []
-
-        for job in jobs:
-            job_attributes.append({
-                'attribute_type': 'JOB',
-                'display_name': 'job',
-                'value': job.name,
-                'destination_id': job.id,
-                'active': job.is_active,
-                'detail': {
-                    'code': job.code,
-                    'status': job.status,
-                    'account_prefix_id': job.account_prefix_id,
-                    'created_on_utc': job.created_on_utc,
-                    'version': job.version
-                }
-            })
-
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            job_attributes, 'JOB', self.workspace_id, True)
-        
+        field_names = [
+            'code', 'status', 'version', 'account_prefix_id', 'created_on_utc'
+        ]
+        self._sync_data(jobs, 'JOB', 'job', self.workspace_id, field_names)
         return []
 
 
@@ -118,26 +97,8 @@ class SageDesktopConnector:
         """
         
         cost_codes = self.connection.jobs.get_all_costcodes()
-        cost_code_attributes = []
-        
-        for cost_code in cost_codes:
-            cost_code_attributes.append({
-                'attribute_type': 'COST_CODE',
-                'display_name': 'cost code',
-                'value': cost_code.name,
-                'destination_id': cost_code.id,
-                'active': cost_code.is_active,
-                'detail': {
-                    'code': cost_code.code,
-                    'description': cost_code.description,
-                    'is_standard': cost_code.is_standard,
-                    'version': cost_code.version
-                }
-            })
-
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            cost_code_attributes, 'COST_CODE', self.workspace_id, True)
-                
+        field_names = ['code', 'version', 'is_standard', 'description']
+        self._sync_data(cost_codes, 'COST_CODE', 'cost_code', self.workspace_id, field_names)
         return []
 
 
@@ -147,27 +108,8 @@ class SageDesktopConnector:
         """
         
         categories = self.connection.jobs.get_all_categories()
-        category_attributes = []
-        
-        for category in categories:
-            category_attributes.append({
-                'attribute_type': 'CATEGORY',
-                'display_name': 'category',
-                'value': category.name,
-                'destination_id': category.id,
-                'active': category.is_active,
-                'detail': {
-                    'code': category.code,
-                    'description': category.description,
-                    'is_standard': category.is_standard,
-                    'accumulation_name': category.accumulation_name,
-                    'version': category.version
-                }
-            })
-
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            category_attributes, 'CATEGORY', self.workspace_id, True)
-                
+        field_names = ['code', 'version', 'description', 'accumulation_name']
+        self._sync_data(categories, 'COST_CODE', 'cost_code', self.workspace_id, field_names)
         return []
 
 
@@ -177,24 +119,10 @@ class SageDesktopConnector:
         """
     
         commitments = self.connection.commitments.get_all()
-        commitment_attributes = []
-        
-        for commitment in commitments:
-            commitment_attributes.append({
-                'attribute_type': 'COMMITMENT',
-                'display_name': 'commitment',
-                'value': commitment.name,
-                'destination_id': commitment.id,
-                'active': commitment.is_active,
-                'detail': {
-                    'code': commitment.code,
-                    'description': commitment.description,
-                    'is_closed': commitment.is_closed,
-                    'is_commited': commitment.is_commited,
-                    'job_id': commitment.job_id,
-                    'vendor_id': commitment.vendor_id,
-                    'version': commitment.version,
-                    'created_on_utc': commitment.created_on_utc,
-                    'date': commitment.date
-                }
-            })
+        field_names = [
+            'code', 'is_closed', 'version', 'description', 'is_commited',
+            'created_on_utc', 'date', 'vendor_id', 'job_id'
+        ]
+        self._sync_data(commitments, 'COMMITMENT', 'commitment', self.workspace_id, field_names)
+        return []
+
