@@ -145,7 +145,7 @@ class Commitment:
 
 
 @dataclass
-class Jobs:
+class Job:
     id: str
     version: int
     account_prefix_id: str
