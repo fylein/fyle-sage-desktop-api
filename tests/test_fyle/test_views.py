@@ -16,7 +16,7 @@ def test_import_fyle_attributes(mocker, api_client, test_connection, create_temp
     response = api_client.post(url, payload)
     assert response.status_code == 201
 
-    payload = {'refresh': 'false'}
+    payload = {'refresh': False}
 
     response = api_client.post(url, payload)
     assert response.status_code == 201

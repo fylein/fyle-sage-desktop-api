@@ -21,7 +21,7 @@ class ImportFyleAttributesSerializer(serializers.Serializer):
         """
         try:
             workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
-            refresh = self.context['request'].parser_context.get('kwargs').get('refresh')
+            refresh = self.context['request'].data.get('refresh')
 
             workspace = Workspace.objects.get(id=workspace_id)
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
