@@ -1,6 +1,5 @@
 from django.db import models
 
-
 class StringNotNullField(models.CharField):
     description = "Custom String with Not Null "
 
@@ -10,16 +9,14 @@ class StringNotNullField(models.CharField):
         kwargs['help_text'] = kwargs.get('help_text', 'string field with null false')
         super(StringNotNullField, self).__init__(*args, **kwargs)
 
-
 class StringNullField(models.CharField):
     description = "Custom String with Null"
 
     def __init__(self, *args, **kwargs):
         kwargs['max_length'] = kwargs.get('max_length', 255)  # Set a default max_length
-        kwargs['null'] = True  # Ensure the field is not nullable
+        kwargs['null'] = True  # Ensure the field is nullable
         kwargs['help_text'] = kwargs.get('help_text', 'string field with null True')
         super(StringNullField, self).__init__(*args, **kwargs)
-
 
 class CustomDateTimeField(models.DateTimeField):
     description = "Custom DateTime Field with Auto-Add Now"
@@ -28,6 +25,13 @@ class CustomDateTimeField(models.DateTimeField):
         kwargs['null'] = True
         super(CustomDateTimeField, self).__init__(*args, **kwargs)
 
+class TextNotNullField(models.TextField):
+    description = "Custom Text Field with Not Null"
+
+    def __init__(self, *args, **kwargs):
+        kwargs['null'] = False  # Ensure the field is not nullable
+        kwargs['help_text'] = kwargs.get('help_text', 'text field with null false')
+        super(TextNotNullField, self).__init__(*args, **kwargs)
 
 class StringOptionsField(models.CharField):
     description = "Custom String Field with Options"
