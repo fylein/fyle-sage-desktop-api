@@ -4,18 +4,24 @@ from django.contrib.auth import get_user_model
 from rest_framework import generics
 from rest_framework.views import Response, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import viewsets
 
 from fyle_rest_auth.utils import AuthUtils
+
 
 from sage_desktop_api.utils import assert_valid
 from apps.workspaces.models import (
     Workspace,
-    Sage300Credentials
+    Sage300Credentials,
+    ExportSettings,
+    ImportSetting,
+    AdvancedSetting
 )
 from apps.workspaces.serializers import (
     WorkspaceSerializer,
-    Sage300CredentialSerializer
+    Sage300CredentialSerializer,
+    ExportSettingsSerializer,
+    ImportSettingsSerializer,
+    AdvancedSettingSerializer
 )
 
 
@@ -31,10 +37,6 @@ class WorkspaceView(generics.CreateAPIView, generics.RetrieveAPIView):
     Create Retrieve Workspaces
     """
     serializer_class = WorkspaceSerializer
-
-    permission_classes = [
-        IsAuthenticated
-    ]
 
     def get_object(self):
         """
@@ -85,3 +87,34 @@ class Sage300CredsView(generics.CreateAPIView, generics.RetrieveAPIView):
     lookup_field = 'workspace_id'
 
     queryset = Sage300Credentials.objects.all()
+
+
+class ExportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+    """
+    Retrieve or Create Export Settings
+    """
+    serializer_class = ExportSettingsSerializer
+    lookup_field = 'workspace_id'
+
+    queryset = ExportSettings.objects.all()
+
+
+class ImportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+    """
+    Retrieve or Create Export Settings
+    """
+    serializer_class = ImportSettingsSerializer
+    lookup_field = 'workspace_id'
+
+    queryset = ImportSetting.objects.all()
+
+
+class AdvancedSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+    """
+    Retrieve or Create Advanced Settings
+    """
+    serializer_class = AdvancedSettingSerializer
+    lookup_field = 'workspace_id'
+    lookup_url_kwarg = 'workspace_id'
+
+    queryset = AdvancedSetting.objects.all()
