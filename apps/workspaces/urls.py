@@ -14,13 +14,12 @@ Including another URLconf
 """
 from django.urls import path
 
-from apps.workspaces.views import WorkspaceView, ReadyView, ConnectSage300View, ExportSettingView
+from apps.workspaces.views import WorkspaceView, ReadyView, Sage300CredsView, ExportSettingView
 
 
 urlpatterns = [
     path('', WorkspaceView.as_view(), name='workspaces'),
     path('ready/', ReadyView.as_view(), name='ready'),
-    path('<int:workspace_id>/credentials/sage_300/delete/', ConnectSage300View.as_view({'post': 'delete'}), name='sage300-delete'),
-    path('<int:workspace_id>/credentials/sage_300/', ConnectSage300View.as_view({'post': 'post', 'get': 'get'}), name='sage300-creds'),
+    path('<int:workspace_id>/credentials/sage_300/', Sage300CredsView.as_view(), name='sage300-creds'),
     path('<int:workspace_id>/export_settings/', ExportSettingView.as_view(), name='export-settings'),
 ]

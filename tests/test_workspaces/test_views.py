@@ -1,9 +1,8 @@
 import json
-
-from django.urls import reverse
 import pytest       # noqa
+from django.urls import reverse
 
-from apps.workspaces.models import Workspace, ExportSettings
+from apps.workspaces.models import Workspace, ExportSettings, Sage300Credentials
 
 
 def test_post_of_workspace(api_client, test_connection):
@@ -58,6 +57,76 @@ def test_get_of_workspace(api_client, test_connection):
     assert response.data['fyle_currency'] == 'USD'
 
 
+def test_post_of_sage300_creds(api_client, test_connection, mocker):
+    '''
+    Test post of sage300 creds
+    '''
+
+    url = reverse(
+            'workspaces'
+        )
+
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    response = api_client.post(url)
+
+    url = reverse(
+        'sage300-creds', kwargs={
+            'workspace_id': response.data['id']
+        }
+    )
+
+    payload = { 
+        'identifier': "indentifier",
+        'password': "passeord", 
+        'username': "username",
+        'workspace': response.data['id']
+    }
+    
+    mocker.patch(
+        'sage_desktop_sdk.core.client.Client.update_cookie',
+        return_value={'text': {'Result': 2}}
+    )
+
+    response = api_client.post(url, payload)
+    assert response.status_code == 201
+
+
+def test_get_of_sage300_creds(api_client, test_connection):
+    '''
+    Test get of workspace
+    '''
+
+    url = reverse(
+        'workspaces'
+    )
+
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    response = api_client.post(url)
+
+    url = reverse(
+        'sage300-creds', kwargs={
+            'workspace_id': response.data['id']
+        }
+    )
+
+    Sage300Credentials.objects.create(
+            identifier='identifier',
+            username='username',
+            password='password',
+            workspace_id=response.data['id'],
+            api_key='apiley',
+            api_secret='apisecret'
+        )
+
+
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    assert response.data['username'] == 'username'
+    assert response.data['password'] == 'password'
+
+
 def test_export_settings(api_client, test_connection):
     '''
     Test export settings
@@ -79,7 +148,6 @@ def test_export_settings(api_client, test_connection):
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
-
     assert response.status_code == 400
 
     payload = {

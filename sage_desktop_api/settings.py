@@ -59,7 +59,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
-    # 'quickbooks_desktop_api.logging_middleware.ErrorHandlerMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.middleware.common.CommonMiddleware',

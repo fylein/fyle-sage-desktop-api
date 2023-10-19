@@ -12,7 +12,9 @@ from fyle_rest_auth.models import User, AuthToken
 
 from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
-    Workspace, FyleCredential
+    Workspace, 
+    FyleCredential,
+    Sage300Credentials
 )
 
 from sage_desktop_api.tests import settings
@@ -147,4 +149,24 @@ def add_fyle_credentials():
             refresh_token='dummy_refresh_token',
             workspace_id=workspace_id,
             cluster_domain='https://dummy_cluster_domain.com',
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_sage300_creds():
+    """
+    Pytest fixture to add fyle credentials to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        Sage300Credentials.objects.create(
+            identifier='identifier',
+            username='username',
+            password='password',
+            workspace_id=workspace_id,
+            api_key='apiley',
+            api_secret='apisecret'
         )
