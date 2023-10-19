@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_q',
     'fyle_rest_auth',
+    'django_filters',
 
     # User Created Apps
     'apps.users',
@@ -200,6 +201,11 @@ FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
+
+
+# Sage300 Settings
+SD_API_KEY = os.environ.get('SD_API_KEY')
+SD_API_SECRET = os.environ.get('SD_API_SECRET')
 
 
 # Internationalization

@@ -98,25 +98,25 @@ FYLE_REST_AUTH_SETTINGS = {
     'async_update_user': True
 }
 
-# REST_FRAMEWORK = {
-#     'DEFAULT_PERMISSION_CLASSES': (
-#         'rest_framework.permissions.IsAuthenticated',
-#         'apps.workspaces.permissions.WorkspacePermissions'
-#     ),
-#     'DEFAULT_AUTHENTICATION_CLASSES': (
-#         'fyle_rest_auth.authentication.FyleJWTAuthentication',
-#     ),
-#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-#     'PAGE_SIZE': 100
-# }
-
-
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'auth_cache',
-    }
+REST_FRAMEWORK = {
+    # 'DEFAULT_PERMISSION_CLASSES': (
+    #     'rest_framework.permissions.IsAuthenticated',
+    #     'apps.workspaces.permissions.WorkspacePermissions'
+    # ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'fyle_rest_auth.authentication.FyleJWTAuthentication',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 100
 }
+
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+#         'LOCATION': 'auth_cache',
+#     }
+# }
 
 Q_CLUSTER = {
     'name': 'sage_desktop_api',
@@ -162,7 +162,8 @@ DATABASES = {
     }
 }
 
-DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
+# DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -192,6 +193,10 @@ FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
+
+
+SD_API_KEY = os.environ.get('SD_API_KEY')
+SD_API_SECRET = os.environ.get('SD_API_SECRET')
 
 
 # Internationalization
