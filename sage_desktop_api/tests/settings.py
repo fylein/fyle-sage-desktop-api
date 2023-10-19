@@ -65,7 +65,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'sage_desktop_api.logging_middleware.ErrorHandlerMiddleware',
+    # 'sage_desktop_api.logging_middleware.ErrorHandlerMiddleware',
 ]
 
 ROOT_URLCONF = 'sage_desktop_api.urls'
@@ -162,7 +162,8 @@ DATABASES = {
     }
 }
 
-DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
+# DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
