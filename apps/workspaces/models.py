@@ -10,7 +10,7 @@ from sage_desktop_api.models.fields import (
     TextNotNullField,
     BooleanFalseField,
     IntegerNullField,
-    CustomeJsonField,
+    CustomJsonField,
 )
 
 User = get_user_model()
@@ -196,8 +196,8 @@ class AdvancedSetting(BaseModel):
     schedule_start_datetime = CustomDateTimeField(help_text='Schedule start date and time')
     schedule_id = StringNullField(help_text='Schedule id')
     interval_hours = IntegerNullField(help_text='Interval in hours')
-    emails_selected = CustomeJsonField(help_text='Emails Selected For Email Notification')
-    emails_added = CustomeJsonField(help_text='Emails Selected For Email Notification')
+    emails_selected = CustomJsonField(help_text='Emails Selected For Email Notification')
+    emails_added = CustomJsonField(help_text='Emails Selected For Email Notification')
 
     class Meta:
         db_table = 'advanced_settings'

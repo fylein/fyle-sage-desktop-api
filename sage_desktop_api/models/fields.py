@@ -34,14 +34,14 @@ class IntegerNotNullField(models.IntegerField):
         kwargs['help_text'] = kwargs.get('help_text', 'Integer field with null false')
         super(IntegerNotNullField, self).__init__(*args, **kwargs)
 
-class CustomeJsonField(models.JSONField):
+class CustomJsonField(models.JSONField):
     description = "Custom Json Field with Null"
 
     def __init__(self, *args, **kwargs):
         kwargs['default'] = list  # Set a default value for the JSON field
         kwargs['null'] = True  # Allow the field to be nullable
         kwargs['help_text'] = kwargs.get('help_text', 'Json field with null true')
-        super(CustomeJsonField, self).__init__(*args, **kwargs)
+        super(CustomJsonField, self).__init__(*args, **kwargs)
 
 class CustomDateTimeField(models.DateTimeField):
     description = "Custom DateTime Field with Auto-Add Now"
