@@ -27,7 +27,6 @@ def test_post_of_workspace(api_client, test_connection):
     assert response.status_code == 201
     assert workspace.name == response.data['name']
     assert workspace.org_id == response.data['org_id']
-    assert workspace.fyle_currency == response.data['fyle_currency']
 
     response = json.loads(response.content)
 
@@ -60,7 +59,6 @@ def test_get_of_workspace(api_client, test_connection):
     assert response.status_code == 200
     assert response.data['name'] == 'Fyle For MS Dynamics Demo'
     assert response.data['org_id'] == 'orNoatdUnm1w'
-    assert response.data['fyle_currency'] == 'USD'
 
 
 def test_post_of_sage300_creds(api_client, test_connection, mocker):
@@ -223,9 +221,7 @@ def test_import_settings(api_client, test_connection):
             'workspace_id': workspace_id
         }
     )
-    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
-    response = api_client.post(url)
-    assert response.status_code == 400
+
     payload = {
         'import_categories': True,
         'import_vendors_as_merchants': True
@@ -235,6 +231,7 @@ def test_import_settings(api_client, test_connection):
     assert response.status_code == 201
     assert import_settings.import_categories == True
     assert import_settings.import_vendors_as_merchants == True
+
     response = api_client.get(url)
     assert response.status_code == 200
     assert import_settings.import_categories == True

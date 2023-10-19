@@ -40,7 +40,7 @@ class WorkspaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workspace
         fields = '__all__'
-        read_only_fields = ('id', 'name', 'org_id', 'fyle_currency', 'created_at', 'updated_at', 'user')
+        read_only_fields = ('id', 'name', 'org_id', 'created_at', 'updated_at', 'user')
 
     def create(self, validated_data):
         """
@@ -55,7 +55,6 @@ class WorkspaceSerializer(serializers.ModelSerializer):
         # getting name, org_id, currency of Fyle User
         name = fyle_user['data']['org']['name']
         org_id = fyle_user['data']['org']['id']
-        fyle_currency = fyle_user['data']['org']['currency']
 
         # Checking if workspace already exists
         workspace = Workspace.objects.filter(org_id=org_id).first()
@@ -68,7 +67,6 @@ class WorkspaceSerializer(serializers.ModelSerializer):
             workspace = Workspace.objects.create(
                 name=name,
                 org_id=org_id,
-                fyle_currency=fyle_currency
             )
 
             workspace.user.add(User.objects.get(user_id=user))
