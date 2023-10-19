@@ -2,13 +2,15 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
 
-from sage_desktop_api.helpers import (
-    StringNotNullField, 
-    StringNullField, 
-    CustomDateTimeField, 
-    StringOptionsField, 
-    TextNotNullField, 
-    BooleanFalseField
+from sage_desktop_api.models.fields import (
+    StringNotNullField,
+    StringNullField,
+    CustomDateTimeField,
+    StringOptionsField,
+    TextNotNullField,
+    BooleanFalseField,
+    IntegerNullField,
+    CustomeJsonField,
 )
 
 User = get_user_model()
@@ -180,7 +182,7 @@ class ImportSetting(BaseModel):
     import_vendors_as_merchants = BooleanFalseField(help_text='toggle for import of vendors as merchant from sage300')
     
     class Meta:
-	    db_table = 'import_settings'
+        db_table = 'import_settings'
 
 
 class AdvancedSetting(BaseModel):
@@ -193,9 +195,9 @@ class AdvancedSetting(BaseModel):
     schedule_is_enabled = BooleanFalseField(help_text='Boolean to check if schedule is enabled')
     schedule_start_datetime = CustomDateTimeField(help_text='Schedule start date and time')
     schedule_id = StringNullField(help_text='Schedule id')
-    interval_hours = models.IntegerField(null=True)
-    emails_selected = models.JSONField(default=list, help_text='Emails Selected For Email Notification',  null=True)
-    emails_added = models.JSONField(default=list, help_text='Emails Selected For Email Notification',  null=True)
+    interval_hours = IntegerNullField(help_text='Interval in hours')
+    emails_selected = CustomeJsonField(help_text='Emails Selected For Email Notification')
+    emails_added = CustomeJsonField(help_text='Emails Selected For Email Notification')
 
     class Meta:
         db_table = 'advanced_settings'

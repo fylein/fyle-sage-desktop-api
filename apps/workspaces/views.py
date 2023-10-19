@@ -38,10 +38,6 @@ class WorkspaceView(generics.CreateAPIView, generics.RetrieveAPIView):
     """
     serializer_class = WorkspaceSerializer
 
-    permission_classes = [  # Remove IsAuthenticated once we have a proper auth flow
-        IsAuthenticated
-    ]
-
     def get_object(self):
         """
         return workspace object for the given org_id
