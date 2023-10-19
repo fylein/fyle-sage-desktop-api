@@ -31,15 +31,20 @@ class ImportFyleAttributesSerializer(serializers.Serializer):
                 platform.import_fyle_dimensions()
                 workspace.source_synced_at = datetime.now()
                 workspace.save(update_fields=['source_synced_at'])
+
             else:
                 if workspace.source_synced_at:
                     time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
+
                 if workspace.source_synced_at is None or time_interval.days > 0:
                     platform.import_fyle_dimensions()
                     workspace.source_synced_at = datetime.now()
                     workspace.save(update_fields=['source_synced_at'])
+
             return Response(status=status.HTTP_200_OK)
+
         except FyleCredential.DoesNotExist:
             raise serializers.ValidationError({'message': 'Fyle credentials not found in workspace'}, code='invalid_login')
+
         except Exception:
             raise serializers.ValidationError()
