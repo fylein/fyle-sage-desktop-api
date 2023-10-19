@@ -99,6 +99,10 @@ FYLE_REST_AUTH_SETTINGS = {
 }
 
 REST_FRAMEWORK = {
+    # 'DEFAULT_PERMISSION_CLASSES': (
+    #     'rest_framework.permissions.IsAuthenticated',
+    #     'apps.workspaces.permissions.WorkspacePermissions'
+    # ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'fyle_rest_auth.authentication.FyleJWTAuthentication',
     ),
@@ -157,11 +161,6 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT'),
     }
 }
-
-# DATABASES['cache_db'] = {
-#     'ENGINE': 'django.db.backends.sqlite3',
-#     'NAME': 'cache.db'
-# }
 
 # DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
 
