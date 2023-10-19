@@ -10,11 +10,6 @@ from fyle_rest_auth.models import AuthToken
 from apps.fyle.helpers import get_cluster_domain
 from sage_desktop_api.utils import assert_valid
 
-from .models import (
-    Sage300Credentials,
-    ImportSetting,
-    AdvancedSetting
-)
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from sage_desktop_sdk.exceptions import (
     UserAccountLocked,
@@ -23,12 +18,13 @@ from sage_desktop_sdk.exceptions import (
     WebApiClientLocked
 )
 
-from apps.fyle.helpers import get_cluster_domain
 from apps.workspaces.models import (
     Workspace,
     FyleCredential,
     Sage300Credentials,
-    ExportSettings
+    ImportSetting,
+    ExportSettings,
+    AdvancedSetting
 )
 from apps.users.models import User
 
@@ -85,14 +81,13 @@ class WorkspaceSerializer(serializers.ModelSerializer):
 
 
 class Sage300CredentialSerializer(serializers.ModelSerializer):
-    
+
     api_key = serializers.CharField(required=False)
     api_secret = serializers.CharField(required=False)
 
     class Meta:
         model = Sage300Credentials
         fields = '__all__'
-
 
     def create(self, validated_data):
         try:
@@ -170,10 +165,12 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         model = ImportSetting
         fields = '__all__'
         read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
+
     def create(self, validated_data):
         """
         Create Export Settings
         """
+
         workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
         import_settings, _ = ImportSetting.objects.update_or_create(
             workspace_id=workspace_id,

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'django_q',
     'fyle_rest_auth',
     'django_filters',
+    'fyle_accounting_mappings',
 
     # User Created Apps
     'apps.users',

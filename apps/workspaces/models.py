@@ -180,7 +180,7 @@ class ImportSetting(BaseModel):
 
     import_categories = BooleanFalseField(help_text='toggle for import of chart of accounts from sage300')
     import_vendors_as_merchants = BooleanFalseField(help_text='toggle for import of vendors as merchant from sage300')
-    
+
     class Meta:
         db_table = 'import_settings'
 

@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import generics
 from rest_framework.views import Response, status
-from rest_framework.permissions import IsAuthenticated
 
 from fyle_rest_auth.utils import AuthUtils
 
