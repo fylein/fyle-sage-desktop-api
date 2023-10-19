@@ -60,10 +60,25 @@ class Client:
             "Password": self.__user_password, 
             "Username": self.__user_id
         })
-        
+
         authentication_url = self.__api_url + '/Api/Security/V3/Session.svc/authenticate'
-        response = requests.request("POST", url=authentication_url, headers=request_header, data=api_data)
-        self.__cookie = response.headers.get('Set-Cookie')
+        result = requests.request("POST", url=authentication_url, headers=request_header, data=api_data)
+        response = json.loads(result.text)
+
+        if response['Result'] == 5:
+            self.__cookie = result.headers.get('Set-Cookie')
+
+        if response['Result'] == 1:
+            raise InvalidUserCredentials('Invalid User Credentials')
+        
+        if response['Result'] == 2:
+            raise InvalidWebApiClientCredentials('Invalid Webapp Client')
+        
+        if response['Result'] == 3:
+            raise UserAccountLocked('User Account Locked')
+        
+        if response['Result'] == 4:
+            raise WebApiClientLocked('Web API client Locked')
 
 
     def _query_get_all(self, url: str) -> List[Dict]:

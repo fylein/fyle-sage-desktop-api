@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_q',
     'fyle_rest_auth',
+    'django_filters',
 
     # User Created Apps
     'apps.users',
@@ -61,15 +62,16 @@ MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'corsheaders.middleware.CorsPostCsrfMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'sage_desktop_api.logging_middleware.ErrorHandlerMiddleware',
 ]
+
 
 ROOT_URLCONF = 'sage_desktop_api.urls'
 APPEND_SLASH = False
@@ -188,6 +190,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Fyle Settings
 API_URL = os.environ.get('API_URL')
@@ -198,6 +201,11 @@ FYLE_BASE_URL = os.environ.get('FYLE_BASE_URL')
 FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
+
+
+# Sage300 Settings
+SD_API_KEY = os.environ.get('SD_API_KEY')
+SD_API_SECRET = os.environ.get('SD_API_SECRET')
 
 
 # Internationalization

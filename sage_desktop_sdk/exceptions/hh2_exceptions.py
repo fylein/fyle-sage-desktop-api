@@ -33,3 +33,19 @@ class NotFoundItemError(SageDesktopSDKError):
 
 class InternalServerError(SageDesktopSDKError):
     """The rest QBOSDK errors, 500 error."""
+
+
+class InvalidUserCredentials(SageDesktopSDKError):
+    """InvalidUserCredentials"""
+
+
+class InvalidWebApiClientCredentials(SageDesktopSDKError):
+    """InvalidWebApiClientCredentials"""
+
+
+class UserAccountLocked(SageDesktopSDKError):
+    """UserAccountLocked"""
+    
+
+class WebApiClientLocked(SageDesktopSDKError):
+    """WebApiClientLocked"""
