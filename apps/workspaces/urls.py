@@ -14,7 +14,14 @@ Including another URLconf
 """
 from django.urls import path
 
-from apps.workspaces.views import WorkspaceView, ReadyView, Sage300CredsView, ExportSettingView
+from apps.workspaces.views import (
+    ReadyView,
+    WorkspaceView,
+    Sage300CredsView,
+    ImportSettingView,
+    ExportSettingView,
+    AdvancedSettingView
+)
 
 
 urlpatterns = [
@@ -22,4 +29,6 @@ urlpatterns = [
     path('ready/', ReadyView.as_view(), name='ready'),
     path('<int:workspace_id>/credentials/sage_300/', Sage300CredsView.as_view(), name='sage300-creds'),
     path('<int:workspace_id>/export_settings/', ExportSettingView.as_view(), name='export-settings'),
+    path('<int:workspace_id>/export_settings/', ImportSettingView.as_view(), name='import-settings'),
+    path('<int:workspace_id>/export_settings/', AdvancedSettingView.as_view(), name='advanced-settings')
 ]

@@ -10,7 +10,11 @@ from fyle_rest_auth.models import AuthToken
 from apps.fyle.helpers import get_cluster_domain
 from sage_desktop_api.utils import assert_valid
 
-from .models import Sage300Credentials
+from .models import (
+    Sage300Credentials,
+    ImportSetting,
+    AdvancedSetting
+)
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from sage_desktop_sdk.exceptions import (
     UserAccountLocked,
@@ -91,6 +95,7 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
         model = Sage300Credentials
         fields = '__all__'
 
+
     def create(self, validated_data):
         try:
             username = validated_data.get('username')
@@ -157,3 +162,70 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
             workspace.save()
 
         return export_settings
+
+
+class ImportSettingsSerializer(serializers.ModelSerializer):
+    """
+    Export Settings serializer
+    """
+    class Meta:
+        model = ImportSetting
+        fields = '__all__'
+        read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
+    def create(self, validated_data):
+        """
+        Create Export Settings
+        """
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+        import_settings, _ = ImportSetting.objects.update_or_create(
+            workspace_id=workspace_id,
+            defaults=validated_data
+        )
+        # Update workspace onboarding state
+        workspace = import_settings.workspace
+        if workspace.onboarding_state == 'IMPORT_SETTINGS':
+            workspace.onboarding_state = 'ADVANCED_SETTINGS'
+            workspace.save()
+
+        return import_settings
+
+
+class AdvancedSettingSerializer(serializers.ModelSerializer):
+    """
+    Advanced Settings serializer
+    """
+    class Meta:
+        model = AdvancedSetting
+        fields = '__all__'
+        read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
+
+    def create(self, validated_data):
+        """
+        Create Advanced Settings
+        """
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+        advanced_setting = AdvancedSetting.objects.filter(
+            workspace_id=workspace_id).first()
+
+        if not advanced_setting:
+            if 'expense_memo_structure' not in validated_data:
+                validated_data['expense_memo_structure'] = [
+                    'employee_email',
+                    'merchant',
+                    'purpose',
+                    'report_number'
+                ]
+
+        advanced_setting, _ = AdvancedSetting.objects.update_or_create(
+            workspace_id=workspace_id,
+            defaults=validated_data
+        )
+
+        # Update workspace onboarding state
+        workspace = advanced_setting.workspace
+
+        if workspace.onboarding_state == 'ADVANCED_SETTINGS':
+            workspace.onboarding_state = 'COMPLETE'
+            workspace.save()
+
+        return advanced_setting

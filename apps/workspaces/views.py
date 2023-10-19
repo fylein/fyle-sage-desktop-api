@@ -4,29 +4,26 @@ from django.contrib.auth import get_user_model
 from rest_framework import generics
 from rest_framework.views import Response, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import viewsets
 
 from fyle_rest_auth.utils import AuthUtils
+
 
 from sage_desktop_api.utils import assert_valid
 from apps.workspaces.models import (
     Workspace,
     Sage300Credentials,
-    ExportSettings
+    ExportSettings,
+    ImportSetting,
+    AdvancedSetting
 )
 from apps.workspaces.serializers import (
     WorkspaceSerializer,
     Sage300CredentialSerializer,
-    ExportSettingsSerializer
+    ExportSettingsSerializer,
+    ImportSettingsSerializer,
+    AdvancedSettingSerializer
 )
 
-from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
-from sage_desktop_sdk.exceptions import (
-    UserAccountLocked, 
-    InvalidUserCredentials, 
-    InvalidWebApiClientCredentials, 
-    WebApiClientLocked
-)
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -104,3 +101,24 @@ class ExportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
     lookup_field = 'workspace_id'
 
     queryset = ExportSettings.objects.all()
+
+
+class ImportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+    """
+    Retrieve or Create Export Settings
+    """
+    serializer_class = ImportSettingsSerializer
+    lookup_field = 'workspace_id'
+
+    queryset = ImportSetting.objects.all()
+
+
+class AdvancedSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+    """
+    Retrieve or Create Advanced Settings
+    """
+    serializer_class = AdvancedSettingSerializer
+    lookup_field = 'workspace_id'
+    lookup_url_kwarg = 'workspace_id'
+
+    queryset = AdvancedSetting.objects.all()

@@ -2,7 +2,13 @@ import json
 import pytest       # noqa
 from django.urls import reverse
 
-from apps.workspaces.models import Workspace, ExportSettings, Sage300Credentials
+from apps.workspaces.models import (
+    Workspace,
+    Sage300Credentials,
+    ExportSettings,
+    ImportSetting,
+    AdvancedSetting
+)
 
 
 def test_post_of_workspace(api_client, test_connection):
@@ -200,3 +206,152 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.default_credit_card_account_id == '12312'
     assert export_settings.default_vendor_name == 'Nilesh'
     assert export_settings.default_vendor_id == '123'
+
+
+def test_import_settings(api_client, test_connection):
+    '''
+    Test export settings
+    '''
+    url = reverse(
+        'workspaces'
+    )
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    response = api_client.post(url)
+    workspace_id = response.data['id']
+    url = reverse(
+        'import-settings', kwargs={
+            'workspace_id': workspace_id
+        }
+    )
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    response = api_client.post(url)
+    assert response.status_code == 400
+    payload = {
+        'import_categories': True,
+        'import_vendors_as_merchants': True
+    }
+    response = api_client.post(url, payload)
+    import_settings = ImportSetting.objects.filter(workspace_id=workspace_id).first()
+    assert response.status_code == 201
+    assert import_settings.import_categories == True
+    assert import_settings.import_vendors_as_merchants == True
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert import_settings.import_categories == True
+    assert import_settings.import_vendors_as_merchants == True
+
+
+def test_advanced_settings(api_client, test_connection):
+    '''
+    Test advanced settings
+    '''
+    url = reverse(
+        'workspaces'
+    )
+
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    response = api_client.post(url)
+
+    workspace_id = response.data['id']
+
+    url = reverse(
+        'advanced-settings', kwargs={
+            'workspace_id': workspace_id
+        }
+    )
+
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+
+    payload = {
+        'expense_memo_structure': [
+            'employee_email',
+            'merchant',
+            'purpose',
+            'report_number',
+            'expense_link'
+        ],
+        'schedule_is_enabled': False,
+        'interval_hours': 12,
+        'emails_selected': json.dumps([
+            {
+                'name': 'Shwetabh Kumar',
+                'email': 'shwetabh.kumar@fylehq.com'
+            },
+            {
+                'name': 'Netra Ballabh',
+                'email': 'nilesh.p@fylehq.com'
+            },
+        ])
+    }
+
+    response = api_client.post(url, payload)
+
+    assert response.status_code == 201
+    assert response.data['expense_memo_structure'] == [
+        'employee_email',
+        'merchant',
+        'purpose',
+        'report_number',
+        'expense_link'
+    ]
+    assert response.data['schedule_is_enabled'] == False
+    assert response.data['schedule_id'] == None
+    assert response.data['emails_selected'] == [
+        {
+            'name': 'Shwetabh Kumar',
+            'email': 'shwetabh.kumar@fylehq.com'
+        },
+        {
+            'name': 'Netra Ballabh',
+            'email': 'nilesh.p@fylehq.com'
+        },
+    ]
+
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    assert response.data['expense_memo_structure'] == [
+        'employee_email',
+        'merchant',
+        'purpose',
+        'report_number',
+        'expense_link'
+    ]
+    assert response.data['schedule_is_enabled'] == False
+    assert response.data['schedule_id'] == None
+    assert response.data['emails_selected'] == [
+        {
+            'name': 'Shwetabh Kumar',
+            'email': 'shwetabh.kumar@fylehq.com'
+        },
+        {
+            'name': 'Netra Ballabh',
+            'email': 'nilesh.p@fylehq.com'
+        },
+    ]
+
+    del payload['expense_memo_structure']
+
+    AdvancedSetting.objects.filter(workspace_id=workspace_id).first().delete()
+
+    response = api_client.post(url, payload)
+
+    assert response.status_code == 201
+    assert response.data['expense_memo_structure'] == [
+        'employee_email',
+        'merchant',
+        'purpose',
+        'report_number'
+    ]
+    assert response.data['schedule_is_enabled'] == False
+    assert response.data['schedule_id'] == None
+    assert response.data['emails_selected'] == [
+        {
+            'name': 'Shwetabh Kumar',
+            'email': 'shwetabh.kumar@fylehq.com'
+        },
+        {
+            'name': 'Netra Ballabh',
+            'email': 'nilesh.p@fylehq.com'
+        },
+    ]

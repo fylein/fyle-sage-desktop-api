@@ -64,3 +64,19 @@ class BooleanFalseField(models.BooleanField):
         value = getattr(instance, self.attname)
         setattr(instance, self.attname, not value)
         instance.save()
+
+
+class BooleanTrueField(models.BooleanField):
+    description = "Custom Boolean Field with Default True"
+
+    def __init__(self, *args, **kwargs):
+        kwargs['default'] = True  # Set the default value to True
+        super(BooleanTrueField, self).__init__(*args, **kwargs)
+
+    def toggle(self, instance):
+        """
+        Toggle the value of the boolean field for the given instance.
+        """
+        value = getattr(instance, self.attname)
+        setattr(instance, self.attname, not value)
+        instance.save()
