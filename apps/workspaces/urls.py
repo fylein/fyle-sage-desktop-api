@@ -20,7 +20,8 @@ from apps.workspaces.views import (
     Sage300CredsView,
     ImportSettingView,
     ExportSettingView,
-    AdvancedSettingView
+    AdvancedSettingView,
+    WorkspaceAdminsView
 )
 
 
@@ -31,5 +32,6 @@ urlpatterns = [
     path('<int:workspace_id>/export_settings/', ExportSettingView.as_view(), name='export-settings'),
     path('<int:workspace_id>/import_settings/', ImportSettingView.as_view(), name='import-settings'),
     path('<int:workspace_id>/advanced_settings/', AdvancedSettingView.as_view(), name='advanced-settings'),
+    path('<int:workspace_id>/admins/', WorkspaceAdminsView.as_view(), name='admin'),
     path('<int:workspace_id>/fyle/', include('apps.fyle.urls')),
 ]
