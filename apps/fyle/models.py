@@ -8,6 +8,7 @@ from sage_desktop_api.models.fields import (
 )
 from apps.workspaces.models import BaseForeignWorkspaceModel
 
+
 EXPENSE_FILTER_RANK = (
     (1, 1),
     (2, 2)
