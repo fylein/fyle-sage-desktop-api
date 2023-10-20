@@ -4,8 +4,8 @@ from django.urls import reverse
 
 from apps.workspaces.models import (
     Workspace,
-    Sage300Credentials,
-    ExportSettings,
+    Sage300Credential,
+    ExportSetting,
     ImportSetting,
     AdvancedSetting
 )
@@ -113,7 +113,7 @@ def test_get_of_sage300_creds(api_client, test_connection):
         }
     )
 
-    Sage300Credentials.objects.create(
+    Sage300Credential.objects.create(
             identifier='identifier',
             username='username',
             password='password',
@@ -173,7 +173,7 @@ def test_export_settings(api_client, test_connection):
 
     response = api_client.post(url, payload)
 
-    export_settings = ExportSettings.objects.filter(workspace_id=workspace_id).first()
+    export_settings = ExportSetting.objects.filter(workspace_id=workspace_id).first()
 
     assert response.status_code == 201
     assert export_settings.reimbursable_expenses_export_type == 'PURCHASE_INVOICE'
