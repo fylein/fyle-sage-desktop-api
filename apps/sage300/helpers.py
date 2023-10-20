@@ -4,7 +4,7 @@ import logging
 
 from django.utils.module_loading import import_string
 
-from apps.workspaces.models import Workspace, Sage300Credentials
+from apps.workspaces.models import Workspace, Sage300Credential
 from apps.sage300.utils import SageDesktopConnector
 
 
@@ -12,14 +12,14 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-# Import your Workspace and Sage300Credentials models here
+# Import your Workspace and Sage300Credential models here
 # Also, make sure you have 'logger' defined and imported from a logging module
-def check_interval_and_sync_dimension(workspace: Workspace, sage300_credential: Sage300Credentials) -> bool:
+def check_interval_and_sync_dimension(workspace: Workspace, sage300_credential: Sage300Credential) -> bool:
     """
     Check the synchronization interval and trigger dimension synchronization if needed.
 
     :param workspace: Workspace Instance
-    :param sage300_credential: Sage300Credentials Instance
+    :param sage300_credential: Sage300Credential Instance
 
     :return: True if synchronization is triggered, False if not
     """
@@ -36,11 +36,11 @@ def check_interval_and_sync_dimension(workspace: Workspace, sage300_credential: 
     return False
 
 
-def sync_dimensions(sage300_credential: Sage300Credentials, workspace_id: int) -> None:
+def sync_dimensions(sage300_credential: Sage300Credential, workspace_id: int) -> None:
     """
     Synchronize various dimensions with Sage 300 using the provided credentials.
 
-    :param sage300_credential: Sage300Credentials Instance
+    :param sage300_credential: Sage300Credential Instance
     :param workspace_id: ID of the workspace
 
     This function syncs dimensions like accounts, vendors, commitments, jobs, categories, and cost codes.

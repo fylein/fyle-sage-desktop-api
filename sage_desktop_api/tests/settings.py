@@ -102,7 +102,7 @@ FYLE_REST_AUTH_SETTINGS = {
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-        'apps.workspaces.permissions.WorkspacePermissions'
+        # 'apps.workspaces.permissions.WorkspacePermissions'
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'fyle_rest_auth.authentication.FyleJWTAuthentication',
