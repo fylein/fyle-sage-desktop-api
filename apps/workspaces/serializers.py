@@ -231,16 +231,15 @@ class WorkspaceAdminSerializer(serializers.Serializer):
     """
     Workspace Admin Serializer
     """
-    admin_email = serializers.SerializerMethodField()
+    admin_emails = serializers.SerializerMethodField()
 
-    def get_admin_email(self, validated_data):
+    def get_admin_emails(self, validated_data):
         """
         Get Workspace Admins
         """
         workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
         workspace = Workspace.objects.get(pk=workspace_id)
-
-        admin_email = []
+        admin_emails = []
 
         users = workspace.user.all()
 
@@ -248,6 +247,6 @@ class WorkspaceAdminSerializer(serializers.Serializer):
             admin = User.objects.get(user_id=user)
             employee = ExpenseAttribute.objects.filter(value=admin.email, workspace_id=workspace_id, attribute_type='EMPLOYEE').first()
             if employee:
-                admin_email.append({'name': employee.detail['full_name'], 'email': admin.email})
+                admin_emails.append({'name': employee.detail['full_name'], 'email': admin.email})
 
-        return admin_email
+        return admin_emails
