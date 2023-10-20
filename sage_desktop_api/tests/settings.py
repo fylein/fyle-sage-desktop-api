@@ -99,10 +99,10 @@ FYLE_REST_AUTH_SETTINGS = {
 }
 
 REST_FRAMEWORK = {
-    # 'DEFAULT_PERMISSION_CLASSES': (
-    #     'rest_framework.permissions.IsAuthenticated',
-    #     'apps.workspaces.permissions.WorkspacePermissions'
-    # ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        'apps.workspaces.permissions.WorkspacePermissions'
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'fyle_rest_auth.authentication.FyleJWTAuthentication',
     ),
@@ -111,12 +111,12 @@ REST_FRAMEWORK = {
 }
 
 
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-#         'LOCATION': 'auth_cache',
-#     }
-# }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'auth_cache',
+    }
+}
 
 Q_CLUSTER = {
     'name': 'sage_desktop_api',
@@ -163,6 +163,7 @@ DATABASES = {
 }
 
 # DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
+
 
 
 # Password validation
