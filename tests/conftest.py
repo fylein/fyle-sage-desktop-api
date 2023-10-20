@@ -14,7 +14,7 @@ from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
     Workspace, 
     FyleCredential,
-    Sage300Credentials
+    Sage300Credential
 )
 
 from sage_desktop_api.tests import settings
@@ -162,7 +162,7 @@ def add_sage300_creds():
         1, 2, 3
     ]
     for workspace_id in workspace_ids:
-        Sage300Credentials.objects.create(
+        Sage300Credential.objects.create(
             identifier='identifier',
             username='username',
             password='password',

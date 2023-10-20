@@ -11,8 +11,8 @@ from fyle_rest_auth.utils import AuthUtils
 from sage_desktop_api.utils import assert_valid
 from apps.workspaces.models import (
     Workspace,
-    Sage300Credentials,
-    ExportSettings,
+    Sage300Credential,
+    ExportSetting,
     ImportSetting,
     AdvancedSetting
 )
@@ -86,7 +86,7 @@ class Sage300CredsView(generics.CreateAPIView, generics.RetrieveAPIView):
     serializer_class = Sage300CredentialSerializer
     lookup_field = 'workspace_id'
 
-    queryset = Sage300Credentials.objects.all()
+    queryset = Sage300Credential.objects.all()
 
 
 class ExportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
@@ -96,7 +96,7 @@ class ExportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
     serializer_class = ExportSettingsSerializer
     lookup_field = 'workspace_id'
 
-    queryset = ExportSettings.objects.all()
+    queryset = ExportSetting.objects.all()
 
 
 class ImportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
