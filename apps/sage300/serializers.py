@@ -1,11 +1,12 @@
 import logging
+from datetime import datetime
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import status
 
-from datetime import datetime, timezone
-from apps.workspaces.models import Workspace, Sage300Credentials
+from apps.workspaces.models import Workspace, Sage300Credential
 from apps.sage300.helpers import sync_dimensions, check_interval_and_sync_dimension
+
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -17,31 +18,37 @@ class ImportSage300AttributesSerializer(serializers.Serializer):
     """
 
     def create(self, validated_data):
-
         try:
-            workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
-            refresh_dimension = self.context['request'].data.get('refresh')
+            # Get the workspace ID from the URL kwargs
+            workspace_id = self.context['request'].parser_context['kwargs']['workspace_id']
+            
+            # Check if the 'refresh' field is provided in the request data
+            refresh_dimension = self.context['request'].data.get('refresh', False)
 
+            # Retrieve the workspace and Sage 300 credentials
             workspace = Workspace.objects.get(pk=workspace_id)
-            sage_intacct_credentials = Sage300Credentials.objects.get(workspace_id=workspace.id)
+            sage_intacct_credentials = Sage300Credential.objects.get(workspace_id=workspace.id)
 
             if refresh_dimension:
-                synced = True
+                # If 'refresh' is true, perform a full sync of dimensions
                 sync_dimensions(sage_intacct_credentials, workspace.id)
             else:
-                synced = check_interval_and_sync_dimension(workspace, sage_intacct_credentials)
+                # If 'refresh' is false, check the interval and sync dimension accordingly
+                check_interval_and_sync_dimension(workspace, sage_intacct_credentials)
 
-            if synced:
-                workspace.destination_synced_at = datetime.now()
-                workspace.save(update_fields=['destination_synced_at'])
+            # Update the destination_synced_at field and save the workspace
+            workspace.destination_synced_at = datetime.now()
+            workspace.save(update_fields=['destination_synced_at'])
 
-            return Response(
-                status=status.HTTP_200_OK
-            )
+            # Return a success response
+            return Response(status=status.HTTP_200_OK)
 
-        except Sage300Credentials.DoesNotExist:
+        except Sage300Credential.DoesNotExist:
+            # Handle the case when Sage 300 credentials are not found or invalid
             raise serializers.ValidationError({'message': 'Sage300 credentials not found / invalid in workspace'})
 
         except Exception as exception:
+            # Handle unexpected exceptions and log the error
             logger.error('Something unexpected happened workspace_id: %s %s', workspace_id, exception)
-            raise serializers.ValidationError()
+            # Raise a custom exception or re-raise the original exception
+            raise Exception()

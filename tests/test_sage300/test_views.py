@@ -1,14 +1,14 @@
 import json
 from django.urls import reverse
 
-from apps.workspaces.models import Sage300Credentials, Workspace
+from apps.workspaces.models import Sage300Credential
 
 def test_sync_dimensions(api_client, test_connection, mocker, create_temp_workspace, add_sage300_creds):
     workspace_id = 1
 
     access_token = test_connection.access_token
     url = reverse(
-        'import-attributes', kwargs={
+        'import-sage300-attributes', kwargs={
             'workspace_id': workspace_id
         }
     )
@@ -23,7 +23,7 @@ def test_sync_dimensions(api_client, test_connection, mocker, create_temp_worksp
     response = api_client.post(url)
     assert response.status_code == 201
 
-    sage_intacct_credentials = Sage300Credentials.objects.get(workspace_id=workspace_id)
+    sage_intacct_credentials = Sage300Credential.objects.get(workspace_id=workspace_id)
     sage_intacct_credentials.delete()
 
     response = api_client.post(url)
