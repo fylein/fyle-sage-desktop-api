@@ -4,12 +4,17 @@ from sage_desktop_api.models.fields import (
     StringNotNullField,
     StringNullField,
     CustomJsonField,
-    CustomDateTimeField
+    CustomDateTimeField,
+    BooleanFalseField,
+    TextNotNullField,
+    StringOptionsField
 )
 from apps.workspaces.models import BaseModel
 from apps.fyle.models import Expense
-from apps.sage300.models import Invoice, DirectCost
+from fyle_accounting_mappings.models import ExpenseAttribute
 
+
+ERROR_TYPE_CHOICES = (('EMPLOYEE_MAPPING', 'EMPLOYEE_MAPPING'), ('CATEGORY_MAPPING', 'CATEGORY_MAPPING'), ('SAGE_ERROR', 'SAGE_ERROR'))
 
 
 class AccountingExport(BaseModel):
@@ -19,7 +24,7 @@ class AccountingExport(BaseModel):
     id = models.AutoField(primary_key=True)
     type = StringNotNullField(max_length=50, help_text='Task type (FETCH_EXPENSES / INVOICES / DIRECT_COST)')
     fund_source = StringNotNullField(help_text='Expense fund source')
-    mapping_errors = ArrayField()
+    mapping_errors = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='Mapping Errors')
     expenses = models.ManyToManyField(Expense, help_text="Expenses under this Expense Group")
     task_id = StringNullField(help_text='Fyle Jobs task reference')
     description = CustomJsonField(help_text='Description')
@@ -30,3 +35,25 @@ class AccountingExport(BaseModel):
 
     class Meta:
         db_table = 'accounting_exports'
+
+
+class Error(BaseModel):
+    """
+    Table to store errors
+    """
+    id = models.AutoField(primary_key=True)
+    type = StringOptionsField(max_length=50, choices=ERROR_TYPE_CHOICES, help_text='Error type')
+    accounting_export = models.ForeignKey(
+        AccountingExport, on_delete=models.PROTECT, 
+        null=True, help_text='Reference to Expense group'
+    )
+    expense_attribute = models.OneToOneField(
+        ExpenseAttribute, on_delete=models.PROTECT,
+        null=True, help_text='Reference to Expense Attribute'
+    )
+    is_resolved = BooleanFalseField(help_text='Is resolved')
+    error_title = StringNotNullField(help_text='Error title')
+    error_detail = TextNotNullField(help_text='Error detail')
+
+    class Meta:
+        db_table = 'errors'

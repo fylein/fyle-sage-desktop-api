@@ -14,9 +14,10 @@ Including another URLconf
 """
 from django.urls import path
 
-from .views import AccountingExportView
+from .views import AccountingExportView, ErrorsView
 
 
 urlpatterns = [
-    path('', AccountingExportView.as_view(), name='accounting-exports')
+    path('', AccountingExportView.as_view(), name='accounting-exports'),
+    path('errors/', ErrorsView.as_view()),
 ]
