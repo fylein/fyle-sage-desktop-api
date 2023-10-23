@@ -4,6 +4,8 @@ from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import status
 
+from fyle_accounting_mappings.models  import DestinationAttribute
+
 from apps.workspaces.models import Workspace, Sage300Credential
 from apps.sage300.helpers import sync_dimensions, check_interval_and_sync_dimension
 
@@ -51,4 +53,13 @@ class ImportSage300AttributesSerializer(serializers.Serializer):
             # Handle unexpected exceptions and log the error
             logger.error('Something unexpected happened workspace_id: %s %s', workspace_id, exception)
             # Raise a custom exception or re-raise the original exception
-            raise Exception()
+            raise
+
+
+class Sage300FieldSerializer(serializers.ModelSerializer):
+    """
+    Expense Fields Serializer
+    """
+    class Meta:
+        model = DestinationAttribute
+        fields = ['attribute_type', 'display_name']
