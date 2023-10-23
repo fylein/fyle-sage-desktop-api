@@ -11,7 +11,7 @@ from sage_desktop_api.models.fields import (
     CustomEmailField,
     FloatNullField
 )
-from apps.workspaces.models import BaseForeignWorkspaceModel
+from apps.workspaces.models import BaseModel, BaseForeignWorkspaceModel
 
 
 EXPENSE_FILTER_RANK = (
@@ -58,7 +58,7 @@ class ExpenseFilter(BaseForeignWorkspaceModel):
         db_table = 'expense_filters'
 
 
-class Expense(models.Model):
+class Expense(BaseModel):
     """
     Expense
     """
@@ -91,14 +91,14 @@ class Expense(models.Model):
     posted_at = CustomDateTimeField(help_text='Date when the money is taken from the bank')
     expense_created_at = CustomDateTimeField(help_text='Expense created at')
     expense_updated_at = CustomDateTimeField(help_text='Expense created at')
-    created_at = CustomDateTimeField(auto_now_add=True, help_text='Created at')
-    updated_at = CustomDateTimeField(auto_now_add=True, help_text='Updated at')
     fund_source = StringNotNullField(help_text='Expense fund source')
     verified_at = CustomDateTimeField(help_text='Report verified at')
     custom_properties = CustomJsonField(help_text="Custom Properties")
     tax_amount = FloatNullField(help_text='Tax Amount')
     tax_group_id = StringNullField(help_text='Tax Group ID')
     exported = BooleanFalseField(help_text='Expense reimbursable or not')
+    previous_export_state = StringNullField(max_length=255, help_text='Previous export state')
+    accounting_export_summary = CustomJsonField(default=dict, help_text='Accounting Export Summary')
 
 
 class Reimbursement:
