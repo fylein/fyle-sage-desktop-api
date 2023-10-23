@@ -33,7 +33,7 @@ class CustomFieldView(generics.RetrieveAPIView):
                     'type': custom_field['type'],
                     'is_custom': custom_field['is_custom']
                 })
-            
+
         return Response(
             data=response,
             status=status.HTTP_200_OK

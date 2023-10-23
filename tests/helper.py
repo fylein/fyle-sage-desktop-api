@@ -1,6 +1,7 @@
 import json
 from os import path
 
+
 def dict_compare_keys(d1, d2, key_path=''):
     """
     Compare two dicts recursively and see if dict1 has any keys that dict2 does not

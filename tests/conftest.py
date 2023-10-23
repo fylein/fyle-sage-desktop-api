@@ -12,7 +12,7 @@ from fyle_rest_auth.models import User, AuthToken
 
 from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
-    Workspace, 
+    Workspace,
     FyleCredential,
     Sage300Credential
 )
