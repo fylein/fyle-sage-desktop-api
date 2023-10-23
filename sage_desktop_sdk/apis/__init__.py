@@ -1,5 +1,5 @@
 """
-Sage300 SDK init
+Sage Intacct SDK init
 """
 from .accounts import Accounts
 from .vendors import Vendors
