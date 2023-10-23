@@ -62,9 +62,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -115,6 +113,69 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100
 }
+
+SERVICE_NAME = 'HELLO'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} %s {asctime} {module} {message} ' % SERVICE_NAME,
+            'style': '{',
+        },
+        'requests': {
+            'format': 'request {levelname} %s {asctime} {message}' % SERVICE_NAME,
+            'style': '{'
+        }
+    },
+    'handlers': {
+        'debug_logs': {
+            'class': 'logging.StreamHandler',
+            'stream': sys.stdout,
+            'formatter': 'verbose'
+        },
+        'request_logs': {
+            'class': 'logging.StreamHandler',
+            'stream': sys.stdout,
+            'formatter': 'requests'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['request_logs'],
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['request_logs'],
+            'propagate': False
+        },
+        'fyle_intacct_api': {
+            'handlers': ['debug_logs'],
+            'level': 'ERROR',
+            'propagate': False
+        },
+        'apps': {
+            'handlers': ['debug_logs'],
+            'level': 'ERROR',
+            'propagate': False
+        },
+         'django_q': {
+            'handlers': ['debug_logs'],
+            'propagate': True,
+        },
+        'fyle_integrations_platform_connector': {
+            'handlers': ['debug_logs'],
+            'propagate': True,
+        },
+        'gunicorn': {
+            'handlers': ['request_logs'],
+            'level': 'INFO',
+            'propagate': False
+        }
+    }
+}
+
 
 
 CACHES = {
