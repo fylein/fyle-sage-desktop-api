@@ -3,8 +3,8 @@ import pytest  # noqa
 from django.urls import reverse
 from apps.workspaces.models import (
     Workspace,
-    Sage300Credentials,
-    ExportSettings,
+    Sage300Credential,
+    ExportSetting,
     ImportSetting,
     AdvancedSetting
 )
@@ -90,14 +90,15 @@ def test_get_of_sage300_creds(api_client, test_connection):
 
     url = reverse('sage300-creds', kwargs={'workspace_id': response.data['id']})
 
-    Sage300Credentials.objects.create(
-        identifier='identifier',
-        username='username',
-        password='password',
-        workspace_id=response.data['id'],
-        api_key='apiley',
-        api_secret='apisecret'
-    )
+    Sage300Credential.objects.create(
+            identifier='identifier',
+            username='username',
+            password='password',
+            workspace_id=response.data['id'],
+            api_key='apiley',
+            api_secret='apisecret'
+        )
+
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.get(url)
@@ -142,7 +143,7 @@ def test_export_settings(api_client, test_connection):
 
     response = api_client.post(url, payload)
 
-    export_settings = ExportSettings.objects.filter(workspace_id=workspace_id).first()
+    export_settings = ExportSetting.objects.filter(workspace_id=workspace_id).first()
 
     assert response.status_code == 201
     assert export_settings.reimbursable_expenses_export_type == 'PURCHASE_INVOICE'
@@ -183,7 +184,11 @@ def test_import_settings(api_client, test_connection):
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
     workspace_id = response.data['id']
-    url = reverse('import-settings', kwargs={'workspace_id': workspace_id})
+    url = reverse(
+        'import-settings', kwargs={
+            'workspace_id': workspace_id
+        }
+    )
 
     payload = {
         'import_categories': True,

@@ -1,15 +1,14 @@
 """
 Workspace Serializers
 """
-from rest_framework import serializers
 from django.conf import settings
 from django.core.cache import cache
+from rest_framework import serializers
 from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
 
 from apps.fyle.helpers import get_cluster_domain
 from sage_desktop_api.utils import assert_valid
-
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from sage_desktop_sdk.exceptions import (
     UserAccountLocked,
@@ -21,9 +20,9 @@ from sage_desktop_sdk.exceptions import (
 from apps.workspaces.models import (
     Workspace,
     FyleCredential,
-    Sage300Credentials,
+    Sage300Credential,
+    ExportSetting,
     ImportSetting,
-    ExportSettings,
     AdvancedSetting
 )
 from apps.users.models import User
@@ -86,7 +85,7 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
     api_secret = serializers.CharField(required=False)
 
     class Meta:
-        model = Sage300Credentials
+        model = Sage300Credential
         fields = '__all__'
 
     def create(self, validated_data):
@@ -107,8 +106,8 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
                 indentifier=identifier
             )
 
-            # Save the Sage300Credentials instance and update the workspace
-            instance = Sage300Credentials.objects.create(
+            # Save the Sage300Credential instance and update the workspace
+            instance = Sage300Credential.objects.create(
                 username=username,
                 password=password,
                 identifier=identifier,
@@ -131,7 +130,7 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
     Export Settings serializer
     """
     class Meta:
-        model = ExportSettings
+        model = ExportSetting
         fields = '__all__'
         read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
 
@@ -142,7 +141,7 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         assert_valid(validated_data, 'Body cannot be null')
         workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
 
-        export_settings, _ = ExportSettings.objects.update_or_create(
+        export_settings, _ = ExportSetting.objects.update_or_create(
             workspace_id=workspace_id,
             defaults=validated_data
         )

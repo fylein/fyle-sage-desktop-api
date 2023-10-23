@@ -72,7 +72,7 @@ class FyleCredential(BaseModel):
         db_table = 'fyle_credentials'
 
 
-class Sage300Credentials(BaseModel):
+class Sage300Credential(BaseModel):
     """
     Table to store Business Central credentials
     """
@@ -131,7 +131,7 @@ CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES = (
 )
 
 
-class ExportSettings(BaseModel):
+class ExportSetting(BaseModel):
     """
     Table to store export settings
     """

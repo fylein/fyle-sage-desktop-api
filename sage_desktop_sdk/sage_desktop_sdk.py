@@ -13,7 +13,7 @@ class SageDesktopSDK:
     
     def __init__(self, api_key: str, api_secret: str,  user_name: str, password: str, indentifier: str):
         """
-        Initialize connection to Sage Intacct
+        Initialize connection to Sage300
             :param api_key: Sage API Key
             :param api_secret: Sage Desktop Api Secret
             :param user_name: Sage Desktop user name
