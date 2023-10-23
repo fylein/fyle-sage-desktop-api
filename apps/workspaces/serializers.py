@@ -6,6 +6,7 @@ from django.core.cache import cache
 from rest_framework import serializers
 from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
+from fyle_accounting_mappings.models import ExpenseAttribute
 
 from apps.fyle.helpers import get_cluster_domain
 from sage_desktop_api.utils import assert_valid
@@ -223,3 +224,28 @@ class AdvancedSettingSerializer(serializers.ModelSerializer):
             workspace.save()
 
         return advanced_setting
+
+
+class WorkspaceAdminSerializer(serializers.Serializer):
+    """
+    Workspace Admin Serializer
+    """
+    admin_emails = serializers.SerializerMethodField()
+
+    def get_admin_emails(self, validated_data):
+        """
+        Get Workspace Admins
+        """
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+        workspace = Workspace.objects.get(pk=workspace_id)
+        admin_emails = []
+
+        users = workspace.user.all()
+
+        for user in users:
+            admin = User.objects.get(user_id=user)
+            employee = ExpenseAttribute.objects.filter(value=admin.email, workspace_id=workspace_id, attribute_type='EMPLOYEE').first()
+            if employee:
+                admin_emails.append({'name': employee.detail['full_name'], 'email': admin.email})
+
+        return admin_emails

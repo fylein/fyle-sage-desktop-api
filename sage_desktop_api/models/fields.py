@@ -78,6 +78,17 @@ class StringOptionsField(models.CharField):
         super(StringOptionsField, self).__init__(max_length=max_length, choices=choices, default=default, **kwargs)
 
 
+class IntegerOptionsField(models.IntegerField):
+    description = "Custom String Field with Options"
+
+    def __init__(self, *args, **kwargs):
+        choices = kwargs.pop('choices', [])  # Retrieve choices from kwargs
+        default = kwargs.pop('default', '')  # Retrieve default value from kwargs
+        kwargs['help_text'] = kwargs.get('help_text', 'string field with options')
+        kwargs['null'] = True  # Allow the field to be nullable
+        super(IntegerOptionsField, self).__init__(choices=choices, default=default, **kwargs)
+
+
 class BooleanFalseField(models.BooleanField):
     description = "Custom Boolean Field with Default True"
 

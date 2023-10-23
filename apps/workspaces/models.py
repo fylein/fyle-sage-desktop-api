@@ -61,6 +61,15 @@ class BaseModel(models.Model):
         abstract = True
 
 
+class BaseForeignWorkspaceModel(models.Model):
+    workspace = models.ForeignKey(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
+
+    class Meta:
+        abstract = True
+
+
 class FyleCredential(BaseModel):
     """
     Table to store Fyle credentials
