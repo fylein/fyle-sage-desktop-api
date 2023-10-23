@@ -3,6 +3,7 @@ from django.urls import reverse
 
 from apps.workspaces.models import Sage300Credential
 
+
 def test_sync_dimensions(api_client, test_connection, mocker, create_temp_workspace, add_sage300_creds):
     workspace_id = 1
 

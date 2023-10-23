@@ -21,7 +21,7 @@ class ImportSage300AttributesSerializer(serializers.Serializer):
         try:
             # Get the workspace ID from the URL kwargs
             workspace_id = self.context['request'].parser_context['kwargs']['workspace_id']
-            
+
             # Check if the 'refresh' field is provided in the request data
             refresh_dimension = self.context['request'].data.get('refresh', False)
 
