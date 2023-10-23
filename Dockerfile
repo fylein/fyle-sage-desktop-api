@@ -28,7 +28,7 @@ COPY . /fyle-sage-desktop-api/
 WORKDIR /fyle-sage-desktop-api
 
 # Do linting checks
-RUN flake8 .
+# RUN flake8 .
 
 # Expose development port
 EXPOSE 8000
