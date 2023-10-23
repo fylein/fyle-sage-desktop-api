@@ -24,7 +24,7 @@ from apps.workspaces.views import (
 )
 
 
-urlpatterns = [
+workspace_app_paths = [
     path('', WorkspaceView.as_view(), name='workspaces'),
     path('ready/', ReadyView.as_view(), name='ready'),
     path('<int:workspace_id>/credentials/sage_300/', Sage300CredsView.as_view(), name='sage300-creds'),
@@ -33,3 +33,11 @@ urlpatterns = [
     path('<int:workspace_id>/advanced_settings/', AdvancedSettingView.as_view(), name='advanced-settings'),
     path('<int:workspace_id>/fyle/', include('apps.fyle.urls')),
 ]
+
+other_app_paths = [
+     path('<int:workspace_id>/sage_300/', include('apps.sage300.urls')),
+]
+
+urlpatterns = []
+urlpatterns.extend(workspace_app_paths)
+urlpatterns.extend(other_app_paths)
