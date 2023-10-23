@@ -1,23 +1,13 @@
 import json
-import pytest       # noqa
 from django.urls import reverse
-
-from apps.workspaces.models import (
-    Workspace,
-    Sage300Credential,
-    ExportSetting,
-    ImportSetting,
-    AdvancedSetting
-)
+from apps.workspaces.models import Workspace, Sage300Credential, ExportSetting, ImportSetting, AdvancedSetting
 
 
 def test_post_of_workspace(api_client, test_connection):
     '''
     Test post of workspace
     '''
-    url = reverse(
-        'workspaces'
-    )
+    url = reverse('workspaces')
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
@@ -38,9 +28,7 @@ def test_get_of_workspace(api_client, test_connection):
     '''
     Test get of workspace
     '''
-    url = reverse(
-        'workspaces'
-    )
+    url = reverse('workspaces')
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.get(url)
@@ -66,26 +54,23 @@ def test_post_of_sage300_creds(api_client, test_connection, mocker):
     Test post of sage300 creds
     '''
 
-    url = reverse(
-            'workspaces'
-        )
+    url = reverse('workspaces')
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
 
     url = reverse(
-        'sage300-creds', kwargs={
-            'workspace_id': response.data['id']
-        }
+        'sage300-creds',
+        kwargs={'workspace_id': response.data['id']}
     )
 
-    payload = { 
+    payload = {
         'identifier': "indentifier",
-        'password': "passeord", 
+        'password': "passeord",
         'username': "username",
         'workspace': response.data['id']
     }
-    
+
     mocker.patch(
         'sage_desktop_sdk.core.client.Client.update_cookie',
         return_value={'text': {'Result': 2}}
@@ -100,28 +85,24 @@ def test_get_of_sage300_creds(api_client, test_connection):
     Test get of workspace
     '''
 
-    url = reverse(
-        'workspaces'
-    )
+    url = reverse('workspaces')
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
 
     url = reverse(
-        'sage300-creds', kwargs={
-            'workspace_id': response.data['id']
-        }
+        'sage300-creds',
+        kwargs={'workspace_id': response.data['id']}
     )
 
     Sage300Credential.objects.create(
-            identifier='identifier',
-            username='username',
-            password='password',
-            workspace_id=response.data['id'],
-            api_key='apiley',
-            api_secret='apisecret'
-        )
-
+        identifier='identifier',
+        username='username',
+        password='password',
+        workspace_id=response.data['id'],
+        api_key='apiley',
+        api_secret='apisecret'
+    )
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.get(url)
@@ -135,9 +116,7 @@ def test_export_settings(api_client, test_connection):
     '''
     Test export settings
     '''
-    url = reverse(
-        'workspaces'
-    )
+    url = reverse('workspaces')
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
@@ -145,9 +124,8 @@ def test_export_settings(api_client, test_connection):
     workspace_id = response.data['id']
 
     url = reverse(
-        'export-settings', kwargs={
-            'workspace_id': workspace_id
-        }
+        'export-settings',
+        kwargs={'workspace_id': workspace_id}
     )
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
@@ -160,7 +138,7 @@ def test_export_settings(api_client, test_connection):
         'reimbursable_expense_date': 'LAST_SPENT_AT',
         'reimbursable_expense_grouped_by': 'EXPENSE',
         'credit_card_expense_export_type': 'JOURNAL_ENTRY',
-        'credit_card_expense_state':  'PAID',
+        'credit_card_expense_state': 'PAID',
         'credit_card_expense_grouped_by': 'EXPENSE',
         'credit_card_expense_date': 'CREATED_AT',
         'default_credit_card_account_name': 'credit card account',
@@ -210,16 +188,13 @@ def test_import_settings(api_client, test_connection):
     '''
     Test export settings
     '''
-    url = reverse(
-        'workspaces'
-    )
+    url = reverse('workspaces')
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
     workspace_id = response.data['id']
     url = reverse(
-        'import-settings', kwargs={
-            'workspace_id': workspace_id
-        }
+        'import-settings',
+        kwargs={'workspace_id': workspace_id}
     )
 
     payload = {
@@ -229,22 +204,20 @@ def test_import_settings(api_client, test_connection):
     response = api_client.post(url, payload)
     import_settings = ImportSetting.objects.filter(workspace_id=workspace_id).first()
     assert response.status_code == 201
-    assert import_settings.import_categories == True
-    assert import_settings.import_vendors_as_merchants == True
+    assert import_settings.import_categories is True
+    assert import_settings.import_vendors_as_merchants is True
 
     response = api_client.get(url)
     assert response.status_code == 200
-    assert import_settings.import_categories == True
-    assert import_settings.import_vendors_as_merchants == True
+    assert import_settings.import_categories is True
+    assert import_settings.import_vendors_as_merchants is True
 
 
 def test_advanced_settings(api_client, test_connection):
     '''
     Test advanced settings
     '''
-    url = reverse(
-        'workspaces'
-    )
+    url = reverse('workspaces')
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
@@ -252,9 +225,8 @@ def test_advanced_settings(api_client, test_connection):
     workspace_id = response.data['id']
 
     url = reverse(
-        'advanced-settings', kwargs={
-            'workspace_id': workspace_id
-        }
+        'advanced-settings',
+        kwargs={'workspace_id': workspace_id}
     )
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
@@ -291,8 +263,8 @@ def test_advanced_settings(api_client, test_connection):
         'report_number',
         'expense_link'
     ]
-    assert response.data['schedule_is_enabled'] == False
-    assert response.data['schedule_id'] == None
+    assert response.data['schedule_is_enabled'] is False
+    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
@@ -314,8 +286,8 @@ def test_advanced_settings(api_client, test_connection):
         'report_number',
         'expense_link'
     ]
-    assert response.data['schedule_is_enabled'] == False
-    assert response.data['schedule_id'] == None
+    assert response.data['schedule_is_enabled'] is False
+    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
@@ -340,8 +312,8 @@ def test_advanced_settings(api_client, test_connection):
         'purpose',
         'report_number'
     ]
-    assert response.data['schedule_is_enabled'] == False
-    assert response.data['schedule_id'] == None
+    assert response.data['schedule_is_enabled'] is False
+    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
