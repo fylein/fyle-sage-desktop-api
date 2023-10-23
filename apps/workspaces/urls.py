@@ -34,7 +34,7 @@ workspace_app_paths = [
 ]
 
 other_app_paths = [
-     path('<int:workspace_id>/sage_300/', include('apps.sage300.urls')),
+    path('<int:workspace_id>/sage_300/', include('apps.sage300.urls')),
 ]
 
 urlpatterns = []

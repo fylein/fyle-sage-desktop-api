@@ -4,9 +4,13 @@ from django.urls import reverse
 from apps.workspaces.models import Sage300Credential
 
 
+<<<<<<< HEAD
 def test_sync_dimensions(
     api_client, test_connection, mocker, create_temp_workspace, add_sage300_creds
 ):
+=======
+def test_sync_dimensions(api_client, test_connection, mocker, create_temp_workspace, add_sage300_creds):
+>>>>>>> 3c39af4418acee055b32d9aae4209810f79b5e58
     workspace_id = 1
 
     access_token = test_connection.access_token

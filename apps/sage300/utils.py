@@ -1,7 +1,7 @@
-from django.conf import settings
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.workspaces.models import Sage300Credential
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
+
 
 class SageDesktopConnector:
     """
@@ -25,7 +25,6 @@ class SageDesktopConnector:
 
         self.workspace_id = workspace_id
 
-
     def _create_destination_attribute(self, attribute_type, display_name, value, destination_id, active, detail):
         """
         Create a destination attribute object
@@ -45,7 +44,6 @@ class SageDesktopConnector:
             'active': active,
             'detail': detail
         }
-
 
     def _sync_data(self, data, attribute_type, display_name, workspace_id, field_names):
         """
@@ -73,7 +71,6 @@ class SageDesktopConnector:
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             destination_attributes, attribute_type, workspace_id, True)
 
-
     def sync_accounts(self):
         """
         Synchronize accounts from Sage Desktop SDK to your application
@@ -81,7 +78,6 @@ class SageDesktopConnector:
         accounts = self.connection.accounts.get_all()
         self._sync_data(accounts, 'ACCOUNT', 'accounts', self.workspace_id, ['code', 'version'])
         return []
-
 
     def sync_vendors(self):
         """
@@ -95,7 +91,6 @@ class SageDesktopConnector:
         self._sync_data(vendors, 'VENDOR', 'vendor', self.workspace_id, field_names)
         return []
 
-
     def sync_jobs(self):
         """
         Synchronize jobs from Sage Desktop SDK to your application
@@ -107,7 +102,6 @@ class SageDesktopConnector:
         self._sync_data(jobs, 'JOB', 'job', self.workspace_id, field_names)
         return []
 
-
     def sync_cost_codes(self):
         """
         Synchronize cost codes from Sage Desktop SDK to your application
@@ -117,7 +111,6 @@ class SageDesktopConnector:
         self._sync_data(cost_codes, 'COST_CODE', 'cost_code', self.workspace_id, field_names)
         return []
 
-
     def sync_categories(self):
         """
         Synchronize categories from Sage Desktop SDK to your application
@@ -126,7 +119,6 @@ class SageDesktopConnector:
         field_names = ['code', 'version', 'description', 'accumulation_name']
         self._sync_data(categories, 'CATEGORY', 'category', self.workspace_id, field_names)
         return []
-
 
     def sync_commitments(self):
         """

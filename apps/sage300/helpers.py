@@ -5,7 +5,6 @@ import logging
 from django.utils.module_loading import import_string
 
 from apps.workspaces.models import Workspace, Sage300Credential
-from apps.sage300.utils import SageDesktopConnector
 
 
 logger = logging.getLogger(__name__)

@@ -22,12 +22,10 @@ class ImportSage300AttributesSerializer(serializers.Serializer):
     def create(self, validated_data):
         try:
             # Get the workspace ID from the URL kwargs
-            workspace_id = self.context["request"].parser_context["kwargs"][
-                "workspace_id"
-            ]
+            workspace_id = self.context['request'].parser_context['kwargs']['workspace_id']
 
             # Check if the 'refresh' field is provided in the request data
-            refresh_dimension = self.context["request"].data.get("refresh", False)
+            refresh_dimension = self.context['request'].data.get('refresh', False)
 
             # Retrieve the workspace and Sage 300 credentials
             workspace = Workspace.objects.get(pk=workspace_id)
@@ -44,7 +42,7 @@ class ImportSage300AttributesSerializer(serializers.Serializer):
 
             # Update the destination_synced_at field and save the workspace
             workspace.destination_synced_at = datetime.now()
-            workspace.save(update_fields=["destination_synced_at"])
+            workspace.save(update_fields=['destination_synced_at'])
 
             # Return a success response
             return Response(status=status.HTTP_200_OK)
@@ -52,13 +50,13 @@ class ImportSage300AttributesSerializer(serializers.Serializer):
         except Sage300Credential.DoesNotExist:
             # Handle the case when Sage 300 credentials are not found or invalid
             raise serializers.ValidationError(
-                {"message": "Sage300 credentials not found / invalid in workspace"}
+                {'message': 'Sage300 credentials not found / invalid in workspace'}
             )
 
         except Exception as exception:
             # Handle unexpected exceptions and log the error
             logger.error(
-                "Something unexpected happened workspace_id: %s %s",
+                'Something unexpected happened workspace_id: %s %s',
                 workspace_id,
                 exception,
             )
@@ -73,4 +71,4 @@ class Sage300FieldSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DestinationAttribute
-        fields = ["attribute_type", "display_name"]
+        fields = ['attribute_type', 'display_name']

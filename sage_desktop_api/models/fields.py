@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class StringNotNullField(models.CharField):
     description = "Custom String with Not Null"
 
@@ -8,6 +9,7 @@ class StringNotNullField(models.CharField):
         kwargs['null'] = False  # Ensure the field is not nullable
         kwargs['help_text'] = kwargs.get('help_text', 'string field with null false')
         super(StringNotNullField, self).__init__(*args, **kwargs)
+
 
 class StringNullField(models.CharField):
     description = "Custom String with Null"
@@ -18,6 +20,7 @@ class StringNullField(models.CharField):
         kwargs['help_text'] = kwargs.get('help_text', 'string field with null True')
         super(StringNullField, self).__init__(*args, **kwargs)
 
+
 class IntegerNullField(models.IntegerField):
     description = "Custom Integer with Null"
 
@@ -26,6 +29,7 @@ class IntegerNullField(models.IntegerField):
         kwargs['help_text'] = kwargs.get('help_text', 'Integer field with null True')
         super(IntegerNullField, self).__init__(*args, **kwargs)
 
+
 class IntegerNotNullField(models.IntegerField):
     description = "Custom Integer with Not Null"
 
@@ -33,6 +37,7 @@ class IntegerNotNullField(models.IntegerField):
         kwargs['null'] = False  # Ensure the field is not nullable
         kwargs['help_text'] = kwargs.get('help_text', 'Integer field with null false')
         super(IntegerNotNullField, self).__init__(*args, **kwargs)
+
 
 class CustomJsonField(models.JSONField):
     description = "Custom Json Field with Null"
@@ -43,12 +48,14 @@ class CustomJsonField(models.JSONField):
         kwargs['help_text'] = kwargs.get('help_text', 'Json field with null true')
         super(CustomJsonField, self).__init__(*args, **kwargs)
 
+
 class CustomDateTimeField(models.DateTimeField):
     description = "Custom DateTime Field with Auto-Add Now"
 
     def __init__(self, *args, **kwargs):
         kwargs['null'] = True  # Allow the field to be nullable
         super(CustomDateTimeField, self).__init__(*args, **kwargs)
+
 
 class TextNotNullField(models.TextField):
     description = "Custom Text Field with Not Null"
@@ -57,6 +64,7 @@ class TextNotNullField(models.TextField):
         kwargs['null'] = False  # Ensure the field is not nullable
         kwargs['help_text'] = kwargs.get('help_text', 'text field with null false')
         super(TextNotNullField, self).__init__(*args, **kwargs)
+
 
 class StringOptionsField(models.CharField):
     description = "Custom String Field with Options"
@@ -69,6 +77,7 @@ class StringOptionsField(models.CharField):
         kwargs['null'] = True  # Allow the field to be nullable
         super(StringOptionsField, self).__init__(max_length=max_length, choices=choices, default=default, **kwargs)
 
+
 class BooleanFalseField(models.BooleanField):
     description = "Custom Boolean Field with Default True"
 
@@ -80,6 +89,7 @@ class BooleanFalseField(models.BooleanField):
         value = getattr(instance, self.attname)
         setattr(instance, self.attname, not value)
         instance.save()
+
 
 class BooleanTrueField(models.BooleanField):
     description = "Custom Boolean Field with Default True"

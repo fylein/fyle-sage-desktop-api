@@ -7,7 +7,6 @@ from rest_framework import serializers
 from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
 
-from apps.fyle.helpers import get_cluster_domain
 from sage_desktop_api.utils import assert_valid
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from sage_desktop_sdk.exceptions import (
@@ -81,14 +80,13 @@ class WorkspaceSerializer(serializers.ModelSerializer):
 
 
 class Sage300CredentialSerializer(serializers.ModelSerializer):
-    
+
     api_key = serializers.CharField(required=False)
     api_secret = serializers.CharField(required=False)
 
     class Meta:
         model = Sage300Credential
         fields = '__all__'
-
 
     def create(self, validated_data):
         try:
@@ -166,6 +164,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         model = ImportSetting
         fields = '__all__'
         read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
+
     def create(self, validated_data):
         """
         Create Export Settings
