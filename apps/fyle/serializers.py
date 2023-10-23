@@ -4,6 +4,7 @@ Fyle Serializers
 import logging
 from rest_framework import serializers
 from rest_framework.response import Response
+from rest_framework.exceptions import APIException
 from rest_framework.views import status
 from fyle_integrations_platform_connector import PlatformConnector
 from datetime import datetime, timezone
@@ -53,6 +54,7 @@ class ImportFyleAttributesSerializer(serializers.Serializer):
 
         except Exception as exception:
             logger.error('Something unexpected happened workspace_id: %s %s', workspace_id, exception)
+            raise APIException("Internal Server Error", code='server_error')
 
 
 class ExpenseFilterSerializer(serializers.ModelSerializer):

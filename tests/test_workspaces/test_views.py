@@ -133,8 +133,10 @@ def test_export_settings(api_client, test_connection):
         'credit_card_expense_state': 'PAID',
         'credit_card_expense_grouped_by': 'EXPENSE',
         'credit_card_expense_date': 'CREATED_AT',
-        'default_credit_card_account_name': 'credit card account',
-        'default_credit_card_account_id': '12312',
+        'default_ccc_credit_card_account_name': 'CCC credit card account',
+        'default_ccc_credit_card_account_id': '123',
+        'default_reimbursable_credit_card_account_name': 'reimbursable credit card account',
+        'default_reimbursable_credit_card_account_id': '342',
         'default_vendor_name': 'Nilesh',
         'default_vendor_id': '123',
         'default_back_account_id': '123',
@@ -154,8 +156,10 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
     assert export_settings.credit_card_expense_date == 'CREATED_AT'
-    assert export_settings.default_credit_card_account_name == 'credit card account'
-    assert export_settings.default_credit_card_account_id == '12312'
+    assert export_settings.default_ccc_credit_card_account_name == 'CCC credit card account'
+    assert export_settings.default_ccc_credit_card_account_id == '123'
+    assert export_settings.default_reimbursable_credit_card_account_name == 'reimbursable credit card account'
+    assert export_settings.default_reimbursable_credit_card_account_id == '342'
     assert export_settings.default_vendor_name == 'Nilesh'
     assert export_settings.default_vendor_id == '123'
 
@@ -170,8 +174,10 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
     assert export_settings.credit_card_expense_date == 'CREATED_AT'
-    assert export_settings.default_credit_card_account_name == 'credit card account'
-    assert export_settings.default_credit_card_account_id == '12312'
+    assert export_settings.default_ccc_credit_card_account_name == 'CCC credit card account'
+    assert export_settings.default_ccc_credit_card_account_id == '123'
+    assert export_settings.default_reimbursable_credit_card_account_name == 'reimbursable credit card account'
+    assert export_settings.default_reimbursable_credit_card_account_id == '342'
     assert export_settings.default_vendor_name == 'Nilesh'
     assert export_settings.default_vendor_id == '123'
 
@@ -239,7 +245,8 @@ def test_advanced_settings(api_client, test_connection):
                 'name': 'Netra Ballabh',
                 'email': 'nilesh.p@fylehq.com'
             },
-        ])
+        ]),
+        'auto_create_vendor': True
     }
 
     response = api_client.post(url, payload)
@@ -264,6 +271,7 @@ def test_advanced_settings(api_client, test_connection):
             'email': 'nilesh.p@fylehq.com'
         },
     ]
+    assert response.data['auto_create_vendor'] == True
 
     response = api_client.get(url)
 

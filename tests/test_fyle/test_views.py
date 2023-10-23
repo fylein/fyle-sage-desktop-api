@@ -40,7 +40,7 @@ def test_import_fyle_attributes(mocker, api_client, test_connection, create_temp
     with mock.patch('apps.workspaces.models.FyleCredential.objects.get') as mock_call:
         mock_call.side_effect = Exception()
         response = api_client.post(url, payload)
-        assert response.status_code == 400
+        assert response.status_code == 500
 
 
 def test_expense_filters(api_client, test_connection, create_temp_workspace, add_fyle_credentials, add_expense_filters):
