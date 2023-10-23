@@ -1,20 +1,14 @@
 """
 Workspace Serializers
 """
-from rest_framework import serializers
 from django.conf import settings
 from django.core.cache import cache
+from rest_framework import serializers
 from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
 
 from apps.fyle.helpers import get_cluster_domain
 from sage_desktop_api.utils import assert_valid
-
-from .models import (
-    Sage300Credentials,
-    ImportSetting,
-    AdvancedSetting
-)
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from sage_desktop_sdk.exceptions import (
     UserAccountLocked,
@@ -27,8 +21,10 @@ from apps.fyle.helpers import get_cluster_domain
 from apps.workspaces.models import (
     Workspace,
     FyleCredential,
-    Sage300Credentials,
-    ExportSettings
+    Sage300Credential,
+    ExportSetting,
+    ImportSetting,
+    AdvancedSetting
 )
 from apps.users.models import User
 
@@ -40,7 +36,7 @@ class WorkspaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workspace
         fields = '__all__'
-        read_only_fields = ('id', 'name', 'org_id', 'fyle_currency', 'created_at', 'updated_at', 'user')
+        read_only_fields = ('id', 'name', 'org_id', 'created_at', 'updated_at', 'user')
 
     def create(self, validated_data):
         """
@@ -55,7 +51,6 @@ class WorkspaceSerializer(serializers.ModelSerializer):
         # getting name, org_id, currency of Fyle User
         name = fyle_user['data']['org']['name']
         org_id = fyle_user['data']['org']['id']
-        fyle_currency = fyle_user['data']['org']['currency']
 
         # Checking if workspace already exists
         workspace = Workspace.objects.filter(org_id=org_id).first()
@@ -68,7 +63,6 @@ class WorkspaceSerializer(serializers.ModelSerializer):
             workspace = Workspace.objects.create(
                 name=name,
                 org_id=org_id,
-                fyle_currency=fyle_currency
             )
 
             workspace.user.add(User.objects.get(user_id=user))
@@ -92,7 +86,7 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
     api_secret = serializers.CharField(required=False)
 
     class Meta:
-        model = Sage300Credentials
+        model = Sage300Credential
         fields = '__all__'
 
 
@@ -114,8 +108,8 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
                 indentifier=identifier
             )
 
-            # Save the Sage300Credentials instance and update the workspace
-            instance = Sage300Credentials.objects.create(
+            # Save the Sage300Credential instance and update the workspace
+            instance = Sage300Credential.objects.create(
                 username=username,
                 password=password,
                 identifier=identifier,
@@ -138,7 +132,7 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
     Export Settings serializer
     """
     class Meta:
-        model = ExportSettings
+        model = ExportSetting
         fields = '__all__'
         read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
 
@@ -149,7 +143,7 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         assert_valid(validated_data, 'Body cannot be null')
         workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
 
-        export_settings, _ = ExportSettings.objects.update_or_create(
+        export_settings, _ = ExportSetting.objects.update_or_create(
             workspace_id=workspace_id,
             defaults=validated_data
         )
