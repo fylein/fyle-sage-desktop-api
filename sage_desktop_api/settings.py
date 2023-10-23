@@ -173,9 +173,6 @@ DATABASES['cache_db'] = {
 
 DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
 
-# Password validation
-# https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -203,11 +200,9 @@ FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
 
-
 # Sage300 Settings
 SD_API_KEY = os.environ.get('SD_API_KEY')
 SD_API_SECRET = os.environ.get('SD_API_SECRET')
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
@@ -221,7 +216,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
