@@ -4,10 +4,12 @@ from sage_desktop_api.models.fields import (
     StringNotNullField,
     CustomDateTimeField,
     FloatNullField,
-    IntegerNullField
+    IntegerNullField,
+    TextNotNullField
 )
 
 from apps.workspaces.models import Workspace
+from apps.accounting_exports.models import AccountingExport
 
 
 class Invoice(BaseModel):
@@ -26,17 +28,43 @@ class Invoice(BaseModel):
     id = models.AutoField(primary_key=True)
     amount = FloatNullField(help_text='Invoice amount')
     accounting_date = StringNotNullField(help_text='Accounting date')
-    description = models.TextField(null=True, default='')
+    description = TextNotNullField(help_text='Invoice description')
     tax_amount = FloatNullField(help_text='Tax amount')
+    accounting_export = models.OneToOneField(AccountingExport, on_delete=models.PROTECT, help_text='Reference to AccountingExport model')
     vendor_id = StringNotNullField(help_text='Vendor ID')
     code = StringNotNullField(max_length=15, help_text="unique key for each document")
     discount_amount = FloatNullField(help_text='Discount amount')
-    workspace = models.ForeignKey(
-        Workspace, on_delete=models.CASCADE, related_name='Workspace Id'
-    )
 
     class Meta:
         db_table = 'invoice'
+
+
+class InvoiceLineitems(BaseModel):
+    """
+    Invoice Table Model Class
+
+    Example Data ->
+    amount: 12.31,
+    accounts_payable_account_id: '123123',
+    expense_account_id: '1231231',
+    description: 'Reimbursable Expenses by Shwetabh',
+		job_id: '123123',
+		cost_code_id: '12312123123'
+		category_id: '123'
+    """
+
+    id = models.AutoField(primary_key=True)
+    amount = FloatNullField(help_text='Invoice lineitem amount')
+    accounts_payable_account_id = StringNotNullField(help_text='Accounts Payable Account Id')
+    description = TextNotNullField(help_text='Invoice lineitem description')
+    expense_account_id = StringNotNullField(help_text='Expense Account Id')
+    job_id = StringNotNullField(help_text='Job Id')
+    cost_code_id = StringNotNullField(help_text='Cost Code Id')
+    category_id = StringNotNullField(help_text='Category Id')
+    invoice_id = models.ForeignKey(Invoice, on_delete=models.PROTECT, help_text='Reference to Invoice model')
+
+    class Meta:
+        db_table = 'invoice_lineitems'
 
 
 class DirectCost(BaseModel):
@@ -59,10 +87,11 @@ class DirectCost(BaseModel):
     job_id = StringNotNullField(help_text='Job Id')
     cost_code_id = StringNotNullField(help_text='Cost Code Id')
     category_id = StringNotNullField(help_text='Category Id')
+    accounting_export = models.OneToOneField(AccountingExport, on_delete=models.PROTECT, help_text='Reference to AccountingExport model')
     credit_card_account_id = StringNotNullField(help_text='Credit Card Account Id')
     debit_card_account_id = StringNotNullField(help_text='Debit Card Account Id')
     transaction_date = CustomDateTimeField(help_text='Transaction Date')
-    description = models.TextField(null=True, default='')
+    description = TextNotNullField(help_text='Direct Costs description')
     transaction_type = IntegerNullField(help_text='Transaction Type')
 
     class Meta:

@@ -23,8 +23,6 @@ class AccountingExport(BaseModel):
     expenses = models.ManyToManyField(Expense, help_text="Expenses under this Expense Group")
     task_id = StringNullField(help_text='Fyle Jobs task reference')
     description = CustomJsonField(help_text='Description')
-    invoice = models.ForeignKey(Invoice, on_delete=models.PROTECT, help_text='Referenc to Invoie', null=True)
-    direct_cost = models.ForeignKey(DirectCost, on_delete=models.PROTECT, help_text='Reference to DirectCost', null=True)
     status = StringNotNullField(help_text='Task Status')
     detail = CustomJsonField(help_text='Task Response')
     sage_intacct_errors = CustomJsonField(help_text='Sage Intacct Errors')
