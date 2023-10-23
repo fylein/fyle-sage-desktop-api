@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_q',
     'fyle_rest_auth',
+    'fyle_accounting_mappings',
 
     # User Created Apps
     'apps.users',
@@ -99,24 +100,16 @@ FYLE_REST_AUTH_SETTINGS = {
 }
 
 REST_FRAMEWORK = {
-    # 'DEFAULT_PERMISSION_CLASSES': (
-    #     'rest_framework.permissions.IsAuthenticated',
-    #     'apps.workspaces.permissions.WorkspacePermissions'
-    # ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        # 'apps.workspaces.permissions.WorkspacePermissions'
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'fyle_rest_auth.authentication.FyleJWTAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100
 }
-
-
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-#         'LOCATION': 'auth_cache',
-#     }
-# }
 
 Q_CLUSTER = {
     'name': 'sage_desktop_api',
