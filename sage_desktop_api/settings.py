@@ -114,7 +114,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100
 }
 
-SERVICE_NAME = 'HELLO'
+SERVICE_NAME = os.environ.get('SERVICE_NAME')
 
 LOGGING = {
     'version': 1,
