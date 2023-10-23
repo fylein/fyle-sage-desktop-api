@@ -14,7 +14,7 @@ from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
     Workspace, 
     FyleCredential,
-    Sage300Credentials
+    Sage300Credential
 )
 
 from sage_desktop_api.tests import settings
@@ -104,15 +104,6 @@ def default_session_fixture(request):
     )
     patched_5.__enter__()
 
-    def unpatch():
-        patched_1.__exit__()
-        patched_2.__exit__()
-        patched_3.__exit__()
-        patched_4.__exit__()
-        patched_5.__exit__()
-
-    request.addfinalizer(unpatch)
-
 
 @pytest.fixture
 @pytest.mark.django_db(databases=['default'])
@@ -162,7 +153,7 @@ def add_sage300_creds():
         1, 2, 3
     ]
     for workspace_id in workspace_ids:
-        Sage300Credentials.objects.create(
+        Sage300Credential.objects.create(
             identifier='identifier',
             username='username',
             password='password',
