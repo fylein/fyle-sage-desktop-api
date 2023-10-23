@@ -6,7 +6,7 @@ from tests.helper import dict_compare_keys
 from tests.test_fyle.fixtures import fixtures as fyle_fixtures
 
 
-@pytest.mark.django_db(databases=["default"])
+@pytest.mark.django_db(databases=['default'])
 def test_fyle_expense_fields(
     api_client,
     test_connection,
@@ -18,11 +18,11 @@ def test_fyle_expense_fields(
     workspace_id = 1
 
     access_token = test_connection.access_token
-    url = reverse("fyle-expense-fields", kwargs={"workspace_id": workspace_id})
+    url = reverse('fyle-expense-fields', kwargs={'workspace_id': workspace_id})
 
     mocker.patch(
-        "fyle.platform.apis.v1beta.admin.expense_fields.list_all",
-        return_value=fyle_fixtures["get_all_custom_fields"],
+        'fyle.platform.apis.v1beta.admin.expense_fields.list_all',
+        return_value=fyle_fixtures['get_all_custom_fields'],
     )
 
     api_client.credentials(HTTP_AUTHORIZATION="Bearer {}".format(access_token))
@@ -32,5 +32,5 @@ def test_fyle_expense_fields(
     response = json.loads(response.content)
 
     assert (
-        dict_compare_keys(response, fyle_fixtures["fyle_expense_custom_fields"]) == []
-    ), "expense group api return diffs in keys"
+        dict_compare_keys(response, fyle_fixtures['fyle_expense_custom_fields']) == []
+    ), 'expense group api return diffs in keys'
