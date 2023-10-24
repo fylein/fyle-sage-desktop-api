@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_q',
     'fyle_rest_auth',
+    'fyle_accounting_mappings',
 
     # User Created Apps
     'apps.users',
@@ -57,10 +58,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'corsheaders.middleware.CorsPostCsrfMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -110,14 +110,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100
 }
 
-
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'auth_cache',
-    }
-}
-
 Q_CLUSTER = {
     'name': 'sage_desktop_api',
     'save_limit': 0,
@@ -162,13 +154,6 @@ DATABASES = {
     }
 }
 
-# DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
-
-
-
-# Password validation
-# https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -183,7 +168,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Fyle Settings
 API_URL = os.environ.get('API_URL')
@@ -212,7 +196,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/

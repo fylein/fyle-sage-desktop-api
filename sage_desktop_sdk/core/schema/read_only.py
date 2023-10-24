@@ -145,7 +145,7 @@ class Commitment:
 
 
 @dataclass
-class Jobs:
+class Job:
     id: str
     version: int
     account_prefix_id: str
@@ -232,7 +232,6 @@ class CostCode:
     description: str
     is_active: bool
     is_archived: bool
-    is_group_code: bool
     is_standard: bool
     name: str
 
@@ -246,7 +245,6 @@ class CostCode:
             description=costcode_dict['Description'],
             is_active=costcode_dict['IsActive'],
             is_archived=costcode_dict['IsArchived'],
-            is_group_code=costcode_dict['IsGroupCode'],
             is_standard=costcode_dict['IsStandard'],
             name=costcode_dict['Name']
         )

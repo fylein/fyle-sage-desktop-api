@@ -12,7 +12,7 @@ from fyle_rest_auth.models import User, AuthToken
 
 from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
-    Workspace, 
+    Workspace,
     FyleCredential,
     Sage300Credential
 )
@@ -103,15 +103,6 @@ def default_session_fixture(request):
         return_value=fyle_fixtures['get_my_profile']
     )
     patched_5.__enter__()
-
-    def unpatch():
-        patched_1.__exit__()
-        patched_2.__exit__()
-        patched_3.__exit__()
-        patched_4.__exit__()
-        patched_5.__exit__()
-
-    request.addfinalizer(unpatch)
 
 
 @pytest.fixture
