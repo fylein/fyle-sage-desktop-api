@@ -179,10 +179,8 @@ FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
 
-
 SD_API_KEY = os.environ.get('SD_API_KEY')
 SD_API_SECRET = os.environ.get('SD_API_SECRET')
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
