@@ -65,10 +65,16 @@ class ImportSage300AttributesSerializer(serializers.Serializer):
             raise
 
 
-class Sage300FieldSerializer(serializers.ModelSerializer):
+class DestinationAttributeSerializer(serializers.Serializer):
+    attribute_type = serializers.CharField()
+    display_name = serializers.CharField()
+
+
+class Sage300FieldSerializer(serializers.Serializer):
     """
-    Expense Fields Serializer
+    Sage300 Expense Fields Serializer
     """
+
     attribute_type = serializers.CharField()
     display_name = serializers.CharField()
 
@@ -97,7 +103,3 @@ class Sage300FieldSerializer(serializers.ModelSerializer):
         attributes_list.append({"attribute_type": "JOB", "display_name": "Job"})
 
         return attributes_list
-
-    class Meta:
-        model = DestinationAttribute
-        fields = ['attribute_type', 'display_name']

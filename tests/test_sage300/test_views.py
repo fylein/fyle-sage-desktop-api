@@ -38,4 +38,4 @@ def test_sage300_fields(api_client, test_connection):
     response = api_client.get(url)
     assert response.status_code == 200
 
-    assert response.data == [{'attribute_type': 'JOB', 'display_name': 'Job'}]
+    assert response.data['results'] == [{'attribute_type': 'JOB', 'display_name': 'Job'}]
