@@ -1,4 +1,5 @@
 import logging
+from django.db.models import Q
 from datetime import datetime
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -68,6 +69,34 @@ class Sage300FieldSerializer(serializers.ModelSerializer):
     """
     Expense Fields Serializer
     """
+    attribute_type = serializers.CharField()
+    display_name = serializers.CharField()
+
+    def format_sage300_fields(self, workspace_id):
+        attribute_types = [
+            "VENDOR",
+            "ACCOUNT",
+            "JOB",
+            "CATEGORY",
+            "COST_CODE",
+            "PAYMENT",
+        ]
+        attributes = (
+            DestinationAttribute.objects.filter(
+                ~Q(attribute_type__in=attribute_types),
+                workspace_id=workspace_id,
+            )
+            .values("attribute_type", "display_name")
+            .distinct()
+        )
+
+        serialized_attributes = Sage300FieldSerializer(attributes, many=True).data
+
+        # Adding "Job" by default since it can be supported even if it doesn't exist
+        attributes_list = list(serialized_attributes)
+        attributes_list.append({"attribute_type": "JOB", "display_name": "Job"})
+
+        return attributes_list
 
     class Meta:
         model = DestinationAttribute
