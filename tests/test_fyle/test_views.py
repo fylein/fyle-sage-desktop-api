@@ -32,5 +32,5 @@ def test_fyle_expense_fields(
     response = json.loads(response.content)
 
     assert (
-        dict_compare_keys(response, fyle_fixtures['fyle_expense_custom_fields']) == []
+        dict_compare_keys(response['results'], fyle_fixtures['fyle_expense_custom_fields']) == []
     ), 'expense group api return diffs in keys'
