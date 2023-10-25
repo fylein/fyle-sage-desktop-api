@@ -2,8 +2,6 @@ import logging
 
 from rest_framework import generics
 
-from fyle_accounting_mappings.models import DestinationAttribute
-
 from apps.sage300.serializers import Sage300FieldSerializer
 from apps.sage300.serializers import ImportSage300AttributesSerializer
 
