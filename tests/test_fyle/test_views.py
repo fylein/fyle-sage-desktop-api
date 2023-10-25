@@ -21,7 +21,7 @@ def test_fyle_expense_fields(
     url = reverse('fyle-expense-fields', kwargs={'workspace_id': workspace_id})
 
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.expense_fields.list_all',
+        'fyle.platform.apis.v1beta.admin.ExpenseFields.list_all',
         return_value=fyle_fixtures['get_all_custom_fields'],
     )
 
