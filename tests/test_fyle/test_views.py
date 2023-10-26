@@ -85,3 +85,18 @@ def test_fyle_expense_fields(api_client, test_connection, create_temp_workspace,
     assert (
         dict_compare_keys(response['results'], data['fyle_expense_custom_fields']) == []
     ), 'expense group api return diffs in keys'
+
+
+def test_fyle_fields(api_client, test_connection, create_temp_workspace, add_fyle_credentials):
+
+    access_token = test_connection.access_token
+
+    url = reverse('fyle-fields', kwargs={'workspace_id': 1})
+
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+    response = api_client.get(url)
+    assert response.status_code == 200
+
+    response = json.loads(response.content)
+    assert response['results'] == data['fyle_fields_response']

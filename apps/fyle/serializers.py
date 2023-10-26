@@ -2,11 +2,15 @@
 Fyle Serializers
 """
 import logging
+from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
 from rest_framework.views import status
 from fyle_integrations_platform_connector import PlatformConnector
+
+from fyle_accounting_mappings.models import ExpenseAttribute
+
 from datetime import datetime, timezone
 from apps.workspaces.models import Workspace, FyleCredential
 from apps.fyle.models import ExpenseFilter
@@ -91,3 +95,28 @@ class ExpenseFieldSerializer(serializers.Serializer):
         expense_fields = get_expense_fields(workspace_id=workspace_id)
 
         return expense_fields
+
+
+class FyleFieldsSerializer(serializers.Serializer):
+    """
+    Fyle Fields Serializer
+    """
+
+    attribute_type = serializers.CharField()
+    display_name = serializers.CharField()
+
+    def format_fyle_fields(self, workspace_id):
+        """
+        Get Fyle Fields
+        """
+
+        default_attributes = ['EMPLOYEE', 'CATEGORY', 'PROJECT', 'COST_CENTER', 'TAX_GROUP', 'CORPORATE_CARD', 'MERCHANT']
+
+        attributes = ExpenseAttribute.objects.filter(~Q(attribute_type__in=default_attributes), workspace_id=workspace_id).values('attribute_type', 'display_name').distinct()
+
+        fyle_fields = [{'attribute_type': 'COST_CENTER', 'display_name': 'Cost Center'}, {'attribute_type': 'PROJECT', 'display_name': 'Project'}]
+
+        for attribute in attributes:
+            fyle_fields.append(attribute)
+
+        return fyle_fields
