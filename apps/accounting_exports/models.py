@@ -11,9 +11,10 @@ from apps.workspaces.models import BaseForeignWorkspaceModel
 from apps.fyle.models import Expense
 
 TYPE_CHOICES = (
-    ('FETCH_EXPENSES', 'FETCH_EXPENSES'),
     ('INVOICES', 'INVOICES'),
-    ('DIRECT_COST', 'DIRECT_COST')
+    ('DIRECT_COST', 'DIRECT_COST'),
+    ('FETCHING_REIMBURSABLE_EXPENSES', 'FETCHING_REIMBURSABLE_EXPENSES'),
+    ('FETCHING_CREDIT_CARD_EXPENENSES', 'FETCHING_CREDIT_CARD_EXPENENSES')
 )
 
 

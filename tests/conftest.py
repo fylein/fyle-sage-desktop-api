@@ -208,7 +208,7 @@ def add_accounting_export_expenses():
     for workspace_id in workspace_ids:
         AccountingExport.objects.update_or_create(
             workspace_id=workspace_id,
-            type='FETCH_EXPENSES',
+            type='FETCHING_REIMBURSABLE_EXPENSES',
             defaults={
                 'status': 'IN_PROGRESS'
             }
@@ -216,7 +216,7 @@ def add_accounting_export_expenses():
 
         AccountingExport.objects.update_or_create(
             workspace_id=workspace_id,
-            type='FETCH_EXPENSES',
+            type='FETCHING_CREDIT_CARD_EXPENENSES',
             defaults={
                 'status': 'IN_PROGRESS'
             }
