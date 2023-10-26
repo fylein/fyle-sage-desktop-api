@@ -33,13 +33,12 @@ workspace_app_paths = [
     path('<int:workspace_id>/import_settings/', ImportSettingView.as_view(), name='import-settings'),
     path('<int:workspace_id>/advanced_settings/', AdvancedSettingView.as_view(), name='advanced-settings'),
     path('<int:workspace_id>/admins/', WorkspaceAdminsView.as_view(), name='admin'),
-    path('<int:workspace_id>/fyle/', include('apps.fyle.urls')),
-    path('<int:workspace_id>/accounting_exports/', include('apps.accounting_exports.urls')),
 ]
 
 other_app_paths = [
     path('<int:workspace_id>/sage_300/', include('apps.sage300.urls')),
-    path('<int:workspace_id>/fyle/', include('apps.fyle.urls'))
+    path('<int:workspace_id>/fyle/', include('apps.fyle.urls')),
+    path('<int:workspace_id>/accounting_exports/', include('apps.accounting_exports.urls')),
 ]
 
 urlpatterns = []

@@ -75,6 +75,7 @@ class FyleCredential(BaseModel):
     """
     Table to store Fyle credentials
     """
+    id = models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)
     refresh_token = TextNotNullField(help_text='Fyle refresh token')
     cluster_domain = StringNullField(help_text='Fyle cluster domain')
 
@@ -86,6 +87,7 @@ class Sage300Credential(BaseModel):
     """
     Table to store Business Central credentials
     """
+    id = models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)
     identifier = StringNotNullField(help_text='sage300 identifier')
     username = StringNotNullField(help_text='sage300 username')
     password = StringNotNullField(help_text='sage300 password')
@@ -146,6 +148,7 @@ class ExportSetting(BaseModel):
     Table to store export settings
     """
     # Reimbursable Expenses Export Settings
+    id = models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)
     reimbursable_expenses_export_type = StringOptionsField(
         choices=REIMBURSABLE_EXPENSE_EXPORT_TYPE_CHOICES,
     )
@@ -189,7 +192,7 @@ class ImportSetting(BaseModel):
     """
     Table to store Import setting
     """
-
+    id = models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)
     import_categories = BooleanFalseField(help_text='toggle for import of chart of accounts from sage300')
     import_vendors_as_merchants = BooleanFalseField(help_text='toggle for import of vendors as merchant from sage300')
 
@@ -201,6 +204,7 @@ class AdvancedSetting(BaseModel):
     """
     Table to store advanced setting
     """
+    id = models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)
     expense_memo_structure = ArrayField(
         models.CharField(max_length=255), help_text='Array of fields in memo', null=True
     )
