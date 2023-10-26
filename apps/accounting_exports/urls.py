@@ -19,5 +19,5 @@ from .views import AccountingExportView, ErrorsView
 
 urlpatterns = [
     path('', AccountingExportView.as_view(), name='accounting-exports'),
-    path('errors/', ErrorsView.as_view()),
+    path('errors/', ErrorsView.as_view(), name='errors'),
 ]
