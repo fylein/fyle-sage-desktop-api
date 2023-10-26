@@ -4,18 +4,24 @@ from sage_desktop_api.models.fields import (
     StringNotNullField,
     StringNullField,
     CustomJsonField,
-    CustomDateTimeField
+    CustomDateTimeField,
+    StringOptionsField
 )
 from apps.workspaces.models import BaseForeignWorkspaceModel
 from apps.fyle.models import Expense
 
+TYPE_CHOICES = (
+    ('FETCH_EXPENSES', 'FETCH_EXPENSES'),
+    ('INVOICES', 'INVOICES'),
+    ('DIRECT_COST', 'DIRECT_COST')
+)
 
 class AccountingExport(BaseForeignWorkspaceModel):
     """
     Table to store accounting exports
     """
     id = models.AutoField(primary_key=True)
-    type = StringNotNullField(max_length=50, help_text='Task type (FETCH_EXPENSES / INVOICES / DIRECT_COST)')
+    type = StringOptionsField(choices=TYPE_CHOICES, help_text='Task type')
     fund_source = StringNotNullField(help_text='Expense fund source')
     mapping_errors = ArrayField(help_text='Mapping errors', base_field=models.CharField(max_length=255), blank=True, null=True)
     expenses = models.ManyToManyField(Expense, help_text="Expenses under this Expense Group")
@@ -23,7 +29,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
     description = CustomJsonField(help_text='Description')
     status = StringNotNullField(help_text='Task Status')
     detail = CustomJsonField(help_text='Task Response')
-    sage_intacct_errors = CustomJsonField(help_text='Sage Intacct Errors')
+    sage_300_errors = CustomJsonField(help_text='Sage 300 Errors')
     exported_at = CustomDateTimeField(help_text='time of export')
 
     class Meta:

@@ -31,7 +31,6 @@ class Invoice(BaseModel):
     accounting_export = models.OneToOneField(AccountingExport, on_delete=models.PROTECT, help_text='Reference to AccountingExport model')
     vendor_id = StringNotNullField(help_text='Vendor ID')
     code = StringNotNullField(max_length=15, help_text="unique key for each document")
-    discount_amount = FloatNullField(help_text='Discount amount')
 
     class Meta:
         db_table = 'invoice'
