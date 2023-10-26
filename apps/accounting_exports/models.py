@@ -16,6 +16,7 @@ TYPE_CHOICES = (
     ('DIRECT_COST', 'DIRECT_COST')
 )
 
+
 class AccountingExport(BaseForeignWorkspaceModel):
     """
     Table to store accounting exports
