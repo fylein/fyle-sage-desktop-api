@@ -17,6 +17,7 @@ from apps.workspaces.models import (
     Sage300Credentials
 )
 from apps.fyle.models import ExpenseFilter
+from apps.accounting_exports.models import AccountingExport
 from sage_desktop_api.tests import settings
 
 from .test_fyle.fixtures import fixtures as fyle_fixtures
@@ -201,4 +202,31 @@ def add_expense_filters():
             is_custom=False,
             custom_field_type='SELECT',
             workspace_id=workspace_id
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_accounting_export_expenses():
+    """
+    Pytest fixture to add accounting export to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        AccountingExport.objects.update_or_create(
+            workspace_id=workspace_id,
+            type='FETCHING_REIMBURSABLE_EXPENSES',
+            defaults={
+                'status': 'IN_PROGRESS'
+            }
+        )
+
+        AccountingExport.objects.update_or_create(
+            workspace_id=workspace_id,
+            type='FETCHING_CREDIT_CARD_EXPENSES',
+            defaults={
+                'status': 'IN_PROGRESS'
+            }
         )

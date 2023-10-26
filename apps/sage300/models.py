@@ -1,14 +1,12 @@
 from django.db import models
 from apps.workspaces.models import BaseModel
-from sage_desktop_api.models.fields import ( 
+from sage_desktop_api.models.fields import (
     StringNotNullField,
     CustomDateTimeField,
     FloatNullField,
     IntegerNullField,
     TextNotNullField
 )
-
-from apps.workspaces.models import Workspace
 from apps.accounting_exports.models import AccountingExport
 
 
@@ -21,8 +19,8 @@ class Invoice(BaseModel):
     date: '2021-04-26',
     accounting_date: 'Accounts Payable',
     description: 'Reimbursable Expenses by Shwetabh',
-		tax_amount: 1.32,
-		vendor_id: '12312123123'
+    tax_amount: 1.32,
+    vendor_id: '12312123123'
     """
 
     id = models.AutoField(primary_key=True)
@@ -48,9 +46,9 @@ class InvoiceLineitems(BaseModel):
     accounts_payable_account_id: '123123',
     expense_account_id: '1231231',
     description: 'Reimbursable Expenses by Shwetabh',
-		job_id: '123123',
-		cost_code_id: '12312123123'
-		category_id: '123'
+    job_id: '123123',
+    cost_code_id: '12312123123'
+    category_id: '123'
     """
 
     id = models.AutoField(primary_key=True)
@@ -76,9 +74,9 @@ class DirectCost(BaseModel):
     accounts_payable_account_id: '123123',
     expense_account_id: '1231231',
     description: 'Reimbursable Expenses by Shwetabh',
-		job_id: '123123',
-		cost_code_id: '12312123123'
-		category_id: '123'
+    job_id: '123123',
+    cost_code_id: '12312123123'
+    category_id: '123'
     """
 
     id = models.AutoField(primary_key=True)
