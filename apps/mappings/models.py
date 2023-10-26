@@ -1,3 +1,5 @@
+from django.db import models
+
 from apps.workspaces.models import BaseModel
 from sage_desktop_api.models.fields import (
     CustomJsonField,
@@ -21,6 +23,7 @@ class ImportLog(BaseModel):
     Table to store import logs
     """
 
+    id = models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)
     attribute_type = StringNotNullField(max_length=150, help_text='Attribute type')
     status = StringOptionsField(help_text='Status', choices=IMPORT_STATUS_CHOICES)
     error_log = CustomJsonField(help_text='Emails Selected For Email Notification')
