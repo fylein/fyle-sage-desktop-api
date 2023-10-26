@@ -16,7 +16,7 @@ from apps.workspaces.models import BaseForeignWorkspaceModel
 from apps.fyle.models import Expense
 
 
-ERROR_TYPE_CHOICES = (('EMPLOYEE_MAPPING', 'EMPLOYEE_MAPPING'), ('CATEGORY_MAPPING', 'CATEGORY_MAPPING'), ('SAGE_ERROR', 'SAGE_ERROR'))
+ERROR_TYPE_CHOICES = (('EMPLOYEE_MAPPING', 'EMPLOYEE_MAPPING'), ('CATEGORY_MAPPING', 'CATEGORY_MAPPING'), ('SAGE300_ERROR', 'SAGE300_ERROR'))
 
 
 class AccountingExport(BaseForeignWorkspaceModel):

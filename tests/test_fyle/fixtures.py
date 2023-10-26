@@ -131,7 +131,7 @@ fixtures = {
                 "id":3,
                 "created_at":"2023-10-26T03:47:16.865303Z",
                 "updated_at":"2023-10-26T03:47:16.865307Z",
-                "type":"SAGE_ERROR",
+                "type":"SAGE300_ERROR",
                 "is_resolved": "false",
                 "error_title":"Sage Error",
                 "error_detail":"Sage Error",

@@ -248,7 +248,7 @@ def add_errors():
             workspace_id=workspace_id
         )
         Error.objects.create(
-            type='SAGE_ERROR',
+            type='SAGE300_ERROR',
             is_resolved=False,
             error_title='Sage Error',
             error_detail='Sage Error',
