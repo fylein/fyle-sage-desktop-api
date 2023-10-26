@@ -180,11 +180,13 @@ fixtures = {
     "fyle_fields_response": [
         {
             'attribute_type': 'COST_CENTER',
-            'display_name': 'Cost Center'
+            'display_name': 'Cost Center',
+            'is_dependant': False
         },
         {
             'attribute_type': 'PROJECT',
-            'display_name': 'Project'
+            'display_name': 'Project',
+            'is_dependant': False
         }
     ]
 }

@@ -104,19 +104,30 @@ class FyleFieldsSerializer(serializers.Serializer):
 
     attribute_type = serializers.CharField()
     display_name = serializers.CharField()
+    is_dependant = serializers.BooleanField()
 
     def format_fyle_fields(self, workspace_id):
         """
         Get Fyle Fields
         """
 
-        default_attributes = ['EMPLOYEE', 'CATEGORY', 'PROJECT', 'COST_CENTER', 'TAX_GROUP', 'CORPORATE_CARD', 'MERCHANT']
+        attribute_types = ['EMPLOYEE', 'CATEGORY', 'PROJECT', 'COST_CENTER', 'TAX_GROUP', 'CORPORATE_CARD', 'MERCHANT']
 
-        attributes = ExpenseAttribute.objects.filter(~Q(attribute_type__in=default_attributes), workspace_id=workspace_id, detail__is_dependent=False).values('attribute_type', 'display_name').distinct()
+        attributes = ExpenseAttribute.objects.filter(
+            ~Q(attribute_type__in=attribute_types),
+            workspace_id=workspace_id
+        ).values('attribute_type', 'display_name', 'detail__is_dependent').distinct()
 
-        fyle_fields = [{'attribute_type': 'COST_CENTER', 'display_name': 'Cost Center'}, {'attribute_type': 'PROJECT', 'display_name': 'Project'}]
+        attributes_list = [
+            {'attribute_type': 'COST_CENTER', 'display_name': 'Cost Center', 'is_dependant': False},
+            {'attribute_type': 'PROJECT', 'display_name': 'Project', 'is_dependant': False}
+        ]
 
-        for attribute in attributes:
-            fyle_fields.append(attribute)
+        for attr in attributes:
+            attributes_list.append({
+                'attribute_type': attr['attribute_type'],
+                'display_name': attr['display_name'],
+                'is_dependant': attr['detail__is_dependent']
+            })
 
-        return fyle_fields
+        return attributes_list
