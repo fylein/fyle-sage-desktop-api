@@ -3,8 +3,8 @@ import pytest  # noqa
 from django.urls import reverse
 from apps.workspaces.models import (
     Workspace,
-    Sage300Credentials,
-    ExportSettings,
+    Sage300Credential,
+    ExportSetting,
     ImportSetting,
     AdvancedSetting
 )
@@ -90,7 +90,7 @@ def test_get_of_sage300_creds(api_client, test_connection):
 
     url = reverse('sage300-creds', kwargs={'workspace_id': response.data['id']})
 
-    Sage300Credentials.objects.create(
+    Sage300Credential.objects.create(
         identifier='identifier',
         username='username',
         password='password',
@@ -132,8 +132,10 @@ def test_export_settings(api_client, test_connection):
         'credit_card_expense_state': 'PAID',
         'credit_card_expense_grouped_by': 'EXPENSE',
         'credit_card_expense_date': 'CREATED_AT',
-        'default_credit_card_account_name': 'credit card account',
-        'default_credit_card_account_id': '12312',
+        'default_ccc_credit_card_account_name': 'CCC credit card account',
+        'default_ccc_credit_card_account_id': '123',
+        'default_reimbursable_credit_card_account_name': 'reimbursable credit card account',
+        'default_reimbursable_credit_card_account_id': '342',
         'default_vendor_name': 'Nilesh',
         'default_vendor_id': '123',
         'default_back_account_id': '123',
@@ -142,7 +144,7 @@ def test_export_settings(api_client, test_connection):
 
     response = api_client.post(url, payload)
 
-    export_settings = ExportSettings.objects.filter(workspace_id=workspace_id).first()
+    export_settings = ExportSetting.objects.filter(workspace_id=workspace_id).first()
 
     assert response.status_code == 201
     assert export_settings.reimbursable_expenses_export_type == 'PURCHASE_INVOICE'
@@ -153,8 +155,10 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
     assert export_settings.credit_card_expense_date == 'CREATED_AT'
-    assert export_settings.default_credit_card_account_name == 'credit card account'
-    assert export_settings.default_credit_card_account_id == '12312'
+    assert export_settings.default_ccc_credit_card_account_name == 'CCC credit card account'
+    assert export_settings.default_ccc_credit_card_account_id == '123'
+    assert export_settings.default_reimbursable_credit_card_account_name == 'reimbursable credit card account'
+    assert export_settings.default_reimbursable_credit_card_account_id == '342'
     assert export_settings.default_vendor_name == 'Nilesh'
     assert export_settings.default_vendor_id == '123'
 
@@ -169,8 +173,10 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
     assert export_settings.credit_card_expense_date == 'CREATED_AT'
-    assert export_settings.default_credit_card_account_name == 'credit card account'
-    assert export_settings.default_credit_card_account_id == '12312'
+    assert export_settings.default_ccc_credit_card_account_name == 'CCC credit card account'
+    assert export_settings.default_ccc_credit_card_account_id == '123'
+    assert export_settings.default_reimbursable_credit_card_account_name == 'reimbursable credit card account'
+    assert export_settings.default_reimbursable_credit_card_account_id == '342'
     assert export_settings.default_vendor_name == 'Nilesh'
     assert export_settings.default_vendor_id == '123'
 
@@ -183,7 +189,10 @@ def test_import_settings(api_client, test_connection):
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
     workspace_id = response.data['id']
-    url = reverse('import-settings', kwargs={'workspace_id': workspace_id})
+    url = reverse(
+        'import-settings',
+        kwargs={'workspace_id': workspace_id}
+    )
 
     payload = {
         'import_categories': True,
@@ -192,13 +201,13 @@ def test_import_settings(api_client, test_connection):
     response = api_client.post(url, payload)
     import_settings = ImportSetting.objects.filter(workspace_id=workspace_id).first()
     assert response.status_code == 201
-    assert import_settings.import_categories == True
-    assert import_settings.import_vendors_as_merchants == True
+    assert import_settings.import_categories is True
+    assert import_settings.import_vendors_as_merchants is True
 
     response = api_client.get(url)
     assert response.status_code == 200
-    assert import_settings.import_categories == True
-    assert import_settings.import_vendors_as_merchants == True
+    assert import_settings.import_categories is True
+    assert import_settings.import_vendors_as_merchants is True
 
 
 def test_advanced_settings(api_client, test_connection):
@@ -234,7 +243,8 @@ def test_advanced_settings(api_client, test_connection):
                 'name': 'Netra Ballabh',
                 'email': 'nilesh.p@fylehq.com'
             },
-        ])
+        ]),
+        'auto_create_vendor': True
     }
 
     response = api_client.post(url, payload)
@@ -247,8 +257,8 @@ def test_advanced_settings(api_client, test_connection):
         'report_number',
         'expense_link'
     ]
-    assert response.data['schedule_is_enabled'] == False
-    assert response.data['schedule_id'] == None
+    assert response.data['schedule_is_enabled'] is False
+    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
@@ -259,6 +269,7 @@ def test_advanced_settings(api_client, test_connection):
             'email': 'nilesh.p@fylehq.com'
         },
     ]
+    assert response.data['auto_create_vendor'] == True
 
     response = api_client.get(url)
 
@@ -270,8 +281,8 @@ def test_advanced_settings(api_client, test_connection):
         'report_number',
         'expense_link'
     ]
-    assert response.data['schedule_is_enabled'] == False
-    assert response.data['schedule_id'] == None
+    assert response.data['schedule_is_enabled'] is False
+    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
@@ -296,8 +307,8 @@ def test_advanced_settings(api_client, test_connection):
         'purpose',
         'report_number'
     ]
-    assert response.data['schedule_is_enabled'] == False
-    assert response.data['schedule_id'] == None
+    assert response.data['schedule_is_enabled'] is False
+    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',

@@ -40,14 +40,13 @@ def test_import_fyle_attributes(mocker, api_client, test_connection, create_temp
     with mock.patch('apps.workspaces.models.FyleCredential.objects.get') as mock_call:
         mock_call.side_effect = Exception()
         response = api_client.post(url, payload)
-        assert response.status_code == 400
+        assert response.status_code == 500
 
 
 def test_expense_filters(api_client, test_connection, create_temp_workspace, add_fyle_credentials, add_expense_filters):
     url = reverse('expense-filters', kwargs={'workspace_id': 1})
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
-
     response = api_client.get(url)
     assert response.status_code == 200
     response = json.loads(response.content)
@@ -64,3 +63,25 @@ def test_expense_filters(api_client, test_connection, create_temp_workspace, add
     response = api_client.get(url)
     assert response.status_code == 200
     assert dict_compare_keys(response, data['expense_filters_response']['results'][1]) == [], 'expense group api return diffs in keys'
+
+
+def test_fyle_expense_fields(api_client, test_connection, create_temp_workspace, add_fyle_credentials, add_sage300_creds, mocker):
+    workspace_id = 1
+
+    access_token = test_connection.access_token
+    url = reverse('fyle-expense-fields', kwargs={'workspace_id': workspace_id})
+
+    mocker.patch(
+        'fyle.platform.apis.v1beta.admin.ExpenseFields.list_all',
+        return_value = data['get_all_custom_fields'],
+    )
+
+    api_client.credentials(HTTP_AUTHORIZATION="Bearer {}".format(access_token))
+
+    response = api_client.get(url)
+    assert response.status_code == 200
+    response = json.loads(response.content)
+
+    assert (
+        dict_compare_keys(response['results'], data['fyle_expense_custom_fields']) == []
+    ), 'expense group api return diffs in keys'

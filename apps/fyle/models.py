@@ -103,7 +103,7 @@ class Expense(BaseModel):
 
 class Reimbursement:
     """
-    Creating a dummy class to be able to use
+    Creating a dummy class to be able to user
     fyle_integrations_platform_connector correctly
     """
     pass

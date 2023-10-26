@@ -58,10 +58,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'corsheaders.middleware.CorsPostCsrfMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -100,24 +99,16 @@ FYLE_REST_AUTH_SETTINGS = {
 }
 
 REST_FRAMEWORK = {
-    # 'DEFAULT_PERMISSION_CLASSES': (
-    #     'rest_framework.permissions.IsAuthenticated',
-    #     'apps.workspaces.permissions.WorkspacePermissions'
-    # ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        # 'apps.workspaces.permissions.WorkspacePermissions'
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'fyle_rest_auth.authentication.FyleJWTAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100
 }
-
-
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-#         'LOCATION': 'auth_cache',
-#     }
-# }
 
 Q_CLUSTER = {
     'name': 'sage_desktop_api',
@@ -163,12 +154,6 @@ DATABASES = {
     }
 }
 
-# DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
-
-
-# Password validation
-# https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -184,7 +169,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Fyle Settings
 API_URL = os.environ.get('API_URL')
 FYLE_TOKEN_URI = os.environ.get('FYLE_TOKEN_URI')
@@ -195,10 +179,8 @@ FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
 
-
 SD_API_KEY = os.environ.get('SD_API_KEY')
 SD_API_SECRET = os.environ.get('SD_API_SECRET')
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
@@ -212,7 +194,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
