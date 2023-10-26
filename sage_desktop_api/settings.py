@@ -62,9 +62,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'request_logging.middleware.LoggingMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-    'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -116,6 +114,67 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100
 }
 
+SERVICE_NAME = os.environ.get('SERVICE_NAME')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} %s {asctime} {module} {message} ' % SERVICE_NAME,
+            'style': '{',
+        },
+        'requests': {
+            'format': 'request {levelname} %s {asctime} {message}' % SERVICE_NAME,
+            'style': '{'
+        }
+    },
+    'handlers': {
+        'debug_logs': {
+            'class': 'logging.StreamHandler',
+            'stream': sys.stdout,
+            'formatter': 'verbose'
+        },
+        'request_logs': {
+            'class': 'logging.StreamHandler',
+            'stream': sys.stdout,
+            'formatter': 'requests'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['request_logs'],
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['request_logs'],
+            'propagate': False
+        },
+        'fyle_intacct_api': {
+            'handlers': ['debug_logs'],
+            'level': 'ERROR',
+            'propagate': False
+        },
+        'apps': {
+            'handlers': ['debug_logs'],
+            'level': 'ERROR',
+            'propagate': False
+        },
+         'django_q': {
+            'handlers': ['debug_logs'],
+            'propagate': True,
+        },
+        'fyle_integrations_platform_connector': {
+            'handlers': ['debug_logs'],
+            'propagate': True,
+        },
+        'gunicorn': {
+            'handlers': ['request_logs'],
+            'level': 'INFO',
+            'propagate': False
+        }
+    }
+}
 
 CACHES = {
     'default': {
@@ -173,9 +232,6 @@ DATABASES['cache_db'] = {
 
 DATABASE_ROUTERS = ['sage_desktop_api.cache_router.CacheRouter']
 
-# Password validation
-# https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -203,11 +259,9 @@ FYLE_JOBS_URL = os.environ.get('FYLE_JOBS_URL')
 FYLE_APP_URL = os.environ.get('APP_URL')
 FYLE_EXPENSE_URL = os.environ.get('FYLE_APP_URL')
 
-
 # Sage300 Settings
 SD_API_KEY = os.environ.get('SD_API_KEY')
 SD_API_SECRET = os.environ.get('SD_API_SECRET')
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
@@ -221,7 +275,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/

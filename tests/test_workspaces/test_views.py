@@ -91,14 +91,13 @@ def test_get_of_sage300_creds(api_client, test_connection):
     url = reverse('sage300-creds', kwargs={'workspace_id': response.data['id']})
 
     Sage300Credential.objects.create(
-            identifier='identifier',
-            username='username',
-            password='password',
-            workspace_id=response.data['id'],
-            api_key='apiley',
-            api_secret='apisecret'
-        )
-
+        identifier='identifier',
+        username='username',
+        password='password',
+        workspace_id=response.data['id'],
+        api_key='apiley',
+        api_secret='apisecret'
+    )
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.get(url)
@@ -191,9 +190,8 @@ def test_import_settings(api_client, test_connection):
     response = api_client.post(url)
     workspace_id = response.data['id']
     url = reverse(
-        'import-settings', kwargs={
-            'workspace_id': workspace_id
-        }
+        'import-settings',
+        kwargs={'workspace_id': workspace_id}
     )
 
     payload = {
@@ -203,13 +201,13 @@ def test_import_settings(api_client, test_connection):
     response = api_client.post(url, payload)
     import_settings = ImportSetting.objects.filter(workspace_id=workspace_id).first()
     assert response.status_code == 201
-    assert import_settings.import_categories == True
-    assert import_settings.import_vendors_as_merchants == True
+    assert import_settings.import_categories is True
+    assert import_settings.import_vendors_as_merchants is True
 
     response = api_client.get(url)
     assert response.status_code == 200
-    assert import_settings.import_categories == True
-    assert import_settings.import_vendors_as_merchants == True
+    assert import_settings.import_categories is True
+    assert import_settings.import_vendors_as_merchants is True
 
 
 def test_advanced_settings(api_client, test_connection):
@@ -259,8 +257,8 @@ def test_advanced_settings(api_client, test_connection):
         'report_number',
         'expense_link'
     ]
-    assert response.data['schedule_is_enabled'] == False
-    assert response.data['schedule_id'] == None
+    assert response.data['schedule_is_enabled'] is False
+    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
@@ -283,8 +281,8 @@ def test_advanced_settings(api_client, test_connection):
         'report_number',
         'expense_link'
     ]
-    assert response.data['schedule_is_enabled'] == False
-    assert response.data['schedule_id'] == None
+    assert response.data['schedule_is_enabled'] is False
+    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
@@ -309,8 +307,8 @@ def test_advanced_settings(api_client, test_connection):
         'purpose',
         'report_number'
     ]
-    assert response.data['schedule_is_enabled'] == False
-    assert response.data['schedule_id'] == None
+    assert response.data['schedule_is_enabled'] is False
+    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',

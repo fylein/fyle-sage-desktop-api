@@ -8,7 +8,6 @@ from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
 from fyle_accounting_mappings.models import ExpenseAttribute
 
-from apps.fyle.helpers import get_cluster_domain
 from sage_desktop_api.utils import assert_valid
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from sage_desktop_sdk.exceptions import (
@@ -27,6 +26,7 @@ from apps.workspaces.models import (
     AdvancedSetting
 )
 from apps.users.models import User
+from apps.fyle.helpers import get_cluster_domain
 
 
 class WorkspaceSerializer(serializers.ModelSerializer):
@@ -237,7 +237,7 @@ class WorkspaceAdminSerializer(serializers.Serializer):
         Get Workspace Admins
         """
         workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
-
+        workspace = Workspace.objects.get(id=workspace_id)
         admin_emails = []
 
         users = workspace.user.all()
