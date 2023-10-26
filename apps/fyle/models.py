@@ -100,6 +100,9 @@ class Expense(BaseModel):
     previous_export_state = StringNullField(max_length=255, help_text='Previous export state')
     accounting_export_summary = CustomJsonField(default=dict, help_text='Accounting Export Summary')
 
+    class Meta:
+        db_table = 'expenses'
+
 
 class Reimbursement:
     """
