@@ -216,7 +216,7 @@ def add_accounting_export_expenses():
 
         AccountingExport.objects.update_or_create(
             workspace_id=workspace_id,
-            type='FETCHING_CREDIT_CARD_EXPENSES',
+            type='FETCHING_CREDIT_CARD_EXPENENSES',
             defaults={
                 'status': 'IN_PROGRESS'
             }
