@@ -237,7 +237,7 @@ class WorkspaceAdminSerializer(serializers.Serializer):
         Get Workspace Admins
         """
         workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
-        workspace = Workspace.objects.get(pk=workspace_id)
+
         admin_emails = []
 
         users = workspace.user.all()
