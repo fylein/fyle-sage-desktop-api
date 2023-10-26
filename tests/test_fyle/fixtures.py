@@ -98,6 +98,49 @@ fixtures = {
             }
         ]
     },
+    "errors_response": {
+        "count":3,
+        "next":"None",
+        "previous":"None",
+        "results":[
+            {
+                "id":1,
+                "created_at":"2023-10-26T03:47:16.864421Z",
+                "updated_at":"2023-10-26T03:47:16.864428Z",
+                "type":"EMPLOYEE_MAPPING",
+                "is_resolved": "false",
+                "error_title":"Employee Mapping Error",
+                "error_detail":"Employee Mapping Error",
+                "workspace":1,
+                "accounting_export":"None",
+                "expense_attribute":"None"
+            },
+            {
+                "id":2,
+                "created_at":"2023-10-26T03:47:16.865103Z",
+                "updated_at":"2023-10-26T03:47:16.865108Z",
+                "type":"CATEGORY_MAPPING",
+                "is_resolved": "false",
+                "error_title":"Category Mapping Error",
+                "error_detail":"Category Mapping Error",
+                "workspace":1,
+                "accounting_export":"None",
+                "expense_attribute":"None"
+            },
+            {
+                "id":3,
+                "created_at":"2023-10-26T03:47:16.865303Z",
+                "updated_at":"2023-10-26T03:47:16.865307Z",
+                "type":"SAGE300_ERROR",
+                "is_resolved": "false",
+                "error_title":"Sage Error",
+                "error_detail":"Sage Error",
+                "workspace":1,
+                "accounting_export":"None",
+                "expense_attribute":"None"
+            }
+        ]
+    },
     "fyle_expense_custom_fields": [
         {"field_name": "employee_email", "type": "SELECT", "is_custom": False},
         {"field_name": "claim_number", "type": "TEXT", "is_custom": False},
@@ -134,4 +177,16 @@ fixtures = {
             ]
         }
     ],
+    "fyle_fields_response": [
+        {
+            'attribute_type': 'COST_CENTER',
+            'display_name': 'Cost Center',
+            'is_dependant': False
+        },
+        {
+            'attribute_type': 'PROJECT',
+            'display_name': 'Project',
+            'is_dependant': False
+        }
+    ]
 }
