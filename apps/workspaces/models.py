@@ -11,6 +11,7 @@ from sage_desktop_api.models.fields import (
     BooleanFalseField,
     IntegerNullField,
     CustomJsonField,
+    BooleanTrueField
 )
 
 User = get_user_model()
@@ -54,6 +55,15 @@ class Workspace(models.Model):
 
 class BaseModel(models.Model):
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
+    created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
+    updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
+
+    class Meta:
+        abstract = True
+
+
+class BaseForeignWorkspaceModel(models.Model):
+    workspace = models.ForeignKey(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
 
@@ -160,8 +170,10 @@ class ExportSetting(BaseModel):
     credit_card_expense_state = StringOptionsField(
         choices=CREDIT_CARD_EXPENSE_STATE_CHOICES
     )
-    default_credit_card_account_name = StringNullField(help_text='Credit card account name')
-    default_credit_card_account_id = StringNullField(help_text='Credit Card Account ID')
+    default_ccc_credit_card_account_name = StringNullField(help_text='CCC Credit card account name')
+    default_ccc_credit_card_account_id = StringNullField(help_text='CCC Credit Card Account ID')
+    default_reimbursable_credit_card_account_name = StringNullField(help_text='Reimbursable Credit card account name')
+    default_reimbursable_credit_card_account_id = StringNullField(help_text='Reimbursable Credit card account name')
     credit_card_expense_grouped_by = StringOptionsField(
         choices=CREDIT_CARD_EXPENSES_GROUPED_BY_CHOICES
     )
@@ -170,7 +182,7 @@ class ExportSetting(BaseModel):
     )
     default_vendor_name = StringNullField(help_text='default Vendor Name')
     default_vendor_id = StringNullField(help_text='default Vendor Id')
-    auto_create_vendor = BooleanFalseField(help_text='Auto create vendor')
+    auto_map_employees = BooleanTrueField(help_text='Auto map employees')
 
     class Meta:
         db_table = 'export_settings'
@@ -202,6 +214,7 @@ class AdvancedSetting(BaseModel):
     interval_hours = IntegerNullField(help_text='Interval in hours')
     emails_selected = CustomJsonField(help_text='Emails Selected For Email Notification')
     emails_added = CustomJsonField(help_text='Emails Selected For Email Notification')
+    auto_create_vendor = BooleanFalseField(help_text='Auto create vendor')
 
     class Meta:
         db_table = 'advanced_settings'

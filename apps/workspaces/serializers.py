@@ -6,6 +6,7 @@ from django.core.cache import cache
 from rest_framework import serializers
 from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
+from fyle_accounting_mappings.models import ExpenseAttribute
 
 from sage_desktop_api.utils import assert_valid
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
@@ -16,7 +17,6 @@ from sage_desktop_sdk.exceptions import (
     WebApiClientLocked
 )
 
-from apps.fyle.helpers import get_cluster_domain
 from apps.workspaces.models import (
     Workspace,
     FyleCredential,
@@ -26,6 +26,7 @@ from apps.workspaces.models import (
     AdvancedSetting
 )
 from apps.users.models import User
+from apps.fyle.helpers import get_cluster_domain
 
 
 class WorkspaceSerializer(serializers.ModelSerializer):
@@ -169,6 +170,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         """
         Create Export Settings
         """
+
         workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
         import_settings, _ = ImportSetting.objects.update_or_create(
             workspace_id=workspace_id,
@@ -222,3 +224,28 @@ class AdvancedSettingSerializer(serializers.ModelSerializer):
             workspace.save()
 
         return advanced_setting
+
+
+class WorkspaceAdminSerializer(serializers.Serializer):
+    """
+    Workspace Admin Serializer
+    """
+    admin_emails = serializers.SerializerMethodField()
+
+    def get_admin_emails(self, validated_data):
+        """
+        Get Workspace Admins
+        """
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+        workspace = Workspace.objects.get(id=workspace_id)
+        admin_emails = []
+
+        users = workspace.user.all()
+
+        for user in users:
+            admin = User.objects.get(user_id=user)
+            employee = ExpenseAttribute.objects.filter(value=admin.email, workspace_id=workspace_id, attribute_type='EMPLOYEE').first()
+            if employee:
+                admin_emails.append({'name': employee.detail['full_name'], 'email': admin.email})
+
+        return admin_emails

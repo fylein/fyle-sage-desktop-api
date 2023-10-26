@@ -16,7 +16,8 @@ from apps.workspaces.models import (
     FyleCredential,
     Sage300Credential
 )
-
+from apps.fyle.models import ExpenseFilter
+from apps.accounting_exports.models import AccountingExport, Error
 from sage_desktop_api.tests import settings
 
 from .test_fyle.fixtures import fixtures as fyle_fixtures
@@ -160,4 +161,96 @@ def add_sage300_creds():
             workspace_id=workspace_id,
             api_key='apiley',
             api_secret='apisecret'
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_expense_filters():
+    """
+    Pytest fixture to add expense filters to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        ExpenseFilter.objects.create(
+            condition='employee_email',
+            operator='in',
+            values=['ashwinnnnn.t@fyle.in', 'admin1@fyleforleaf.in'],
+            rank="1",
+            join_by='AND',
+            is_custom=False,
+            custom_field_type='SELECT',
+            workspace_id=workspace_id
+        )
+        ExpenseFilter.objects.create(
+            condition='last_spent_at',
+            operator='lt',
+            values=['2020-04-20 23:59:59+00'],
+            rank="2",
+            join_by=None,
+            is_custom=False,
+            custom_field_type='SELECT',
+            workspace_id=workspace_id
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_accounting_export_expenses():
+    """
+    Pytest fixture to add accounting export to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        AccountingExport.objects.update_or_create(
+            workspace_id=workspace_id,
+            type='FETCHING_REIMBURSABLE_EXPENSES',
+            defaults={
+                'status': 'IN_PROGRESS'
+            }
+        )
+
+        AccountingExport.objects.update_or_create(
+            workspace_id=workspace_id,
+            type='FETCHING_CREDIT_CARD_EXPENENSES',
+            defaults={
+                'status': 'IN_PROGRESS'
+            }
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_errors():
+    """
+    Pytest fixture to add errors to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        Error.objects.create(
+            type='EMPLOYEE_MAPPING',
+            is_resolved=False,
+            error_title='Employee Mapping Error',
+            error_detail='Employee Mapping Error',
+            workspace_id=workspace_id
+        )
+        Error.objects.create(
+            type='CATEGORY_MAPPING',
+            is_resolved=False,
+            error_title='Category Mapping Error',
+            error_detail='Category Mapping Error',
+            workspace_id=workspace_id
+        )
+        Error.objects.create(
+            type='SAGE300_ERROR',
+            is_resolved=False,
+            error_title='Sage Error',
+            error_detail='Sage Error',
+            workspace_id=workspace_id
         )

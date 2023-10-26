@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import EmailValidator
 
 
 class StringNotNullField(models.CharField):
@@ -78,6 +79,17 @@ class StringOptionsField(models.CharField):
         super(StringOptionsField, self).__init__(max_length=max_length, choices=choices, default=default, **kwargs)
 
 
+class IntegerOptionsField(models.IntegerField):
+    description = "Custom String Field with Options"
+
+    def __init__(self, *args, **kwargs):
+        choices = kwargs.pop('choices', [])  # Retrieve choices from kwargs
+        default = kwargs.pop('default', '')  # Retrieve default value from kwargs
+        kwargs['help_text'] = kwargs.get('help_text', 'string field with options')
+        kwargs['null'] = True  # Allow the field to be nullable
+        super(IntegerOptionsField, self).__init__(choices=choices, default=default, **kwargs)
+
+
 class BooleanFalseField(models.BooleanField):
     description = "Custom Boolean Field with Default True"
 
@@ -102,3 +114,20 @@ class BooleanTrueField(models.BooleanField):
         value = getattr(instance, self.attname)
         setattr(instance, self.attname, not value)
         instance.save()
+
+
+class CustomEmailField(models.EmailField):
+    description = "Custom Email Field"
+
+    def __init__(self, *args, **kwargs):
+        kwargs['max_length'] = kwargs.get('max_length', 254)  # Set a default max length for email addresses
+        kwargs['validators'] = [EmailValidator()]  # Add email validation
+        super(CustomEmailField, self).__init__(*args, **kwargs)
+
+
+class FloatNullField(models.FloatField):
+    description = "Custom Float Field with Null"
+
+    def __init__(self, *args, **kwargs):
+        kwargs['null'] = True  # Allow the field to be nullable
+        super(FloatNullField, self).__init__(*args, **kwargs)
