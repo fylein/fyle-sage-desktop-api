@@ -4,11 +4,14 @@ Fyle Serializers
 import logging
 from rest_framework import serializers
 from rest_framework.response import Response
+from rest_framework.exceptions import APIException
 from rest_framework.views import status
 from fyle_integrations_platform_connector import PlatformConnector
 from datetime import datetime, timezone
 from apps.workspaces.models import Workspace, FyleCredential
 from apps.fyle.models import ExpenseFilter
+from apps.fyle.helpers import get_expense_fields
+
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -52,7 +55,7 @@ class ImportFyleAttributesSerializer(serializers.Serializer):
 
         except Exception as exception:
             logger.error('Something unexpected happened workspace_id: %s %s', workspace_id, exception)
-            raise serializers.ValidationError()
+            raise APIException("Internal Server Error", code='server_error')
 
 
 class ExpenseFilterSerializer(serializers.ModelSerializer):
@@ -71,3 +74,20 @@ class ExpenseFilterSerializer(serializers.ModelSerializer):
         expense_filter, _ = ExpenseFilter.objects.update_or_create(workspace_id=workspace_id, rank=validated_data['rank'], defaults=validated_data)
 
         return expense_filter
+
+
+class ExpenseFieldSerializer(serializers.Serializer):
+    """
+    Workspace Admin Serializer
+    """
+    expense_fields = serializers.SerializerMethodField()
+
+    def get_expense_fields(self, validated_data):
+        """
+        Get Expense Fields
+        """
+
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+        expense_fields = get_expense_fields(workspace_id=workspace_id)
+
+        return expense_fields

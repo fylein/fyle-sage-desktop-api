@@ -1,7 +1,8 @@
 import logging
 from rest_framework import generics
 from sage_desktop_api.utils import LookupFieldMixin
-from apps.fyle.serializers import ImportFyleAttributesSerializer, ExpenseFilterSerializer
+from apps.workspaces.models import Workspace
+from apps.fyle.serializers import ImportFyleAttributesSerializer, ExpenseFilterSerializer, ExpenseFieldSerializer
 from apps.fyle.models import ExpenseFilter
 
 logger = logging.getLogger(__name__)
@@ -32,3 +33,12 @@ class ExpenseFilterDeleteView(generics.DestroyAPIView):
 
     queryset = ExpenseFilter.objects.all()
     serializer_class = ExpenseFilterSerializer
+
+
+class CustomFieldView(generics.ListAPIView):
+    """
+    Custom Field view
+    """
+
+    serializer_class = ExpenseFieldSerializer
+    queryset = Workspace.objects.all()
