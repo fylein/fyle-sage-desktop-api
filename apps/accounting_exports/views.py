@@ -22,7 +22,7 @@ class AccountingExportView(LookupFieldMixin, generics.ListAPIView):
     filterset_fields = {"type": {"in"}, "updated_at": {"lte", "gte"}, "id": {"in"}, "status": {"in"}}
 
 
-class AccountingExportCountView(generics.ListAPIView):
+class AccountingExportCountView(generics.RetrieveAPIView):
     """
     Retrieve Accounting Export Count
     """
