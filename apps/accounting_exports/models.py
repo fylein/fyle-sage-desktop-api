@@ -10,9 +10,10 @@ from sage_desktop_api.models.fields import (
     CustomDateTimeField,
     BooleanFalseField,
     TextNotNullField,
-    StringOptionsField
+    StringOptionsField,
+    IntegerNullField
 )
-from apps.workspaces.models import BaseForeignWorkspaceModel
+from apps.workspaces.models import BaseForeignWorkspaceModel, BaseModel
 from apps.fyle.models import Expense
 
 TYPE_CHOICES = (
@@ -22,8 +23,12 @@ TYPE_CHOICES = (
     ('FETCHING_CREDIT_CARD_EXPENENSES', 'FETCHING_CREDIT_CARD_EXPENENSES')
 )
 
-
 ERROR_TYPE_CHOICES = (('EMPLOYEE_MAPPING', 'EMPLOYEE_MAPPING'), ('CATEGORY_MAPPING', 'CATEGORY_MAPPING'), ('SAGE300_ERROR', 'SAGE300_ERROR'))
+
+EXPORT_MODE_CHOICES = (
+    ('MANUAL', 'MANUAL'),
+    ('AUTO', 'AUTO')
+)
 
 
 class AccountingExport(BaseForeignWorkspaceModel):
@@ -66,3 +71,19 @@ class Error(BaseForeignWorkspaceModel):
 
     class Meta:
         db_table = 'errors'
+
+
+class AccountingExportSummary(BaseModel):
+    """
+    Table to store accounting export summary
+    """
+    id = models.AutoField(primary_key=True)
+    last_exported_at = CustomDateTimeField(help_text='Last exported at datetime')
+    next_export_at = CustomDateTimeField(help_text='next export datetime')
+    export_mode = StringOptionsField(choices=EXPORT_MODE_CHOICES, help_text='Export mode')
+    total_accounting_export_count = IntegerNullField(help_text='Total count of accounting export exported')
+    successful_accounting_export_count = IntegerNullField(help_text='count of successful accounting export')
+    failed_accounting_export_count = IntegerNullField(help_text='count of failed accounting export')
+
+    class Meta:
+        db_table = 'accounting_export_summary'
