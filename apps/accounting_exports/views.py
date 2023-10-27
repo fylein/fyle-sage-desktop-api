@@ -33,8 +33,8 @@ class AccountingExportCountView(generics.RetrieveAPIView):
         if request.query_params.get("status__in"):
             params["status__in"] = request.query_params.get("status__in").split(",")
 
-        return Response({"count" : AccountingExport.objects.filter(**params).count()})
-    
+        return Response({"count": AccountingExport.objects.filter(**params).count()})
+
 
 class ErrorsView(LookupFieldMixin, generics.ListAPIView):
     serializer_class = ErrorSerializer
