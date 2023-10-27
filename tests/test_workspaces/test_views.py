@@ -132,6 +132,8 @@ def test_export_settings(api_client, test_connection):
         'credit_card_expense_state': 'PAID',
         'credit_card_expense_grouped_by': 'EXPENSE',
         'credit_card_expense_date': 'CREATED_AT',
+        'default_reimbursable_account_name': 'reimbursable account',
+        'default_reimbursable_account_id': '123',
         'default_ccc_credit_card_account_name': 'CCC credit card account',
         'default_ccc_credit_card_account_id': '123',
         'default_reimbursable_credit_card_account_name': 'reimbursable credit card account',
@@ -155,6 +157,8 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
     assert export_settings.credit_card_expense_date == 'CREATED_AT'
+    assert export_settings.default_reimbursable_account_name == 'reimbursable account'
+    assert export_settings.default_reimbursable_account_id == '123'
     assert export_settings.default_ccc_credit_card_account_name == 'CCC credit card account'
     assert export_settings.default_ccc_credit_card_account_id == '123'
     assert export_settings.default_reimbursable_credit_card_account_name == 'reimbursable credit card account'
@@ -173,6 +177,8 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
     assert export_settings.credit_card_expense_date == 'CREATED_AT'
+    assert export_settings.default_reimbursable_account_name == 'reimbursable account'
+    assert export_settings.default_reimbursable_account_id == '123'
     assert export_settings.default_ccc_credit_card_account_name == 'CCC credit card account'
     assert export_settings.default_ccc_credit_card_account_id == '123'
     assert export_settings.default_reimbursable_credit_card_account_name == 'reimbursable credit card account'
