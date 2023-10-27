@@ -17,7 +17,7 @@ from apps.workspaces.models import (
     Sage300Credential
 )
 from apps.fyle.models import ExpenseFilter
-from apps.accounting_exports.models import AccountingExport, Error
+from apps.accounting_exports.models import AccountingExport, Error, AccountingExportSummary
 from sage_desktop_api.tests import settings
 
 from .test_fyle.fixtures import fixtures as fyle_fixtures
@@ -253,4 +253,25 @@ def add_errors():
             error_title='Sage Error',
             error_detail='Sage Error',
             workspace_id=workspace_id
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_accounting_export_summary():
+    """
+    Pytest fixture to add accounting export summary to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        AccountingExportSummary.objects.create(
+            workspace_id=workspace_id,
+            last_exported_at = datetime.now(tz=timezone.utc),
+            next_export_at = datetime.now(tz=timezone.utc),
+            export_mode = 'AUTO',
+            total_accounting_export_count = 10,
+            successful_accounting_export_count = 5,
+            failed_accounting_export_count = 5
         )
