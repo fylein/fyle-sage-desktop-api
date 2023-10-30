@@ -2,7 +2,7 @@
 Sage Desktop Jobs
 """
 from sage_desktop_sdk.core.client import Client
-from sage_desktop_sdk.core.schema.read_only import Job, CostCode, Category
+from sage_desktop_sdk.core.schema.read_only import Job, StandardCategory, StandardCostCode
 
 
 class Jobs(Client):
@@ -12,32 +12,29 @@ class Jobs(Client):
     GET_COST_CODES = '/JobCosting/Api/V1/JobCost.svc/costcodes'
     GET_CATEGORIES = '/JobCosting/Api/V1/JobCost.svc/categories'
 
-
     def get_all_jobs(self):
         """
         Get all Jobs
         :return: List of Dicts in Jobs Schema
         """
-        jobs =  self._query_get_all(Jobs.GET_JOBS)
+        jobs = self._query_get_all(Jobs.GET_JOBS)
         for job in jobs:
             yield Job.from_dict(job)
 
-
-    def get_all_costcodes(self):
+    def get_standard_costcodes(self):
         """
-        Get all Cost Codes
+        Get all standard Cost Codes
         :return: List of Dicts in cost code Schema
         """
-        costcodes =  self._query_get_all(Jobs.GET_COST_CODES)
+        costcodes = self._query_get_all(Jobs.GET_COST_CODES)
         for costcode in costcodes:
-            yield CostCode.from_dict(costcode)
+            yield StandardCostCode.from_dict(costcode)
 
-
-    def get_all_categories(self):
+    def get_standard_categories(self):
         """
-        Get all Categories
-        :return: List of Dicts in Cstegories Schema
+        Get all standard Categories
+        :return: List of Dicts in Categories Schema
         """
-        categories =  self._query_get_all(Jobs.GET_CATEGORIES)
+        categories = self._query_get_all(Jobs.GET_CATEGORIES)
         for category in categories:
-            yield Category.from_dict(category)
+            yield StandardCategory.from_dict(category)

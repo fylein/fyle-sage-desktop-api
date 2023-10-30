@@ -11,7 +11,6 @@ class Vendors(Client):
     GET_VENDORS = '/AccountsPayable/Api/V1/Vendor.svc/vendors'
     GET_VENDOR_TYPES = '/AccountsPayable/Api/V1/Vendor.svc/vendors/types'
 
-
     def get_all(self):
         """
         Get all Vendors
@@ -20,7 +19,6 @@ class Vendors(Client):
         vendors = self._query_get_all(Vendors.GET_VENDORS)
         for vendor in vendors:
             yield Vendor.from_dict(vendor)
-
 
     def get_vendor_types(self):
         """

@@ -102,22 +102,22 @@ class SageDesktopConnector:
         self._sync_data(jobs, 'JOB', 'job', self.workspace_id, field_names)
         return []
 
-    def sync_cost_codes(self):
+    def sync_standard_cost_codes(self):
         """
-        Synchronize cost codes from Sage Desktop SDK to your application
+        Synchronize standard cost codes from Sage Desktop SDK to your application
         """
         cost_codes = self.connection.jobs.get_all_costcodes()
         field_names = ['code', 'version', 'is_standard', 'description']
-        self._sync_data(cost_codes, 'COST_CODE', 'cost_code', self.workspace_id, field_names)
+        self._sync_data(cost_codes, 'STANDARD_COST_CODE', 'standard_cost_code', self.workspace_id, field_names)
         return []
 
-    def sync_categories(self):
+    def sync_standard_categories(self):
         """
-        Synchronize categories from Sage Desktop SDK to your application
+        Synchronize standard categories from Sage Desktop SDK to your application
         """
         categories = self.connection.jobs.get_all_categories()
         field_names = ['code', 'version', 'description', 'accumulation_name']
-        self._sync_data(categories, 'CATEGORY', 'category', self.workspace_id, field_names)
+        self._sync_data(categories, 'STANDARD_CATEGORY', 'standard_category', self.workspace_id, field_names)
         return []
 
     def sync_commitments(self):
@@ -130,4 +130,13 @@ class SageDesktopConnector:
             'created_on_utc', 'date', 'vendor_id', 'job_id'
         ]
         self._sync_data(commitments, 'COMMITMENT', 'commitment', self.workspace_id, field_names)
+        return []
+
+    def sync_cost_codes(self):
+        """
+        Synchronize cost codes from Sage Desktop SDK to your application
+        """
+        cost_codes = self.connection.jobs.get_all_costcodes()
+        field_names = ['code', 'version', 'job_id', 'standard_costcode_id']
+        self._sync_data(cost_codes, 'COST_CODE', 'cost_code', self.workspace_id, field_names)
         return []
