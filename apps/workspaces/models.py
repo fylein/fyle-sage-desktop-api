@@ -170,6 +170,8 @@ class ExportSetting(BaseModel):
     credit_card_expense_state = StringOptionsField(
         choices=CREDIT_CARD_EXPENSE_STATE_CHOICES
     )
+    default_reimbursable_account_name = StringNullField(help_text='Reimbursable account name')
+    default_reimbursable_account_id = StringNullField(help_text='Reimbursable Account ID')
     default_ccc_credit_card_account_name = StringNullField(help_text='CCC Credit card account name')
     default_ccc_credit_card_account_id = StringNullField(help_text='CCC Credit Card Account ID')
     default_reimbursable_credit_card_account_name = StringNullField(help_text='Reimbursable Credit card account name')
