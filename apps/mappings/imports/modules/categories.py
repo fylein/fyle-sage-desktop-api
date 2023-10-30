@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 from apps.mappings.imports.modules.base import Base
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, CategoryMapping
 
 
 class Category(Base):
@@ -54,3 +54,29 @@ class Category(Base):
                 payload.append(category)
 
         return payload
+
+    def create_mappings(self):
+        """
+        Create mappings for Category module
+        """
+        filters = {
+            "workspace_id": self.workspace_id,
+            "attribute_type": self.destination_field,
+            "destination_account__isnull": True
+        }
+
+        # get all the destination attributes that have category mappings as null
+        destination_attributes: List[
+            DestinationAttribute
+        ] = DestinationAttribute.objects.filter(**filters)
+
+        destination_attributes_without_duplicates = []
+        destination_attributes_without_duplicates = self.remove_duplicate_attributes(
+            destination_attributes
+        )
+
+        CategoryMapping.bulk_create_mappings(
+            destination_attributes_without_duplicates,
+            self.destination_field,
+            self.workspace_id,
+        )

@@ -112,6 +112,12 @@ class Base:
 
         self.construct_payload_and_import_to_fyle(platform, import_log)
 
+        self.sync_expense_attributes(platform)
+
+        self.create_mappings()
+
+        self.resolve_expense_attribute_errors()
+
     def create_mappings(self):
         """
         Create mappings
@@ -123,7 +129,6 @@ class Base:
             mapping__isnull=True
         ).order_by('value', 'id')
         destination_attributes_without_duplicates = self.remove_duplicate_attributes(destination_attributes)
-
         if destination_attributes_without_duplicates:
             Mapping.bulk_create_mappings(
                 destination_attributes_without_duplicates,
