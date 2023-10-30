@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class Account:
     id: str
@@ -8,7 +9,6 @@ class Account:
     is_active: bool
     is_archived: bool
     name: int
-
 
     @classmethod
     def from_dict(cls, account_dict):
@@ -106,7 +106,6 @@ class Commitment:
     was_printed: bool
     tax_group_id: str
 
-
     @classmethod
     def from_dict(cls, commitment):
         return cls(
@@ -182,7 +181,6 @@ class Job:
     should_use_project_management: bool
     status: int
 
-
     @classmethod
     def from_dict(cls, job_dict):
         return cls(
@@ -225,7 +223,7 @@ class Job:
 
 
 @dataclass
-class CostCode:
+class StandardCostCode:
     id: str
     version: int
     code: str
@@ -234,7 +232,6 @@ class CostCode:
     is_archived: bool
     is_standard: bool
     name: str
-
 
     @classmethod
     def from_dict(cls, costcode_dict):
@@ -251,7 +248,7 @@ class CostCode:
 
 
 @dataclass
-class Category:
+class StandardCategory:
     id: str
     version: int
     accumulation_name: str
@@ -260,7 +257,6 @@ class Category:
     is_active: bool
     is_archived: bool
     name: str
-
 
     @classmethod
     def from_dict(cls, category_dict):
@@ -284,3 +280,139 @@ class OperationStatusResponse:
     ReceivedOn: str
     DisabledOn: str
     CompletedOn: str
+
+
+@dataclass
+class CostCode:
+    code: str
+    cost_code_status: int
+    created_on_utc: str
+    estimate: float
+    estimate_units: float
+    has_external_id: bool
+    id: str
+    is_active: bool
+    is_archived: bool
+    is_group_code: bool
+    job_id: str
+    labor_estimate_units: float
+    misc1_amount: float
+    misc2_amount: float
+    misc3_amount: float
+    misc4_amount: float
+    misc5_amount: float
+    misc6_amount: float
+    name: str
+    original_production_units_estimate: float
+    percent_complete: float
+    previous_percent_complete: float
+    production_estimate_units: float
+    production_unit_of_measure: str
+    production_units_in_place: float
+    standard_cost_code_id: str
+    version: int
+
+    @classmethod
+    def from_dict(cls, data_dict):
+        return cls(
+            code=data_dict['Code'],
+            cost_code_status=data_dict['CostCodeStatus'],
+            created_on_utc=data_dict['CreatedOnUtc'],
+            estimate=data_dict['Estimate'],
+            estimate_units=data_dict['EstimateUnits'],
+            has_external_id=data_dict['HasExternalId'],
+            id=data_dict['Id'],
+            is_active=data_dict['IsActive'],
+            is_archived=data_dict['IsArchived'],
+            is_group_code=data_dict['IsGroupCode'],
+            job_id=data_dict['JobId'],
+            labor_estimate_units=data_dict['LaborEstimateUnits'],
+            misc1_amount=data_dict['Misc1Amount'],
+            misc2_amount=data_dict['Misc2Amount'],
+            misc3_amount=data_dict['Misc3Amount'],
+            misc4_amount=data_dict['Misc4Amount'],
+            misc5_amount=data_dict['Misc5Amount'],
+            misc6_amount=data_dict['Misc6Amount'],
+            name=data_dict['Name'],
+            original_production_units_estimate=data_dict['OriginalProductionUnitsEstimate'],
+            percent_complete=data_dict['PercentComplete'],
+            previous_percent_complete=data_dict['PreviousPercentComplete'],
+            production_estimate_units=data_dict['ProductionEstimateUnits'],
+            production_unit_of_measure=data_dict['ProductionUnitOfMeasure'],
+            production_units_in_place=data_dict['ProductionUnitsInPlace'],
+            standard_cost_code_id=data_dict['StandardCostCodeId'],
+            version=data_dict['Version']
+        )
+
+
+@dataclass
+class Category:
+    id: str
+    version: int
+    approved_commitment_changes: float
+    approved_estimate_changes: float
+    approved_estimate_unit_changes: float
+    code: str
+    commitment_invoiced: float
+    cost_code_id: str
+    created_on_utc: str
+    estimate: float
+    estimate_unit_of_measure: str
+    estimate_units: float
+    has_external_id: bool
+    is_active: bool
+    is_archived: bool
+    job_id: str
+    job_to_date_cost: float
+    job_to_date_dollars_paid: float
+    job_to_date_units: float
+    month_to_date_cost: float
+    month_to_date_dollars_paid: float
+    month_to_date_units: float
+    name: str
+    original_commitment: float
+    original_estimate: float
+    original_estimate_units: float
+    percent_complete: float
+    revised_commitment: float
+    standard_category_id: str
+    standard_category_accumulation_name: str
+    standard_category_description: str
+    standard_category_name: str
+
+    @classmethod
+    def from_dict(cls, data_dict):
+        return cls(
+            id=data_dict['Id'],
+            version=data_dict['Version'],
+            approved_commitment_changes=data_dict['ApprovedCommitmentChanges'],
+            approved_estimate_changes=data_dict['ApprovedEstimateChanges'],
+            approved_estimate_unit_changes=data_dict['ApprovedEstimateUnitChanges'],
+            code=data_dict['Code'],
+            commitment_invoiced=data_dict['CommitmentInvoiced'],
+            cost_code_id=data_dict['CostCodeId'],
+            created_on_utc=data_dict['CreatedOnUtc'],
+            estimate=data_dict['Estimate'],
+            estimate_unit_of_measure=data_dict['EstimateUnitOfMeasure'],
+            estimate_units=data_dict['EstimateUnits'],
+            has_external_id=data_dict['HasExternalId'],
+            is_active=data_dict['IsActive'],
+            is_archived=data_dict['IsArchived'],
+            job_id=data_dict['JobId'],
+            job_to_date_cost=data_dict['JobToDateCost'],
+            job_to_date_dollars_paid=data_dict['JobToDateDollarsPaid'],
+            job_to_date_units=data_dict['JobToDateUnits'],
+            month_to_date_cost=data_dict['MonthToDateCost'],
+            month_to_date_dollars_paid=data_dict['MonthToDateDollarsPaid'],
+            month_to_date_units=data_dict['MonthToDateUnits'],
+            name=data_dict['Name'],
+            original_commitment=data_dict['OriginalCommitment'],
+            original_estimate=data_dict['OriginalEstimate'],
+            original_estimate_units=data_dict['OriginalEstimateUnits'],
+            percent_complete=data_dict['PercentComplete'],
+            revised_commitment=data_dict['RevisedCommitment'],
+            standard_category_id=data_dict['StandardCategoryId'],
+            standard_category_accumulation_name=data_dict['StandardCategoryAccumulationName'],
+            standard_category_description=data_dict['StandardCategoryDescription'],
+            standard_category_name=data_dict['StandardCategoryName']
+        )

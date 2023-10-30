@@ -2,21 +2,29 @@
 import requests
 import json
 from typing import List, Dict
-from sage_desktop_sdk.exceptions import *
+from sage_desktop_sdk.exceptions import (
+    InvalidUserCredentials,
+    InvalidWebApiClientCredentials,
+    UserAccountLocked,
+    WebApiClientLocked,
+    WrongParamsError,
+    NotAcceptableClientError,
+    NotFoundItemError,
+    SageDesktopSDKError,
+    InternalServerError
+)
 
 
 class Client:
     """
     This is base class for all API classes
     """
-    
+
     def __init__(self, url: str = None):
-        
         self.__api_url = None
         self.__user_id = None
         self.__user_password = None
         self.__cookie = None
-
 
     def set_user_id_and_password(self, user_id: str, user_password: str):
         """
@@ -28,7 +36,6 @@ class Client:
         self.__user_id = user_id
         self.__user_password = user_password
 
-
     def set_api_url(self, indentifier: str):
         """
         Set the api url and indentifier for APIs
@@ -36,7 +43,6 @@ class Client:
         :return: None
         """
         self.__api_url = "https://{0}".format(indentifier)
-
 
     def update_cookie(self, api_key: str, api_secret: str):
         """
@@ -70,16 +76,15 @@ class Client:
 
         if response['Result'] == 1:
             raise InvalidUserCredentials('Invalid User Credentials')
-        
+
         if response['Result'] == 2:
             raise InvalidWebApiClientCredentials('Invalid Webapp Client')
-        
+
         if response['Result'] == 3:
             raise UserAccountLocked('User Account Locked')
-        
+
         if response['Result'] == 4:
             raise WebApiClientLocked('Web API client Locked')
-
 
     def _query_get_all(self, url: str) -> List[Dict]:
         """
@@ -88,7 +93,7 @@ class Client:
         :param object_type: type of object
         :return: list of objects
         """
-        
+
         request_url = '{0}{1}'.format(self.__api_url, url)
         api_headers = {
             'Cookie': self.__cookie,
@@ -96,11 +101,11 @@ class Client:
         }
 
         response = requests.get(url=request_url, headers=api_headers)
-        
+
         if response.status_code == 200:
             data = json.loads(response.text)
             return data
-        
+
         if response.status_code == 400:
             raise WrongParamsError('Some of the parameters are wrong', response.text)
 
@@ -114,7 +119,6 @@ class Client:
             raise InternalServerError('Internal server error', response.text)
 
         raise SageDesktopSDKError('Error: {0}'.format(response.status_code), response.text)
-
 
     def _query_get_by_id(self, url: str) -> List[Dict]:
         """
@@ -149,7 +153,6 @@ class Client:
             raise InternalServerError('Internal server error', response.text)
 
         raise SageDesktopSDKError('Error: {0}'.format(response.status_code), response.text)
-
 
     def _post_request(self, url: str, data=None) -> Dict:
         """
