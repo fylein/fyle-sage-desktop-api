@@ -9,7 +9,8 @@ from sage_desktop_api.models.fields import (
     CustomJsonField,
     CustomDateTimeField,
     CustomEmailField,
-    FloatNullField
+    FloatNullField,
+    IntegerNotNullField,
 )
 from apps.workspaces.models import BaseModel, BaseForeignWorkspaceModel
 
@@ -102,6 +103,26 @@ class Expense(BaseModel):
 
     class Meta:
         db_table = 'expenses'
+
+
+class DependentFieldSetting(BaseModel):
+    """
+    Fyle Dependent Fields
+    DB Table: dependent_field_settings:
+    """
+    id = models.AutoField(primary_key=True)
+    is_import_enabled = BooleanFalseField(help_text='Is Import Enabled')
+    project_field_id = IntegerNotNullField(help_text='Fyle Source Field ID')
+    cost_code_field_name = StringNotNullField(help_text='Fyle Cost Code Field Name')
+    cost_code_field_id = StringNotNullField(help_text='Fyle Cost Code Field ID')
+    cost_code_placeholder = models.TextField(blank=True, null=True, help_text='Placeholder for Cost code')
+    category_field_name = StringNotNullField(max_length=255, help_text='Fyle Cost Type Field Name')
+    category_field_id = StringNotNullField(help_text='Fyle Cost Type Field ID')
+    category_placeholder = models.TextField(blank=True, null=True, help_text='Placeholder for Cost Type')
+    last_successful_import_at = CustomDateTimeField(null=True, help_text='Last Successful Import At')
+
+    class Meta:
+        db_table = 'dependent_field_settings'
 
 
 class Reimbursement:
