@@ -14,8 +14,6 @@ class ImportSage300AttributesView(generics.CreateAPIView):
     """
     Import Sage300 Attributes View
     """
-    authentication_classes = []
-    permission_classes = []
     serializer_class = ImportSage300AttributesSerializer
 
 
