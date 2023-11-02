@@ -161,8 +161,8 @@ class Sage300Categories(BaseForeignWorkspaceModel):
         cost_code_ids = [category.cost_code_id for category in list_of_categories]
         job_ids = [category.job_id for category in list_of_categories]
 
-        job_name_mapping = {attr.destination_id: attr.value for attr in DestinationAttribute.objects.filter(destination_id__in=job_ids)}
-        cost_code_name_mapping = {attr.destination_id: attr.value for attr in DestinationAttribute.objects.filter(destination_id__in=cost_code_ids)}
+        job_name_mapping = {attr.destination_id: attr.value for attr in DestinationAttribute.objects.filter(destination_id__in=job_ids, workspace_id=workspace_id)}
+        cost_code_name_mapping = {attr.destination_id: attr.value for attr in DestinationAttribute.objects.filter(destination_id__in=cost_code_ids, workspace_id=workspace_id)}
 
         for category in list_of_categories:
             job_name = job_name_mapping.get(category.job_id)
