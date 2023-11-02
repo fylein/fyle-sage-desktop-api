@@ -13,7 +13,6 @@ class ImportFyleAttributesView(generics.CreateAPIView):
     """
     Import Fyle Attributes View
     """
-
     serializer_class = ImportFyleAttributesSerializer
 
 
