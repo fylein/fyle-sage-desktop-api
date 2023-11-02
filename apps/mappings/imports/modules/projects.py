@@ -34,6 +34,7 @@ class Project(Base):
         Construct Fyle payload for Project module
         :param paginated_destination_attributes: List of paginated destination attributes
         :param existing_fyle_attributes_map: Existing Fyle attributes map
+        :param is_auto_sync_status_allowed: Is auto sync status allowed
         :return: Fyle payload
         """
         payload = []
