@@ -9,6 +9,7 @@ import pytest
 from rest_framework.test import APIClient
 from fyle.platform.platform import Platform
 from fyle_rest_auth.models import User, AuthToken
+from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
@@ -274,4 +275,33 @@ def add_accounting_export_summary():
             total_accounting_export_count = 10,
             successful_accounting_export_count = 5,
             failed_accounting_export_count = 5
+        )
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_project_mappings():
+    """
+    Pytest fixtue to add project mappings to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            destination_id='10064',
+            detail='Sage 300 Project - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            destination_id='10081',
+            detail='Sage 300 Project - Platform APIs, Id - 10081',
+            active=True
         )
