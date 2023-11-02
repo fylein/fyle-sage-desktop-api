@@ -9,7 +9,6 @@ from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.workspaces.models import Workspace, Sage300Credential
 from apps.sage300.helpers import sync_dimensions, check_interval_and_sync_dimension
-from apps.sage300.dependent_fields import import_dependent_fields_to_fyle
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -79,8 +78,6 @@ class Sage300FieldSerializer(serializers.Serializer):
     display_name = serializers.CharField()
 
     def format_sage300_fields(self, workspace_id):
-
-        import_dependent_fields_to_fyle(workspace_id=workspace_id)
         attribute_types = [
             "VENDOR",
             "ACCOUNT",
