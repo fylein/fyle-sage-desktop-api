@@ -10,23 +10,15 @@ def sync_sage300_attributes(sage300_attribute_type: str, workspace_id: int):
         workspace_id=workspace_id
     )
 
-    if sage300_attribute_type == 'JOB':
-        sage300_connection.sync_jobs()
+    sync_functions = {
+        'JOB': sage300_connection.sync_jobs,
+        'COST_CODE': sage300_connection.sync_cost_codes,
+        'CATEGORY': sage300_connection.sync_categories,
+        'VENDOR': sage300_connection.sync_vendors,
+        'COMMITMENT': sage300_connection.sync_commitments,
+        'STANDARD_CATEGORY': sage300_connection.sync_standard_categories,
+        'STANDARD_COST_CODE': sage300_connection.sync_standard_cost_codes,
+    }
 
-    elif sage300_attribute_type == 'COST_CODE':
-        sage300_connection.sync_cost_codes()
-
-    elif sage300_attribute_type == 'CATEGORY':
-        sage300_connection.sync_categories()
-
-    elif sage300_attribute_type == 'VENDOR':
-        sage300_connection.sync_vendors()
-
-    elif sage300_attribute_type == 'COMMITMENT':
-        sage300_connection.sync_commitments()
-
-    elif sage300_attribute_type == 'STANDARD_CATEGORY':
-        sage300_connection.sync_standard_categories()
-
-    elif sage300_attribute_type == 'STANDARD_COST_CODE':
-        sage300_connection.sync_standard_cost_codes()
+    sync_function = sync_functions[sage300_attribute_type]
+    sync_function()
