@@ -1,7 +1,6 @@
 from apps.mappings.imports.modules.projects import Project
 from fyle_accounting_mappings.models import DestinationAttribute
 from .fixtures import data
-from apps.workspaces.models import Workspace
 
 
 def test_construct_fyle_payload(api_client, test_connection, mocker, create_temp_workspace, add_sage300_creds, add_fyle_credentials, add_project_mappings):

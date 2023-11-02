@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 from apps.mappings.imports.modules.base import Base
-from fyle_accounting_mappings.models import DestinationAttribute, CategoryMapping
+from fyle_accounting_mappings.models import DestinationAttribute
 
 
 class Project(Base):
