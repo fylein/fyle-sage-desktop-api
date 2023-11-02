@@ -277,6 +277,7 @@ def add_accounting_export_summary():
             failed_accounting_export_count = 5
         )
 
+
 @pytest.fixture()
 @pytest.mark.django_db(databases=['default'])
 def add_project_mappings():
