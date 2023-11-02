@@ -27,12 +27,14 @@ class Category(Base):
     def construct_fyle_payload(
         self,
         paginated_destination_attributes: List[DestinationAttribute],
-        existing_fyle_attributes_map: object
+        existing_fyle_attributes_map: object,
+        is_auto_sync_status_allowed: bool
     ):
         """
         Construct Fyle payload for Category module
         :param paginated_destination_attributes: List of paginated destination attributes
         :param existing_fyle_attributes_map: Existing Fyle attributes map
+        :param is_auto_sync_status_allowed: Is auto sync status allowed
         :return: Fyle payload
         """
         payload = []
@@ -47,10 +49,9 @@ class Category(Base):
             # Create a new category if it does not exist in Fyle
             if attribute.value.lower() not in existing_fyle_attributes_map:
                 payload.append(category)
-            # Disable the existing category in Fyle if auto-sync status is
-            # allowed and the destination_attributes is inactive
-            elif not attribute.active:
-                category["id"] = existing_fyle_attributes_map[attribute.value.lower()]
+            # Disable the existing category in Fyle if auto-sync status is allowed and the destination_attributes is inactive
+            elif is_auto_sync_status_allowed and not attribute.active:
+                category['id'] = existing_fyle_attributes_map[attribute.value.lower()]
                 payload.append(category)
 
         return payload
