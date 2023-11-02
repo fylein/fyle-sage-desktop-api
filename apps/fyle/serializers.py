@@ -13,7 +13,7 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 
 from datetime import datetime, timezone
 from apps.workspaces.models import Workspace, FyleCredential
-from apps.fyle.models import ExpenseFilter
+from apps.fyle.models import ExpenseFilter, DependentFieldSetting
 from apps.fyle.helpers import get_expense_fields
 
 
@@ -131,3 +131,16 @@ class FyleFieldsSerializer(serializers.Serializer):
             })
 
         return attributes_list
+
+
+class DependentFieldSettingSerializer(serializers.ModelSerializer):
+    """
+    Dependent Field serializer
+    """
+    project_field_id = serializers.IntegerField(required=False)
+    cost_code_field_id = serializers.IntegerField(required=False)
+    category_field_id = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = DependentFieldSetting
+        fields = '__all__'
