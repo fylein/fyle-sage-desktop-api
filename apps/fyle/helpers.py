@@ -122,3 +122,9 @@ def get_fyle_orgs(refresh_token: str, cluster_domain: str):
     api_url = '{0}/api/orgs/'.format(cluster_domain)
 
     return get_request(api_url, {}, refresh_token)
+
+
+def connect_to_platform(workspace_id: int) -> PlatformConnector:
+    fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
+
+    return PlatformConnector(fyle_credentials=fyle_credentials)

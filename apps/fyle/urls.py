@@ -15,7 +15,14 @@ Including another URLconf
 """
 
 from django.urls import path
-from apps.fyle.views import ImportFyleAttributesView, ExpenseFilterView, ExpenseFilterDeleteView, CustomFieldView, FyleFieldsView
+from apps.fyle.views import (
+    ImportFyleAttributesView,
+    ExpenseFilterView,
+    ExpenseFilterDeleteView,
+    CustomFieldView,
+    FyleFieldsView,
+    DependentFieldSettingView
+)
 
 
 urlpatterns = [
@@ -24,4 +31,5 @@ urlpatterns = [
     path('expense_filters/', ExpenseFilterView.as_view(), name='expense-filters'),
     path('expense_fields/', CustomFieldView.as_view(), name='fyle-expense-fields'),
     path('fields/', FyleFieldsView.as_view(), name='fyle-fields'),
+    path('dependent_field_settings/', DependentFieldSettingView.as_view(), name='dependent-field')
 ]
