@@ -142,9 +142,7 @@ def import_dependent_fields_to_fyle(workspace_id: str):
 
     try:
         platform = connect_to_platform(workspace_id)
-        print('i am here')
         sync_sage300_attributes('JOB', workspace_id)
         post_dependent_expense_field_values(workspace_id, dependent_field, platform)
     except Exception as exception:
-        print(exception)
         logger.error('Exception while importing dependent fields to fyle - %s', exception)
