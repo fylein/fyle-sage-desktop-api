@@ -71,10 +71,8 @@ def create_dependent_custom_field_in_fyle(workspace_id: int, fyle_attribute_type
 
 def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict) -> List[str]:
     projects = Sage300Categories.objects.filter(**filters).values('job_name').annotate(cost_codes=ArrayAgg('cost_code_name', distinct=True))
-    print('projecsa', projects)
     projects_from_categories = [project['job_name'] for project in projects]
 
-    print('prposihdfopid', projects_from_categories)
     posted_cost_codes = []
 
     existing_projects_in_fyle = ExpenseAttribute.objects.filter(
@@ -85,9 +83,7 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
 
     for project in projects:
         payload = []
-        print('sposop, 1', project)
         for cost_code in project['cost_codes']:
-            print('sdf;ls', cost_code)
             if project['job_name'] in existing_projects_in_fyle:
                 payload.append({
                     'parent_expense_field_id': dependent_field_setting.project_field_id,
@@ -96,7 +92,6 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
                     'expense_field_value': cost_code,
                     'is_enabled': True
                 })
-                print('kya mai yha hu', payload)
                 sleep(0.2)
                 platform.expense_fields.bulk_post_dependent_expense_field_values(payload)
                 posted_cost_codes.append(cost_code)
@@ -118,7 +113,6 @@ def post_dependent_cost_type(dependent_field_setting: DependentFieldSetting, pla
             } for cost_type in category['sage300_categories']
         ]
 
-        print('sdfsdf', payload)
         if payload:
             sleep(0.2)
             platform.expense_fields.bulk_post_dependent_expense_field_values(payload)
@@ -136,7 +130,6 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
     #     filters['updated_at__gte'] = dependent_field_setting.last_successful_import_at
 
     posted_cost_types = post_dependent_cost_code(dependent_field_setting, platform, filters)
-    print('postrwd cost code', posted_cost_types)
     if posted_cost_types:
         filters['cost_code_name__in'] = posted_cost_types
         post_dependent_cost_type(dependent_field_setting, platform, filters)
@@ -149,9 +142,7 @@ def import_dependent_fields_to_fyle(workspace_id: str):
 
     try:
         platform = connect_to_platform(workspace_id)
-        print('i am here')
-        # sync_sage300_attributes('CATEGORY', workspace_id)
-        print('i corssed that')
+        sync_sage300_attributes('JOB', workspace_id)
         post_dependent_expense_field_values(workspace_id, dependent_field, platform)
     except Exception as exception:
         logger.error('Exception while importing dependent fields to fyle - %s', exception)
