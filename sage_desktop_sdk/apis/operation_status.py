@@ -4,6 +4,7 @@ Sage Desktop Operation Status
 from sage_desktop_sdk.core.client import Client
 from sage_desktop_sdk.core.schema.read_only import OperationStatusResponse
 
+
 class OperationStatus(Client):
     """Class for Operation Status API."""
 

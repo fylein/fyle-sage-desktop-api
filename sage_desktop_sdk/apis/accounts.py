@@ -15,6 +15,6 @@ class Accounts(Client):
         Get all Attachables
         :return: List of Dicts in Attachable Schema
         """
-        accounts = self._query_get_all(Accounts.GET_ACCOUNTS)        
+        accounts = self._query_get_all(Accounts.GET_ACCOUNTS)
         for account in accounts:
             yield Account.from_dict(account)

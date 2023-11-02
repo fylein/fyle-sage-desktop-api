@@ -168,11 +168,11 @@ class Base:
         sage300_connection = SageDesktopConnector(credentials_object=sage300_credentials, workspace_id=self.workspace_id)
 
         sync_methods = {
-            'CATEGORY': sage300_connection.sync_categories,
+            'STANDARD_CATEGORY': sage300_connection.sync_standard_categories,
             'JOB': sage300_connection.sync_jobs,
             'COMMITMENT': sage300_connection.sync_commitments,
             'VENDOR': sage300_connection.sync_vendors,
-            'COST_CODES': sage300_connection.sync_cost_codes,
+            'STANDARD_COST_CODES': sage300_connection.sync_standard_cost_codes,
             'ACCOUNT': sage300_connection.sync_accounts,
         }
 

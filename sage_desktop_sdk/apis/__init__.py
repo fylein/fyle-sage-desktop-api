@@ -7,6 +7,8 @@ from .jobs import Jobs
 from .commitments import Commitments
 from .documents import Documents
 from .operation_status import OperationStatus
+from .categories import Categories
+from .cost_codes import CostCodes
 
 __all__ = [
     'Accounts',
@@ -14,5 +16,7 @@ __all__ = [
     'Jobs',
     'Commitments',
     'Documents',
-    'OperationStatus'
+    'OperationStatus',
+    'Categories',
+    'CostCodes'
 ]

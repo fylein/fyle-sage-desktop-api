@@ -49,7 +49,7 @@ def sync_dimensions(sage300_credential: Sage300Credential, workspace_id: int) ->
     sage300_connection = import_string('apps.sage300.utils.SageDesktopConnector')(sage300_credential, workspace_id)
 
     # List of dimensions to sync
-    dimensions = ['accounts', 'vendors', 'commitments', 'jobs', 'categories', 'cost_codes']
+    dimensions = ['categories']
 
     for dimension in dimensions:
         try:
