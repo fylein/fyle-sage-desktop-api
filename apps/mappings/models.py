@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.workspaces.models import BaseModel
+from apps.workspaces.models import BaseForeignWorkspaceModel
 from sage_desktop_api.models.fields import (
     CustomJsonField,
     StringNotNullField,
@@ -18,7 +18,7 @@ IMPORT_STATUS_CHOICES = (
 )
 
 
-class ImportLog(BaseModel):
+class ImportLog(BaseForeignWorkspaceModel):
     """
     Table to store import logs
     """
