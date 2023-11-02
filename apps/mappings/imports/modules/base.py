@@ -45,6 +45,17 @@ class Base:
         """
         return getattr(platform, self.platform_class_name)
 
+    def get_auto_sync_permission(self):
+        """
+        Get the auto sync permission
+        :return: bool
+        """
+        is_auto_sync_status_allowed = False
+        if (self.destination_field == 'PROJECT' and self.source_field == 'PROJECT') or self.source_field == 'CATEGORY':
+            is_auto_sync_status_allowed = True
+
+        return is_auto_sync_status_allowed
+
     def construct_attributes_filter(self, attribute_type: str, paginated_destination_attribute_values: List[str] = []):
         """
         Construct the attributes filter
