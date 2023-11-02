@@ -187,6 +187,8 @@ class Base:
         """
         Construct Payload and Import to fyle in Batches
         """
+        is_auto_sync_status_allowed = self.get_auto_sync_permission()
+
         filters = self.construct_attributes_filter(self.destination_field)
 
         destination_attributes_count = DestinationAttribute.objects.filter(**filters).count()
@@ -209,7 +211,8 @@ class Base:
 
         for paginated_destination_attributes, is_last_batch in destination_attributes_generator:
             fyle_payload = self.setup_fyle_payload_creation(
-                paginated_destination_attributes=paginated_destination_attributes
+                paginated_destination_attributes=paginated_destination_attributes,
+                is_auto_sync_status_allowed=is_auto_sync_status_allowed
             )
 
             self.post_to_fyle_and_sync(
@@ -236,7 +239,8 @@ class Base:
 
     def setup_fyle_payload_creation(
         self,
-        paginated_destination_attributes: List[DestinationAttribute]
+        paginated_destination_attributes: List[DestinationAttribute],
+        is_auto_sync_status_allowed: bool
     ):
         """
         Setup Fyle Payload Creation
@@ -247,7 +251,7 @@ class Base:
         paginated_destination_attribute_values = [attribute.value for attribute in paginated_destination_attributes]
         existing_expense_attributes_map = self.get_existing_fyle_attributes(paginated_destination_attribute_values)
 
-        return self.construct_fyle_payload(paginated_destination_attributes, existing_expense_attributes_map)
+        return self.construct_fyle_payload(paginated_destination_attributes, existing_expense_attributes_map, is_auto_sync_status_allowed)
 
     def get_existing_fyle_attributes(self, paginated_destination_attribute_values: List[str]):
         """
