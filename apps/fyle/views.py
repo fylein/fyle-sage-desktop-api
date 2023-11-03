@@ -64,8 +64,6 @@ class DependentFieldSettingView(generics.CreateAPIView, generics.RetrieveUpdateA
     """
     Dependent Field view
     """
-    authentication_classes = []
-    permission_classes = []
     serializer_class = DependentFieldSettingSerializer
     lookup_field = 'workspace_id'
     queryset = DependentFieldSetting.objects.all()
