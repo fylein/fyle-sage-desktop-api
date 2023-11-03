@@ -105,8 +105,6 @@ class ImportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
     """
     serializer_class = ImportSettingsSerializer
     lookup_field = 'workspace_id'
-    authentication_classes = []
-    permission_classes = []
 
     queryset = ImportSetting.objects.all()
 
