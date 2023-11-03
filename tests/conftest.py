@@ -336,3 +336,33 @@ def add_cost_center_mappings():
             detail='Cost Center - Platform APIs, Id - 10081',
             active=True
         )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_merchant_mappings():
+    """
+    Pytest fixture to add merchant mappings to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='MERCHANT',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            destination_id='10064',
+            detail='Merchant - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='MERCHANT',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            destination_id='10081',
+            detail='Merchant - Platform APIs, Id - 10081',
+            active=True
+        )
