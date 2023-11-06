@@ -117,12 +117,17 @@ class Expense(BaseModel):
         """
         Bulk create expense objects
         """
+
+        # Create an empty list to store expense objects
         expense_objects = []
 
         for expense in expenses:
+            # Iterate through custom property fields and handle empty values
             for custom_property_field in expense['custom_properties']:
                 if expense['custom_properties'][custom_property_field] == '':
                     expense['custom_properties'][custom_property_field] = None
+
+            # Create or update an Expense object based on expense_id
             expense_object, _ = Expense.objects.update_or_create(
                 expense_id=expense['id'],
                 defaults={
@@ -163,6 +168,7 @@ class Expense(BaseModel):
                 }
             )
 
+            # Check if an AccountingExport related to the expense object already exists
             if not AccountingExport.objects.filter(expenses__id=expense_object.id).first():
                 expense_objects.append(expense_object)
 

@@ -50,21 +50,40 @@ ALLOWED_FORM_INPUT = {
 
 
 def _group_expenses(expenses, group_fields, workspace_id):
-    expense_ids = list(map(lambda expense: expense.id, expenses))
+    """
+    Group expenses based on specified fields
+    """
+
+    # Extract expense IDs from the provided expenses
+    expense_ids = [expense.id for expense in expenses]
+
+    # Retrieve expenses from the database
     expenses = Expense.objects.filter(id__in=expense_ids).all()
 
+    # Create a dictionary to store custom fields
     custom_fields = {}
 
+    # Iterate through group fields
     for field in group_fields:
+        # Check if the field is allowed; if not, it's treated as a custom field
         if field.lower() not in ALLOWED_FIELDS:
             group_fields.pop(group_fields.index(field))
-            field = ExpenseAttribute.objects.filter(workspace_id=workspace_id,
-                                                    attribute_type=field.upper()).first()
-            if field:
-                custom_fields[field.attribute_type.lower()] = KeyTextTransform(field.display_name, 'custom_properties')
 
+            # Retrieve the custom field information from ExpenseAttribute
+            field_info = ExpenseAttribute.objects.filter(
+                workspace_id=workspace_id,
+                attribute_type=field.upper()
+            ).first()
+
+            if field_info:
+                # Add the custom field to the dictionary with the key as its display name
+                custom_fields[field_info.attribute_type.lower()] = KeyTextTransform(
+                    field_info.display_name, 'custom_properties')
+
+    # Create expense groups by grouping expenses based on specified fields and custom fields
     expense_groups = list(expenses.values(*group_fields, **custom_fields).annotate(
         total=Count('*'), expense_ids=ArrayAgg('id')))
+
     return expense_groups
 
 
@@ -90,13 +109,17 @@ class AccountingExport(BaseForeignWorkspaceModel):
     @staticmethod
     def create_expense_groups_by_report_id_fund_source(expense_objects: List[Expense], workspace_id):
         """
-        Group expense by and fund_source
+        Group expenses by report_id and fund_source
         """
+
+        # Retrieve the ExportSetting for the workspace
         export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
 
+        # Initialize lists and fields for reimbursable and corporate credit card expenses
         reimbursable_expense_group_fields = export_setting.reimbursable_expense_grouped_by
         reimbursable_expenses = list(filter(lambda expense: expense.fund_source == 'PERSONAL', expense_objects))
 
+        # Group reimbursable expenses
         expense_groups = _group_expenses(reimbursable_expenses, reimbursable_expense_group_fields, workspace_id)
 
         corporate_credit_card_expense_group_field = export_setting.credit_card_expense_grouped_by
@@ -104,23 +127,27 @@ class AccountingExport(BaseForeignWorkspaceModel):
         corporate_credit_card_expense_groups = _group_expenses(
             corporate_credit_card_expenses, corporate_credit_card_expense_group_field, workspace_id)
 
+        # Combine reimbursable and corporate credit card expense groups
         expense_groups.extend(corporate_credit_card_expense_groups)
 
         for expense_group in expense_groups:
+            # Determine the date field for reimbursable expenses
             if export_setting.reimbursable_expense_date == 'last_spent_at':
                 expense_group['last_spent_at'] = Expense.objects.filter(id__in=expense_group['expense_ids']).order_by('-spent_at').first().spent_at
 
+            # Determine the date field for corporate credit card expenses
             if export_setting.credit_card_expense_date == 'last_spent_at':
                 expense_group['last_spent_at'] = Expense.objects.filter(id__in=expense_group['expense_ids']).order_by('-spent_at').first().spent_at
 
-            employee_name = Expense.objects.filter(
-                id__in=expense_group['expense_ids']
-            ).first().employee_name
+            # Get the employee name for the expense group
+            employee_name = Expense.objects.filter(id__in=expense_group['expense_ids']).first().employee_name
 
+            # Store expense IDs and remove unnecessary keys
             expense_ids = expense_group['expense_ids']
             expense_group.pop('total')
             expense_group.pop('expense_ids')
 
+            # Format date fields according to the specified format
             for key in expense_group:
                 if key in ALLOWED_FORM_INPUT['export_date_type']:
                     if expense_group[key]:
@@ -128,6 +155,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
                     else:
                         expense_group[key] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
+            # Create an AccountingExport object for the expense group
             expense_group_object = AccountingExport.objects.create(
                 workspace_id=workspace_id,
                 fund_source=expense_group['fund_source'],
@@ -135,6 +163,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
                 employee_name=employee_name
             )
 
+            # Add related expenses to the AccountingExport object
             expense_group_object.expenses.add(*expense_ids)
 
 
