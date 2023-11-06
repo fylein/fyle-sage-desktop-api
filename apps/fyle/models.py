@@ -13,6 +13,7 @@ from sage_desktop_api.models.fields import (
     IntegerNotNullField,
 )
 from apps.workspaces.models import BaseModel, BaseForeignWorkspaceModel
+from apps.workspaces.models import Workspace
 
 
 EXPENSE_FILTER_RANK = (
@@ -120,6 +121,7 @@ class DependentFieldSetting(BaseModel):
     cost_category_field_id = StringNotNullField(help_text='Fyle Cost Category Field ID')
     cost_category_placeholder = models.TextField(blank=True, null=True, help_text='Placeholder for Cost Category')
     last_successful_import_at = CustomDateTimeField(null=True, help_text='Last Successful Import At')
+    workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model', related_name='dependent_field_settings')
 
     class Meta:
         db_table = 'dependent_field_settings'

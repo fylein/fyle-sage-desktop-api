@@ -11,6 +11,7 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 from django.db import transaction
 from django.db.models import Q
 
+from apps.fyle.models import DependentFieldSetting
 from sage_desktop_api.utils import assert_valid
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from sage_desktop_sdk.exceptions import (
@@ -207,12 +208,28 @@ class ImportSettingFilterSerializer(serializers.ModelSerializer):
         ]
 
 
+class DependentFieldSettingSerializer(serializers.ModelSerializer):
+    """
+    Dependent Field serializer
+    """
+    class Meta:
+        model = DependentFieldSetting
+        fields = [
+            'cost_code_field_name',
+            'cost_code_placeholder',
+            'cost_category_field_name',
+            'cost_category_placeholder',
+            'is_import_enabled',
+        ]
+
+
 class ImportSettingsSerializer(serializers.ModelSerializer):
     """
     Import Settings serializer
     """
     import_settings = ImportSettingFilterSerializer()
     mapping_settings = MappingSettingSerializer(many=True)
+    dependent_field_settings = DependentFieldSettingSerializer(allow_null=True, required=False)
     workspace_id = serializers.SerializerMethodField()
 
     class Meta:
@@ -220,6 +237,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         fields = [
             'import_settings',
             'mapping_settings',
+            'dependent_field_settings',
             'workspace_id'
         ]
         read_only_fields = ['workspace_id']
@@ -234,10 +252,9 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
 
         mapping_settings = validated.pop('mapping_settings')
         import_settings = validated.pop('import_settings')
-        # dependent_field_settings = validated.pop('dependent_field_settings')
+        dependent_field_settings = validated.pop('dependent_field_settings')
 
         with transaction.atomic():
-            print("inside function")
             ImportSetting.objects.update_or_create(
                 workspace_id=instance.id,
                 defaults={
@@ -261,6 +278,13 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
                         'is_custom': setting['is_custom'] if 'is_custom' in setting else False,
                         'source_placeholder': setting['source_placeholder'] if 'source_placeholder' in setting else None
                     }
+                )
+
+            project_mapping = MappingSetting.objects.filter(workspace_id=instance.id, destination_field='JOB').first()
+            if project_mapping and project_mapping.import_to_fyle and dependent_field_settings:
+                DependentFieldSetting.objects.update_or_create(
+                    workspace_id=instance.id,
+                    defaults=dependent_field_settings
                 )
 
             trigger.post_save_mapping_settings()
