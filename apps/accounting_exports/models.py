@@ -3,8 +3,7 @@ from typing import List
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.contrib.postgres.fields.jsonb import KeyTextTransform
-
+from django.db.models.fields.json import KeyTextTransform
 from django.db.models import Count
 
 from fyle_accounting_mappings.models import ExpenseAttribute
