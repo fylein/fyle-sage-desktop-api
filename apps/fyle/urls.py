@@ -46,4 +46,4 @@ fyle_dimension_paths = [
     path('import_attributes/', ImportFyleAttributesView.as_view(), name='import-fyle-attributes')
 ]
 
-urlpatterns = list(itertools.chain(accounting_exports_path, fyle_dimension_paths))
+urlpatterns = list(itertools.chain(accounting_exports_path, fyle_dimension_paths, other_paths))
