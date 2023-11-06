@@ -15,6 +15,8 @@ Including another URLconf
 """
 
 from django.urls import path
+import itertools
+
 from apps.fyle.views import (
     ImportFyleAttributesView,
     ExpenseFilterView,
@@ -22,16 +24,26 @@ from apps.fyle.views import (
     CustomFieldView,
     FyleFieldsView,
     DependentFieldSettingView,
-    ExportableExpenseGroupsView
+    ExportableExpenseGroupsView,
+    AccoutingExportSyncView
 )
 
 
-urlpatterns = [
-    path('import_attributes/', ImportFyleAttributesView.as_view(), name='import-fyle-attributes'),
+accounting_exports_path = [
+    path('exportable_accounting_exports/', ExportableExpenseGroupsView.as_view(), name='exportable-accounting-exports'),
+    path('expense_groups/sync/', AccoutingExportSyncView.as_view(), name='sync-accounting-exports'),
+]
+
+other_paths = [
     path('expense_filters/<int:pk>/', ExpenseFilterDeleteView.as_view(), name='expense-filters'),
     path('expense_filters/', ExpenseFilterView.as_view(), name='expense-filters'),
     path('expense_fields/', CustomFieldView.as_view(), name='fyle-expense-fields'),
     path('fields/', FyleFieldsView.as_view(), name='fyle-fields'),
     path('dependent_field_settings/', DependentFieldSettingView.as_view(), name='dependent-field'),
-    path('exportable_accounting_exports/', ExportableExpenseGroupsView.as_view(), name='exportable-accounting-exports'),
 ]
+
+fyle_dimension_paths = [
+    path('import_attributes/', ImportFyleAttributesView.as_view(), name='import-fyle-attributes')
+]
+
+urlpatterns = list(itertools.chain(accounting_exports_path, fyle_dimension_paths))

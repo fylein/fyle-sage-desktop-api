@@ -14,6 +14,7 @@ from apps.fyle.serializers import (
 )
 from apps.fyle.models import ExpenseFilter, DependentFieldSetting
 from apps.fyle.helpers import get_exportable_accounting_exports_ids
+from apps.fyle.tasks import get_accounting_exports_and_fund_source, create_accounting_exports
 
 
 logger = logging.getLogger(__name__)
@@ -84,5 +85,22 @@ class ExportableExpenseGroupsView(generics.RetrieveAPIView):
 
         return Response(
             data={'exportable_expense_group_ids': exportable_ids},
+            status=status.HTTP_200_OK
+        )
+
+
+class AccoutingExportSyncView(generics.CreateAPIView):
+    """
+    Create expense groups
+    """
+    def post(self, request, *args, **kwargs):
+        """
+        Post expense groups creation
+        """
+        accounting_export, fund_source = get_accounting_exports_and_fund_source(kwargs['workspace_id'])
+
+        create_accounting_exports(kwargs['workspace_id'], fund_source, accounting_export)
+
+        return Response(
             status=status.HTTP_200_OK
         )
