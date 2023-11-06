@@ -1,6 +1,7 @@
 from typing import List, Dict
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.utils.module_loading import import_string
 
 from sage_desktop_api.models.fields import (
     StringNotNullField,
@@ -15,7 +16,6 @@ from sage_desktop_api.models.fields import (
     IntegerNotNullField,
 )
 from apps.workspaces.models import BaseModel, BaseForeignWorkspaceModel
-from apps.accounting_exports.models import AccountingExport
 
 
 EXPENSE_FILTER_RANK = (
@@ -167,6 +167,9 @@ class Expense(BaseModel):
                     'corporate_card_id': expense['corporate_card_id'],
                 }
             )
+
+            # Doing this to avoid circular import
+            AccountingExport = import_string('apps.accounting_exports.models.AccountingExport')
 
             # Check if an AccountingExport related to the expense object already exists
             if not AccountingExport.objects.filter(expenses__id=expense_object.id).first():
