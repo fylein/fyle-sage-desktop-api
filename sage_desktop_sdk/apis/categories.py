@@ -10,12 +10,26 @@ class Categories(Client):
 
     GET_CATEGORIES = '/JobCosting/Api/V1/JobCost.svc/jobs/categories'
 
-    def get_all_categories(self):
+    def get_all_categories(self, version: int = None):
         """
-        Get all Jobs
-        :return: List of Dicts in Jobs Schema
+        Get all job categories.
+
+        :param version: API version
+        :type version: int
+
+        :return: A generator yielding job categories in the Jobs Schema
+        :rtype: generator of Category objects
         """
-        categories = self._query_get_all(Categories.GET_CATEGORIES)
+        if version:
+            # Append the version query parameter if provided
+            query_params = '?version={0}'.format(version)
+            endpoint = Categories.GET_CATEGORIES + query_params
+        else:
+            endpoint = Categories.GET_CATEGORIES
+
+        # Query the API to get all job categories
+        categories = self._query_get_all(endpoint)
+
         for category in categories:
-            print('catefor', category)
+            # Convert each category dictionary to a Category object and yield it
             yield Category.from_dict(category)
