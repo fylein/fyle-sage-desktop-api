@@ -5,7 +5,6 @@ from apps.workspaces.models import (
     Workspace,
     Sage300Credential,
     ExportSetting,
-    ImportSetting,
     AdvancedSetting
 )
 
