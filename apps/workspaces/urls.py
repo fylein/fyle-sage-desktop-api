@@ -39,6 +39,7 @@ other_app_paths = [
     path('<int:workspace_id>/sage_300/', include('apps.sage300.urls')),
     path('<int:workspace_id>/fyle/', include('apps.fyle.urls')),
     path('<int:workspace_id>/accounting_exports/', include('apps.accounting_exports.urls')),
+    path('<int:workspace_id>/mappings/', include('apps.mappings.urls'))
 ]
 
 urlpatterns = []

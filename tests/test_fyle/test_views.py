@@ -100,3 +100,13 @@ def test_fyle_fields(api_client, test_connection, create_temp_workspace, add_fyl
 
     response = json.loads(response.content)
     assert response['results'] == data['fyle_fields_response']
+
+
+def test_exportable_expense_group_view(api_client, test_connection, create_temp_workspace, add_export_settings):
+
+    access_token = test_connection.access_token
+    url = reverse('exportable-accounting-exports', kwargs={'workspace_id': 1})
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+    response = api_client.get(url)
+    assert response.status_code == 200

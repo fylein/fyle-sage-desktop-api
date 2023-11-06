@@ -1,5 +1,8 @@
 import logging
 from rest_framework import generics
+from rest_framework.views import status
+from rest_framework.response import Response
+
 from sage_desktop_api.utils import LookupFieldMixin
 from apps.workspaces.models import Workspace
 from apps.fyle.serializers import (
@@ -10,6 +13,8 @@ from apps.fyle.serializers import (
     DependentFieldSettingSerializer
 )
 from apps.fyle.models import ExpenseFilter, DependentFieldSetting
+from apps.fyle.helpers import get_exportable_accounting_exports_ids
+
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -64,8 +69,20 @@ class DependentFieldSettingView(generics.CreateAPIView, generics.RetrieveUpdateA
     """
     Dependent Field view
     """
-    authentication_classes = []
-    permission_classes = []
     serializer_class = DependentFieldSettingSerializer
     lookup_field = 'workspace_id'
     queryset = DependentFieldSetting.objects.all()
+
+
+class ExportableExpenseGroupsView(generics.RetrieveAPIView):
+    """
+    List Exportable Expense Groups
+    """
+    def get(self, request, *args, **kwargs):
+
+        exportable_ids = get_exportable_accounting_exports_ids(workspace_id=kwargs['workspace_id'])
+
+        return Response(
+            data={'exportable_expense_group_ids': exportable_ids},
+            status=status.HTTP_200_OK
+        )

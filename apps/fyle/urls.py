@@ -21,7 +21,8 @@ from apps.fyle.views import (
     ExpenseFilterDeleteView,
     CustomFieldView,
     FyleFieldsView,
-    DependentFieldSettingView
+    DependentFieldSettingView,
+    ExportableExpenseGroupsView
 )
 
 
@@ -31,5 +32,6 @@ urlpatterns = [
     path('expense_filters/', ExpenseFilterView.as_view(), name='expense-filters'),
     path('expense_fields/', CustomFieldView.as_view(), name='fyle-expense-fields'),
     path('fields/', FyleFieldsView.as_view(), name='fyle-fields'),
-    path('dependent_field_settings/', DependentFieldSettingView.as_view(), name='dependent-field')
+    path('dependent_field_settings/', DependentFieldSettingView.as_view(), name='dependent-field'),
+    path('exportable_accounting_exports/', ExportableExpenseGroupsView.as_view(), name='exportable-accounting-exports'),
 ]
