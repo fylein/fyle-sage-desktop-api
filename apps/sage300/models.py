@@ -102,9 +102,9 @@ class DirectCost(BaseModel):
         db_table = 'direct_cost'
 
 
-class Sage300Categories(BaseForeignWorkspaceModel):
+class CostCategory(BaseForeignWorkspaceModel):
     """
-    Categories Table Model Class
+    Cost Categories Table Model Class
     """
 
     id = models.AutoField(primary_key=True)
@@ -113,11 +113,11 @@ class Sage300Categories(BaseForeignWorkspaceModel):
     cost_code_id = StringNotNullField(help_text='Sage300 Cost Code Id')
     cost_code_name = StringNotNullField(help_text='Sage300 Cost Code Name')
     name = StringNotNullField(help_text='Sage300 Cost Type Name')
-    category_id = StringNotNullField(help_text='Sage300 Category Id')
+    cost_category_id = StringNotNullField(help_text='Sage300 Category Id')
     status = BooleanFalseField(help_text='Sage300 Cost Type Status')
 
     class Meta:
-        db_table = 'sage300_categories'
+        db_table = 'cost_category'
 
     @staticmethod
     def bulk_create_or_update(categories_generator: List[Dict], workspace_id: int):
@@ -136,7 +136,7 @@ class Sage300Categories(BaseForeignWorkspaceModel):
             'workspace_id': workspace_id
         }
 
-        existing_categories = Sage300Categories.objects.filter(**filters).values(
+        existing_categories = CostCategory.objects.filter(**filters).values(
             'id',
             'category_id',
             'name',
@@ -154,8 +154,8 @@ class Sage300Categories(BaseForeignWorkspaceModel):
                 'status': existing_category['status'],
             }
 
-        category_to_be_created = []
-        category_to_be_updated = []
+        cost_category_to_be_created = []
+        cost_category_to_be_updated = []
 
         # Retrieve job names and cost code names in a single query
         cost_code_ids = [category.cost_code_id for category in list_of_categories]
@@ -167,7 +167,7 @@ class Sage300Categories(BaseForeignWorkspaceModel):
         for category in list_of_categories:
             job_name = job_name_mapping.get(category.job_id)
             cost_code_name = cost_code_name_mapping.get(category.cost_code_id)
-            category_object = Sage300Categories(
+            category_object = CostCategory(
                 job_id=category.job_id,
                 job_name=job_name,
                 cost_code_id=category.cost_code_id,
@@ -179,20 +179,20 @@ class Sage300Categories(BaseForeignWorkspaceModel):
             )
 
             if category.id not in existing_cost_type_record_numbers:
-                category_to_be_created.append(category_object)
+                cost_category_to_be_created.append(category_object)
 
             elif category.id in primary_key_map.keys() and (
                 category.name != primary_key_map[category.id]['name'] or category.is_active != primary_key_map[category.id]['status']
             ):
                 category_object.id = primary_key_map[category.id]['category_id']
-                category_to_be_updated.append(category_object)
+                cost_category_to_be_updated.append(category_object)
 
-        if category_to_be_created:
-            Sage300Categories.objects.bulk_create(category_to_be_created, batch_size=2000)
+        if cost_category_to_be_created:
+            CostCategory.objects.bulk_create(cost_category_to_be_created, batch_size=2000)
 
-        if category_to_be_updated:
-            Sage300Categories.objects.bulk_update(
-                category_to_be_updated, fields=[
+        if cost_category_to_be_updated:
+            CostCategory.objects.bulk_update(
+                cost_category_to_be_updated, fields=[
                     'job_id', 'job_name', 'cost_code_id', 'cost_code_name',
                     'name', 'status', 'category_id'
                 ],

@@ -1,7 +1,7 @@
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.workspaces.models import Sage300Credential
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
-from apps.sage300.models import Sage300Categories
+from apps.sage300.models import CostCategory
 
 
 class SageDesktopConnector:
@@ -147,4 +147,4 @@ class SageDesktopConnector:
          Synchronize categories from Sage Desktop SDK to your application
         """
         categories = self.connection.categories.get_all_categories()
-        Sage300Categories.bulk_create_or_update(categories, self.workspace_id)
+        CostCategory.bulk_create_or_update(categories, self.workspace_id)

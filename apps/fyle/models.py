@@ -116,9 +116,9 @@ class DependentFieldSetting(BaseModel):
     cost_code_field_name = StringNotNullField(help_text='Fyle Cost Code Field Name')
     cost_code_field_id = StringNotNullField(help_text='Fyle Cost Code Field ID')
     cost_code_placeholder = models.TextField(blank=True, null=True, help_text='Placeholder for Cost code')
-    category_field_name = StringNotNullField(max_length=255, help_text='Fyle Cost Type Field Name')
-    category_field_id = StringNotNullField(help_text='Fyle Cost Type Field ID')
-    category_placeholder = models.TextField(blank=True, null=True, help_text='Placeholder for Cost Type')
+    cost_category_field_name = StringNotNullField(max_length=255, help_text='Fyle Cost Category Field Name')
+    cost_category_field_id = StringNotNullField(help_text='Fyle Cost Category Field ID')
+    cost_category_placeholder = models.TextField(blank=True, null=True, help_text='Placeholder for Cost Category')
     last_successful_import_at = CustomDateTimeField(null=True, help_text='Last Successful Import At')
 
     class Meta:
