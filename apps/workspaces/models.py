@@ -197,6 +197,7 @@ class ImportSetting(BaseModel):
     id = models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)
     import_categories = BooleanFalseField(help_text='toggle for import of chart of accounts from sage300')
     import_vendors_as_merchants = BooleanFalseField(help_text='toggle for import of vendors as merchant from sage300')
+    workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model', related_name="import_settings")
 
     class Meta:
         db_table = 'import_settings'
