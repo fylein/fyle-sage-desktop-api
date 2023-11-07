@@ -1,3 +1,5 @@
+from typing import List, Dict
+
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from sage_desktop_api.models.fields import (
@@ -41,6 +43,11 @@ EXPENSE_FILTER_OPERATOR = (
     ('not_in', 'not_in')
 )
 
+SOURCE_ACCOUNT_MAP = {
+    'PERSONAL_CASH_ACCOUNT': 'PERSONAL',
+    'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT': 'CCC'
+}
+
 
 class ExpenseFilter(BaseForeignWorkspaceModel):
     """
@@ -59,7 +66,7 @@ class ExpenseFilter(BaseForeignWorkspaceModel):
         db_table = 'expense_filters'
 
 
-class Expense(BaseModel):
+class Expense(BaseForeignWorkspaceModel):
     """
     Expense
     """
@@ -73,14 +80,14 @@ class Expense(BaseModel):
     org_id = StringNullField(help_text='Organization ID')
     expense_number = StringNotNullField(help_text='Expense Number')
     claim_number = StringNotNullField(help_text='Claim Number')
-    amount = models.FloatField(help_text='Home Amount')
+    amount = FloatNullField(help_text='Home Amount')
     currency = StringNotNullField(max_length=5, help_text='Home Currency')
-    foreign_amount = models.FloatField(null=True, help_text='Foreign Amount')
-    foreign_currency = StringNotNullField(max_length=5, help_text='Foreign Currency')
+    foreign_amount = FloatNullField(help_text='Foreign Amount')
+    foreign_currency = StringNullField(max_length=5, help_text='Foreign Currency')
     settlement_id = StringNullField(help_text='Settlement ID')
     reimbursable = BooleanFalseField(help_text='Expense reimbursable or not')
     state = StringNotNullField(help_text='Expense state')
-    vendor = StringNotNullField(help_text='Vendor')
+    vendor = StringNullField(help_text='Vendor')
     cost_center = StringNullField(help_text='Fyle Expense Cost Center')
     corporate_card_id = StringNullField(help_text='Corporate Card ID')
     purpose = models.TextField(null=True, blank=True, help_text='Purpose')
@@ -95,14 +102,70 @@ class Expense(BaseModel):
     fund_source = StringNotNullField(help_text='Expense fund source')
     verified_at = CustomDateTimeField(help_text='Report verified at')
     custom_properties = CustomJsonField(help_text="Custom Properties")
+    report_title = models.TextField(null=True, blank=True, help_text='Report title')
+    payment_number = StringNullField(max_length=55, help_text='Expense payment number')
     tax_amount = FloatNullField(help_text='Tax Amount')
     tax_group_id = StringNullField(help_text='Tax Group ID')
-    exported = BooleanFalseField(help_text='Expense reimbursable or not')
     previous_export_state = StringNullField(max_length=255, help_text='Previous export state')
     accounting_export_summary = CustomJsonField(default=dict, help_text='Accounting Export Summary')
 
     class Meta:
         db_table = 'expenses'
+
+    @staticmethod
+    def create_expense_objects(expenses: List[Dict], workspace_id: int):
+        """
+        Bulk create expense objects
+        """
+
+        # Create an empty list to store expense objects
+        for expense in expenses:
+            # Iterate through custom property fields and handle empty values
+            for custom_property_field in expense['custom_properties']:
+                if expense['custom_properties'][custom_property_field] == '':
+                    expense['custom_properties'][custom_property_field] = None
+
+            # Create or update an Expense object based on expense_id
+            Expense.objects.update_or_create(
+                expense_id=expense['id'],
+                defaults={
+                    'employee_email': expense['employee_email'],
+                    'employee_name': expense['employee_name'],
+                    'category': expense['category'],
+                    'sub_category': expense['sub_category'],
+                    'project': expense['project'],
+                    'expense_number': expense['expense_number'],
+                    'org_id': expense['org_id'],
+                    'claim_number': expense['claim_number'],
+                    'amount': round(expense['amount'], 2),
+                    'currency': expense['currency'],
+                    'foreign_amount': expense['foreign_amount'],
+                    'foreign_currency': expense['foreign_currency'],
+                    'tax_amount': expense['tax_amount'],
+                    'tax_group_id': expense['tax_group_id'],
+                    'settlement_id': expense['settlement_id'],
+                    'reimbursable': expense['reimbursable'],
+                    'billable': expense['billable'] if expense['billable'] else False,
+                    'state': expense['state'],
+                    'vendor': expense['vendor'][:250] if expense['vendor'] else None,
+                    'cost_center': expense['cost_center'],
+                    'purpose': expense['purpose'],
+                    'report_id': expense['report_id'],
+                    'report_title': expense['report_title'],
+                    'spent_at': expense['spent_at'],
+                    'approved_at': expense['approved_at'],
+                    'posted_at': expense['posted_at'],
+                    'expense_created_at': expense['expense_created_at'],
+                    'expense_updated_at': expense['expense_updated_at'],
+                    'fund_source': SOURCE_ACCOUNT_MAP[expense['source_account_type']],
+                    'verified_at': expense['verified_at'],
+                    'custom_properties': expense['custom_properties'],
+                    'payment_number': expense['payment_number'],
+                    'file_ids': expense['file_ids'],
+                    'corporate_card_id': expense['corporate_card_id'],
+                    'workspace_id': workspace_id
+                }
+            )
 
 
 class DependentFieldSetting(BaseModel):
