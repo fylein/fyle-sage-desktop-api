@@ -13,8 +13,7 @@ from sage_desktop_api.models.fields import (
     CustomDateTimeField,
     CustomEmailField,
     FloatNullField,
-    IntegerNotNullField,
-    
+    IntegerNotNullField
 )
 from apps.workspaces.models import BaseModel, BaseForeignWorkspaceModel
 

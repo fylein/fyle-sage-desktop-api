@@ -54,7 +54,12 @@ def import_reimbursable_expenses(workspace_id, accounting_export: AccountingExpo
             workspace.save()
 
         with transaction.atomic():
-            Expense.create_expense_objects(expenses, workspace_id)
+            expenses_object = Expense.create_expense_objects(expenses, workspace_id)
+            AccountingExport.create_accounting_export_report_id(
+                expenses_object,
+                fund_source='PERSONAL',
+                workspace_id=workspace_id
+            )
 
         accounting_export.status = 'COMPLETE'
         accounting_export.detail = None
@@ -116,7 +121,12 @@ def import_credit_card_expenses(workspace_id, accounting_export: AccountingExpor
             workspace.save()
 
         with transaction.atomic():
-            Expense.create_expense_objects(expenses, workspace_id)
+            expenses_object = Expense.create_expense_objects(expenses, workspace_id)
+            AccountingExport.create_accounting_export_report_id(
+                expenses_object,
+                fund_source='CCC',
+                workspace_id=workspace_id
+            )
 
         accounting_export.status = 'COMPLETE'
         accounting_export.errors = None
