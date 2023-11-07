@@ -150,7 +150,7 @@ LOGGING = {
             'handlers': ['request_logs'],
             'propagate': False
         },
-        'fyle_intacct_api': {
+        'fyle_sage_desktop_api': {
             'handlers': ['debug_logs'],
             'level': 'ERROR',
             'propagate': False

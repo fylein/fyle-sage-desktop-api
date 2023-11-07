@@ -30,16 +30,16 @@ class ImportSage300AttributesSerializer(serializers.Serializer):
 
             # Retrieve the workspace and Sage 300 credentials
             workspace = Workspace.objects.get(pk=workspace_id)
-            sage_intacct_credentials = Sage300Credential.objects.get(
+            sage_300_credentials = Sage300Credential.objects.get(
                 workspace_id=workspace.id
             )
 
             if refresh_dimension:
                 # If 'refresh' is true, perform a full sync of dimensions
-                sync_dimensions(sage_intacct_credentials, workspace.id)
+                sync_dimensions(sage_300_credentials, workspace.id)
             else:
                 # If 'refresh' is false, check the interval and sync dimension accordingly
-                check_interval_and_sync_dimension(workspace, sage_intacct_credentials)
+                check_interval_and_sync_dimension(workspace, sage_300_credentials)
 
             # Update the destination_synced_at field and save the workspace
             workspace.destination_synced_at = datetime.now()
