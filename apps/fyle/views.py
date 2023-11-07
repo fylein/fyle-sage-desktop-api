@@ -100,6 +100,7 @@ class AccoutingExportSyncView(generics.CreateAPIView):
 
         queue_import_reimbursable_expenses(kwargs['workspace_id'], synchronous=True)
         queue_import_credit_card_expenses(kwargs['workspace_id'], synchronous=True)
+
         return Response(
             status=status.HTTP_200_OK
         )
