@@ -102,8 +102,6 @@ class ImportSettingView(generics.RetrieveUpdateAPIView):
     """
     Retrieve or Create Import Settings
     """
-    authentication_classes = []
-    permission_classes = []
     serializer_class = ImportSettingsSerializer
 
     def get_object(self):
