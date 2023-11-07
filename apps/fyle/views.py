@@ -14,7 +14,7 @@ from apps.fyle.serializers import (
 )
 from apps.fyle.models import ExpenseFilter, DependentFieldSetting
 from apps.fyle.helpers import get_exportable_accounting_exports_ids
-from apps.fyle.tasks import get_accounting_exports_and_fund_source, create_accounting_exports
+from apps.fyle.queue import queue_import_reimbursable_expenses
 
 
 logger = logging.getLogger(__name__)
@@ -97,9 +97,8 @@ class AccoutingExportSyncView(generics.CreateAPIView):
         """
         Post expense groups creation
         """
-        accounting_export, fund_source = get_accounting_exports_and_fund_source(kwargs['workspace_id'])
 
-        create_accounting_exports(kwargs['workspace_id'], fund_source, accounting_export)
+        queue_import_reimbursable_expenses(kwargs['workspace_id'], synchronous=True)
 
         return Response(
             status=status.HTTP_200_OK
