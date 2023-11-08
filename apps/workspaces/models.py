@@ -26,7 +26,7 @@ ONBOARDING_STATE_CHOICES = (
 
 
 def get_default_onboarding_state():
-    return 'EXPORT_SETTINGS'
+    return 'CONNECTION'
 
 
 class Workspace(models.Model):
