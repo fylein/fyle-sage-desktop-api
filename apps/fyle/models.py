@@ -1,7 +1,6 @@
 from typing import List, Dict
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
-from django.utils.module_loading import import_string
 
 from sage_desktop_api.models.fields import (
     StringNotNullField,
@@ -168,11 +167,8 @@ class Expense(BaseModel):
                 }
             )
 
-            # Doing this to avoid circular import
-            AccountingExport = import_string('apps.accounting_exports.models.AccountingExport')
-
             # Check if an AccountingExport related to the expense object already exists
-            if not AccountingExport.objects.filter(expenses__id=expense_object.id).first():
+            if not Expense.objects.filter(accountingexport__isnull=False).distinct():
                 expense_objects.append(expense_object)
 
         return expense_objects
