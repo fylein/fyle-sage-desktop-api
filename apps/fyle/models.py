@@ -2,6 +2,7 @@ from typing import List, Dict
 
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+
 from sage_desktop_api.models.fields import (
     StringNotNullField,
     StringNullField,
@@ -12,7 +13,7 @@ from sage_desktop_api.models.fields import (
     CustomDateTimeField,
     CustomEmailField,
     FloatNullField,
-    IntegerNotNullField,
+    IntegerNotNullField
 )
 from apps.workspaces.models import BaseModel, BaseForeignWorkspaceModel
 
@@ -119,6 +120,8 @@ class Expense(BaseForeignWorkspaceModel):
         """
 
         # Create an empty list to store expense objects
+        expense_objects = []
+
         for expense in expenses:
             # Iterate through custom property fields and handle empty values
             for custom_property_field in expense['custom_properties']:
@@ -126,7 +129,7 @@ class Expense(BaseForeignWorkspaceModel):
                     expense['custom_properties'][custom_property_field] = None
 
             # Create or update an Expense object based on expense_id
-            Expense.objects.update_or_create(
+            expense_object, _ = Expense.objects.update_or_create(
                 expense_id=expense['id'],
                 defaults={
                     'employee_email': expense['employee_email'],
@@ -166,6 +169,12 @@ class Expense(BaseForeignWorkspaceModel):
                     'workspace_id': workspace_id
                 }
             )
+
+            # Check if an AccountingExport related to the expense object already exists
+            if not Expense.objects.filter(accountingexport__isnull=False).distinct():
+                expense_objects.append(expense_object)
+
+        return expense_objects
 
 
 class DependentFieldSetting(BaseModel):
