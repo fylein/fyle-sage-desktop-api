@@ -132,13 +132,13 @@ class CostCategory(BaseForeignWorkspaceModel):
         record_number_list = [category.id for category in list_of_categories]
 
         filters = {
-            'category_id__in': record_number_list,
+            'cost_category_id__in': record_number_list,
             'workspace_id': workspace_id
         }
 
         existing_categories = CostCategory.objects.filter(**filters).values(
             'id',
-            'category_id',
+            'cost_category_id',
             'name',
             'status'
         )
@@ -147,8 +147,8 @@ class CostCategory(BaseForeignWorkspaceModel):
         primary_key_map = {}
 
         for existing_category in existing_categories:
-            existing_cost_type_record_numbers.append(existing_category['category_id'])
-            primary_key_map[existing_category['category_id']] = {
+            existing_cost_type_record_numbers.append(existing_category['cost_category_id'])
+            primary_key_map[existing_category['cost_category_id']] = {
                 'id': existing_category['id'],
                 'name': existing_category['name'],
                 'status': existing_category['status'],
@@ -174,7 +174,7 @@ class CostCategory(BaseForeignWorkspaceModel):
                 cost_code_name=cost_code_name,
                 name=category.name,
                 status=category.is_active,
-                category_id=category.id,
+                cost_category_id=category.id,
                 workspace_id=workspace_id
             )
 
@@ -184,7 +184,7 @@ class CostCategory(BaseForeignWorkspaceModel):
             elif category.id in primary_key_map.keys() and (
                 category.name != primary_key_map[category.id]['name'] or category.is_active != primary_key_map[category.id]['status']
             ):
-                category_object.id = primary_key_map[category.id]['category_id']
+                category_object.id = primary_key_map[category.id]['cost_category_id']
                 cost_category_to_be_updated.append(category_object)
 
         if cost_category_to_be_created:
@@ -194,7 +194,7 @@ class CostCategory(BaseForeignWorkspaceModel):
             CostCategory.objects.bulk_update(
                 cost_category_to_be_updated, fields=[
                     'job_id', 'job_name', 'cost_code_id', 'cost_code_name',
-                    'name', 'status', 'category_id'
+                    'name', 'status', 'cost_category_id'
                 ],
                 batch_size=2000
             )

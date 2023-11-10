@@ -1,4 +1,5 @@
 from typing import List, Dict
+
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
@@ -106,7 +107,6 @@ class Expense(BaseForeignWorkspaceModel):
     payment_number = StringNullField(max_length=55, help_text='Expense payment number')
     tax_amount = FloatNullField(help_text='Tax Amount')
     tax_group_id = StringNullField(help_text='Tax Group ID')
-    exported = BooleanFalseField(help_text='Expense reimbursable or not')
     previous_export_state = StringNullField(max_length=255, help_text='Previous export state')
     accounting_export_summary = CustomJsonField(default=dict, help_text='Accounting Export Summary')
 
