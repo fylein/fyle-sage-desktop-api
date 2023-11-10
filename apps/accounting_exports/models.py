@@ -57,15 +57,18 @@ def _group_expenses(expenses: List[Expense], export_setting: ExportSetting, fund
     reimbursable_expense_grouped_by = export_setting.reimbursable_expense_grouped_by
     reimbursable_expense_date = export_setting.reimbursable_expense_date
 
+    # Initialize lists and fields for reimbursable and corporate credit card expenses
+    expense_group_fields = ['employee_email', 'fund_source']
+
     if fund_source == 'CCC':
-        group_fields = ['report_id', 'claim_number'] if credit_card_expense_grouped_by == 'REPORT' else ['expense_id', 'expense_number']
+        expense_group_fields.extend(['report_id', 'claim_number']) if credit_card_expense_grouped_by == 'REPORT' else expense_group_fields.extend(['expense_id', 'expense_number'])
         if credit_card_expense_date != 'LAST_SPENT_AT':
-            group_fields.append(credit_card_expense_date.lower())
+            expense_group_fields.append(credit_card_expense_date.lower())
 
     if fund_source == 'PERSONAL':
-        group_fields = ['report_id', 'claim_number'] if reimbursable_expense_grouped_by == 'REPORT' else ['expense_id', 'expense_number']
+        expense_group_fields.extend(['report_id', 'claim_number']) if reimbursable_expense_grouped_by == 'REPORT' else expense_group_fields.extend(['expense_id', 'expense_number'])
         if reimbursable_expense_date != 'LAST_SPENT_AT':
-            group_fields.append(reimbursable_expense_date.lower())
+            expense_group_fields.append(reimbursable_expense_date.lower())
 
     # Extract expense IDs from the provided expenses
     expense_ids = [expense.id for expense in expenses]
@@ -74,7 +77,7 @@ def _group_expenses(expenses: List[Expense], export_setting: ExportSetting, fund
     expenses = Expense.objects.filter(id__in=expense_ids).all()
 
     # Create expense groups by grouping expenses based on specified fields
-    expense_groups = list(expenses.values(*group_fields).annotate(
+    expense_groups = list(expenses.values(*expense_group_fields).annotate(
         total=Count('*'), expense_ids=ArrayAgg('id'))
     )
 
@@ -109,11 +112,8 @@ class AccountingExport(BaseForeignWorkspaceModel):
         # Retrieve the ExportSetting for the workspace
         export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
 
-        # Initialize lists and fields for reimbursable and corporate credit card expenses
-        expense_group_fields = ['employee_email', 'fund_source']
-
         # Group expenses based on specified fields and fund_source
-        expense_groups = _group_expenses(expense_objects, expense_group_fields, export_setting, fund_source)
+        expense_groups = _group_expenses(expense_objects, export_setting, fund_source)
 
         for expense_group in expense_groups:
             # Determine the date field based on fund_source
