@@ -20,12 +20,6 @@ from apps.workspaces.models import BaseForeignWorkspaceModel, BaseModel, ExportS
 from apps.fyle.models import Expense
 
 
-ALLOWED_FIELDS = [
-    'employee_email', 'report_id', 'claim_number', 'settlement_id',
-    'fund_source', 'vendor', 'category', 'project', 'cost_center',
-    'verified_at', 'approved_at', 'spent_at', 'expense_id', 'expense_number', 'payment_number', 'posted_at'
-]
-
 TYPE_CHOICES = (
     ('INVOICES', 'INVOICES'),
     ('DIRECT_COST', 'DIRECT_COST'),
