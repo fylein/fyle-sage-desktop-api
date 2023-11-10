@@ -94,7 +94,7 @@ class BooleanFalseField(models.BooleanField):
     description = "Custom Boolean Field with Default True"
 
     def __init__(self, *args, **kwargs):
-        kwargs['default'] = True  # Set the default value to True
+        kwargs['default'] = False  # Set the default value to True
         super(BooleanFalseField, self).__init__(*args, **kwargs)
 
     def toggle(self, instance):

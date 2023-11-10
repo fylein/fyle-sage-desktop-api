@@ -11,7 +11,7 @@ from apps.fyle.models import DependentFieldSetting
 
 SOURCE_FIELD_CLASS_MAP = {
     'CATEGORY': Category,
-    'PROJECT': Project
+    'PROJECT': Project,
 }
 
 

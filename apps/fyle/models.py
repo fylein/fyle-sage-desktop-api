@@ -12,7 +12,7 @@ from sage_desktop_api.models.fields import (
     CustomDateTimeField,
     CustomEmailField,
     FloatNullField,
-    IntegerNotNullField,
+    IntegerNotNullField
 )
 from apps.workspaces.models import BaseModel, BaseForeignWorkspaceModel
 
@@ -66,7 +66,7 @@ class ExpenseFilter(BaseForeignWorkspaceModel):
         db_table = 'expense_filters'
 
 
-class Expense(BaseModel):
+class Expense(BaseForeignWorkspaceModel):
     """
     Expense
     """
@@ -80,14 +80,14 @@ class Expense(BaseModel):
     org_id = StringNullField(help_text='Organization ID')
     expense_number = StringNotNullField(help_text='Expense Number')
     claim_number = StringNotNullField(help_text='Claim Number')
-    amount = models.FloatField(help_text='Home Amount')
+    amount = FloatNullField(help_text='Home Amount')
     currency = StringNotNullField(max_length=5, help_text='Home Currency')
-    foreign_amount = models.FloatField(null=True, help_text='Foreign Amount')
-    foreign_currency = StringNotNullField(max_length=5, help_text='Foreign Currency')
+    foreign_amount = FloatNullField(help_text='Foreign Amount')
+    foreign_currency = StringNullField(max_length=5, help_text='Foreign Currency')
     settlement_id = StringNullField(help_text='Settlement ID')
     reimbursable = BooleanFalseField(help_text='Expense reimbursable or not')
     state = StringNotNullField(help_text='Expense state')
-    vendor = StringNotNullField(help_text='Vendor')
+    vendor = StringNullField(help_text='Vendor')
     cost_center = StringNullField(help_text='Fyle Expense Cost Center')
     corporate_card_id = StringNullField(help_text='Corporate Card ID')
     purpose = models.TextField(null=True, blank=True, help_text='Purpose')
@@ -102,6 +102,8 @@ class Expense(BaseModel):
     fund_source = StringNotNullField(help_text='Expense fund source')
     verified_at = CustomDateTimeField(help_text='Report verified at')
     custom_properties = CustomJsonField(help_text="Custom Properties")
+    report_title = models.TextField(null=True, blank=True, help_text='Report title')
+    payment_number = StringNullField(max_length=55, help_text='Expense payment number')
     tax_amount = FloatNullField(help_text='Tax Amount')
     tax_group_id = StringNullField(help_text='Tax Group ID')
     exported = BooleanFalseField(help_text='Expense reimbursable or not')
@@ -146,7 +148,7 @@ class Expense(BaseModel):
                     'tax_group_id': expense['tax_group_id'],
                     'settlement_id': expense['settlement_id'],
                     'reimbursable': expense['reimbursable'],
-                    'billable': expense['billable'],
+                    'billable': expense['billable'] if expense['billable'] else False,
                     'state': expense['state'],
                     'vendor': expense['vendor'][:250] if expense['vendor'] else None,
                     'cost_center': expense['cost_center'],
@@ -164,6 +166,7 @@ class Expense(BaseModel):
                     'payment_number': expense['payment_number'],
                     'file_ids': expense['file_ids'],
                     'corporate_card_id': expense['corporate_card_id'],
+                    'workspace_id': workspace_id
                 }
             )
 
