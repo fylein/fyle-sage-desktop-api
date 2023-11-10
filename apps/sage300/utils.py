@@ -2,6 +2,7 @@ from fyle_accounting_mappings.models import DestinationAttribute
 from apps.workspaces.models import Sage300Credential
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from apps.sage300.models import CostCategory
+from apps.mappings.models import Version
 
 
 class SageDesktopConnector:
@@ -46,6 +47,25 @@ class SageDesktopConnector:
             'detail': detail
         }
 
+    def _update_latest_version(self, attribute_type: str):
+        """
+        Update the latest version in Version Table
+        :param attribute_type: Type of the attribute
+        """
+
+        latest_version = DestinationAttribute.objects.filter(
+            attribute_type=attribute_type
+        ).order_by('-detail__version').first()
+
+        Version.objects.update_or_create(
+            workspace_id=self.workspace_id,
+            defaults={
+                attribute_type.lower(): latest_version.detail['version']
+            }
+        )
+
+        return []
+
     def _sync_data(self, data, attribute_type, display_name, workspace_id, field_names):
         """
         Synchronize data from Sage Desktop SDK to your application
@@ -72,11 +92,14 @@ class SageDesktopConnector:
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             destination_attributes, attribute_type, workspace_id, True)
 
+        self._update_latest_version(attribute_type)
+
     def sync_accounts(self):
         """
         Synchronize accounts from Sage Desktop SDK to your application
         """
-        accounts = self.connection.accounts.get_all()
+        version = Version.objects.get(workspace_id=self.workspace_id).account
+        accounts = self.connection.accounts.get_all(version=version)
         self._sync_data(accounts, 'ACCOUNT', 'accounts', self.workspace_id, ['code', 'version'])
         return []
 
@@ -84,7 +107,8 @@ class SageDesktopConnector:
         """
         Synchronize vendors from Sage Desktop SDK to your application
         """
-        vendors = self.connection.vendors.get_all()
+        version = Version.objects.get(workspace_id=self.workspace_id).vendor
+        vendors = self.connection.vendors.get_all(version=version)
         field_names = [
             'code', 'version', 'default_expense_account', 'default_standard_category',
             'default_standard_costcode', 'type_id', 'created_on_utc'
@@ -96,7 +120,8 @@ class SageDesktopConnector:
         """
         Synchronize jobs from Sage Desktop SDK to your application
         """
-        jobs = self.connection.jobs.get_all_jobs()
+        version = Version.objects.get(workspace_id=self.workspace_id).job
+        jobs = self.connection.jobs.get_all_jobs(version=version)
         field_names = [
             'code', 'status', 'version', 'account_prefix_id', 'created_on_utc'
         ]
@@ -107,7 +132,8 @@ class SageDesktopConnector:
         """
         Synchronize standard cost codes from Sage Desktop SDK to your application
         """
-        cost_codes = self.connection.jobs.get_standard_costcodes()
+        version = Version.objects.get(workspace_id=self.workspace_id).standard_cost_code
+        cost_codes = self.connection.jobs.get_standard_costcodes(version=version)
         field_names = ['code', 'version', 'is_standard', 'description']
         self._sync_data(cost_codes, 'STANDARD_COST_CODE', 'standard_cost_code', self.workspace_id, field_names)
         return []
@@ -116,7 +142,8 @@ class SageDesktopConnector:
         """
         Synchronize standard categories from Sage Desktop SDK to your application
         """
-        categories = self.connection.jobs.get_standard_categories()
+        version = Version.objects.get(workspace_id=self.workspace_id).standard_category
+        categories = self.connection.jobs.get_standard_categories(version=version)
         field_names = ['code', 'version', 'description', 'accumulation_name']
         self._sync_data(categories, 'STANDARD_CATEGORY', 'standard_category', self.workspace_id, field_names)
         return []
@@ -125,7 +152,8 @@ class SageDesktopConnector:
         """
         Synchronize commitments from Sage Desktop SDK to your application
         """
-        commitments = self.connection.commitments.get_all()
+        version = Version.objects.get(workspace_id=self.workspace_id).commitment
+        commitments = self.connection.commitments.get_all(version=version)
         field_names = [
             'code', 'is_closed', 'version', 'description', 'is_commited',
             'created_on_utc', 'date', 'vendor_id', 'job_id'
@@ -137,12 +165,13 @@ class SageDesktopConnector:
         """
         Synchronize cost codes from Sage Desktop SDK to your application
         """
-        cost_codes = self.connection.cost_codes.get_all_costcodes()
+        version = Version.objects.get(workspace_id=self.workspace_id).cost_code
+        cost_codes = self.connection.cost_codes.get_all_costcodes(version=version)
         field_names = ['code', 'version', 'job_id']
         self._sync_data(cost_codes, 'COST_CODE', 'cost_code', self.workspace_id, field_names)
         return []
 
-    def sync_categories(self):
+    def sync_cost_categories(self):
         """
          Synchronize categories from Sage Desktop SDK to your application
         """
