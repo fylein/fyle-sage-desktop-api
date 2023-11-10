@@ -120,11 +120,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
         export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
 
         # Group expenses based on specified fields and fund_source
-<<<<<<< HEAD
         accounting_exports = _group_expenses(expense_objects, export_setting, fund_source)
-=======
-        expense_groups = _group_expenses(expense_objects, export_setting, fund_source)
->>>>>>> 0816f9858c4079548252b65c27698780fc4bc220
 
         fund_source_map = {
             'PERSONAL': 'reimbursable',
