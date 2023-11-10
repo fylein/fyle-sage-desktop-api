@@ -52,8 +52,8 @@ def _group_expenses(expenses: List[Expense], export_setting: ExportSetting, fund
     reimbursable_expense_date = export_setting.reimbursable_expense_date
 
     default_fields = ['employee_email', 'fund_source']
-    report_grouping_fields = ['report_id', 'claim_number']
-    expense_grouping_fields = ['expense_id', 'expense_number']
+    report_grouping_fields = default_fields.extend(['report_id', 'claim_number'])
+    expense_grouping_fields = default_fields.extend(['expense_id', 'expense_number'])
 
     # Define a mapping for fund sources and their associated group fields
     fund_source_mapping = {
