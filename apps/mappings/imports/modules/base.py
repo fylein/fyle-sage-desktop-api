@@ -187,6 +187,8 @@ class Base:
         """
         Construct Payload and Import to fyle in Batches
         """
+        is_auto_sync_status_allowed = self.get_auto_sync_permission()
+
         filters = self.construct_attributes_filter(self.destination_field)
 
         destination_attributes_count = DestinationAttribute.objects.filter(**filters).count()

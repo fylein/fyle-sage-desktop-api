@@ -311,6 +311,36 @@ def add_project_mappings():
 
 @pytest.fixture()
 @pytest.mark.django_db(databases=['default'])
+def add_cost_center_mappings():
+    """
+    Pytest fixtue to add cost center mappings to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CENTER',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            destination_id='10064',
+            detail='Cost Center - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CENTER',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            destination_id='10081',
+            detail='Cost Center - Platform APIs, Id - 10081',
+            active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
 def add_export_settings():
     """
     Pytest fixtue to add export_settings to a workspace

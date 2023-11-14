@@ -5,6 +5,7 @@ from fyle_accounting_mappings.models import MappingSetting
 from apps.mappings.models import ImportLog
 from apps.mappings.imports.modules.categories import Category
 from apps.mappings.imports.modules.projects import Project
+from apps.mappings.imports.modules.cost_centers import CostCenter
 from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
 from apps.fyle.models import DependentFieldSetting
 
@@ -12,6 +13,7 @@ from apps.fyle.models import DependentFieldSetting
 SOURCE_FIELD_CLASS_MAP = {
     'CATEGORY': Category,
     'PROJECT': Project,
+    'COST_CENTER': CostCenter
 }
 
 
