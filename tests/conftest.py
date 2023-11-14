@@ -15,7 +15,8 @@ from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
     Workspace,
     FyleCredential,
-    Sage300Credential
+    Sage300Credential,
+    ExportSetting
 )
 from apps.fyle.models import ExpenseFilter
 from apps.accounting_exports.models import AccountingExport, Error, AccountingExportSummary
@@ -335,4 +336,33 @@ def add_cost_center_mappings():
             destination_id='10081',
             detail='Cost Center - Platform APIs, Id - 10081',
             active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_export_settings():
+    """
+    Pytest fixtue to add export_settings to a workspace
+    """
+
+    workspace_ids = [
+        1, 2, 3
+    ]
+
+    for workspace_id in workspace_ids:
+        ExportSetting.objects.create(
+            workspace_id=workspace_id,
+            reimbursable_expenses_export_type='BILL' if workspace_id in [1, 2] else 'JOURNAL_ENTRY',
+            default_bank_account_name='Accounts Payable',
+            default_back_account_id='1',
+            reimbursable_expense_state='PAYMENT_PROCESSING',
+            reimbursable_expense_date='current_date' if workspace_id == 1 else 'last_spent_at',
+            reimbursable_expense_grouped_by='REPORT' if workspace_id == 1 else 'EXPENSE',
+            credit_card_expense_export_type='CREDIT_CARD_PURCHASE' if workspace_id in [1, 2] else 'JOURNAL_ENTRY',
+            credit_card_expense_state='PAYMENT_PROCESSING',
+            default_ccc_credit_card_account_name='Visa',
+            default_ccc_credit_card_account_id='12',
+            credit_card_expense_grouped_by='EXPENSE' if workspace_id == 3 else 'REPORT',
+            credit_card_expense_date='spent_at'
         )

@@ -12,18 +12,47 @@ class Commitments(Client):
     GET_COMMITMENT_ITEMS = '/JobCosting/Api/V1/Commitment.svc/commitments/items/synchronize?commitment={}'
     GET_COMMITMENTS = '/JobCosting/Api/V1/Commitment.svc/commitments'
 
-    def get_all(self):
+    def get_all(self, version: int = None):
         """
-        Get all Vendors
-        :return: List of Dicts in Vendors Schema
+        Get all commitments.
+
+        :param version: API version
+        :type version: int
+
+        :return: A generator yielding commitments in the Commitments Schema
+        :rtype: generator of Commitment objects
         """
-        commitments = self._query_get_all(Commitments.GET_COMMITMENTS)
+        if version:
+            # Append the version query parameter if provided
+            query_params = '?version={0}'.format(version)
+            endpoint = Commitments.GET_COMMITMENTS + query_params
+        else:
+            endpoint = Commitments.GET_COMMITMENTS
+
+        # Query the API to get all commitments
+        commitments = self._query_get_all(endpoint)
+
         for commitment in commitments:
+            # Convert each commitment dictionary to a Commitment object and yield it
             yield Commitment.from_dict(commitment)
 
-    def get_commitment_items(self, commitment_id: str):
+    def get_commitment_items(self, commitment_id: str, version: int = None):
         """
-        Get Commitment By Id
-        :return: Dicts in Commitment Schema
+        Get commitment items by ID.
+
+        :param commitment_id: Commitment ID
+        :type commitment_id: str
+        :param version: API version
+        :type version: int
+
+        :return: A dictionary in the Commitment Schema
+        :rtype: Commitment object
         """
-        return self._query_get_by_id(Commitments.GET_COMMITMENT_ITEMS.format(commitment_id))
+        if version:
+            # Append the version query parameter if provided
+            query_params = '?version={0}'.format(version)
+            endpoint = Commitments.GET_COMMITMENT_ITEMS.format(commitment_id) + query_params
+        else:
+            endpoint = Commitments.GET_COMMITMENT_ITEMS.format(commitment_id)
+
+        return self._query_get_by_id(endpoint)

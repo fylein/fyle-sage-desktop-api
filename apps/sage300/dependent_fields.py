@@ -8,7 +8,7 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.fyle.models import DependentFieldSetting
-from apps.sage300.models import Sage300Categories
+from apps.sage300.models import CostCategory
 from apps.fyle.helpers import connect_to_platform
 from apps.mappings.tasks import sync_sage300_attributes
 
@@ -70,7 +70,7 @@ def create_dependent_custom_field_in_fyle(workspace_id: int, fyle_attribute_type
 
 
 def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict) -> List[str]:
-    projects = Sage300Categories.objects.filter(**filters).values('job_name').annotate(cost_codes=ArrayAgg('cost_code_name', distinct=True))
+    projects = CostCategory.objects.filter(**filters).values('job_name').annotate(cost_codes=ArrayAgg('cost_code_name', distinct=True))
     projects_from_categories = [project['job_name'] for project in projects]
 
     posted_cost_codes = []
@@ -100,9 +100,9 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
 
 
 def post_dependent_cost_type(dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict):
-    sage300_categories = Sage300Categories.objects.filter(**filters).values('cost_code_name').annotate(sage300_categories=ArrayAgg('name', distinct=True))
+    cost_categories = CostCategory.objects.filter(**filters).values('cost_code_name').annotate(cost_categories=ArrayAgg('name', distinct=True))
 
-    for category in sage300_categories:
+    for category in cost_categories:
         payload = [
             {
                 'parent_expense_field_id': dependent_field_setting.cost_code_field_id,
@@ -110,7 +110,7 @@ def post_dependent_cost_type(dependent_field_setting: DependentFieldSetting, pla
                 'expense_field_id': dependent_field_setting.cost_type_field_id,
                 'expense_field_value': cost_type,
                 'is_enabled': True
-            } for cost_type in category['sage300_categories']
+            } for cost_type in category['cost_categories']
         ]
 
         if payload:

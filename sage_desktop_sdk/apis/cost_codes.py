@@ -10,11 +10,26 @@ class CostCodes(Client):
 
     GET_COST_CODE = '/JobCosting/Api/V1/JobCost.svc/jobs/costcodes'
 
-    def get_all_costcodes(self):
+    def get_all_costcodes(self, version: int = None):
         """
-        Get all Cost Code
-        :return: List of Dicts in Cost Code Schema
+        Get all cost codes.
+
+        :param version: API version
+        :type version: int
+
+        :return: A generator yielding cost codes in the Cost Code Schema
+        :rtype: generator of CostCode objects
         """
-        cost_codes = self._query_get_all(CostCodes.GET_COST_CODE)
+        if version:
+            # Append the version query parameter if provided
+            query_params = '?version={0}'.format(version)
+            endpoint = CostCodes.GET_COST_CODE + query_params
+        else:
+            endpoint = CostCodes.GET_COST_CODE
+
+        # Query the API to get all cost codes
+        cost_codes = self._query_get_all(endpoint)
+
         for cost_code in cost_codes:
+            # Convert each cost code dictionary to a CostCode object and yield it
             yield CostCode.from_dict(cost_code)

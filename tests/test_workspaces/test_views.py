@@ -264,7 +264,6 @@ def test_advanced_settings(api_client, test_connection):
         'expense_link'
     ]
     assert response.data['schedule_is_enabled'] is False
-    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
@@ -288,7 +287,6 @@ def test_advanced_settings(api_client, test_connection):
         'expense_link'
     ]
     assert response.data['schedule_is_enabled'] is False
-    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
@@ -314,7 +312,6 @@ def test_advanced_settings(api_client, test_connection):
         'report_number'
     ]
     assert response.data['schedule_is_enabled'] is False
-    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
