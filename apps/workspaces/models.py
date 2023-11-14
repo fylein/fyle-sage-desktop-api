@@ -216,8 +216,9 @@ class AdvancedSetting(BaseModel):
     interval_hours = IntegerNullField(help_text='Interval in hours')
     emails_selected = CustomJsonField(help_text='Emails Selected For Email Notification')
     emails_added = CustomJsonField(help_text='Emails Selected For Email Notification')
-    auto_create_vendor = BooleanFalseField(help_text='Auto create vendor')
     schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
+    auto_create_vendor = BooleanFalseField(help_text='Auto create vendor')
+    sync_sage_300_to_fyle_payments = BooleanFalseField(help_text='Sync sage 300 to fyle payments')
 
     class Meta:
         db_table = 'advanced_settings'
