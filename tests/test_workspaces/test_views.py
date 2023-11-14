@@ -250,7 +250,8 @@ def test_advanced_settings(api_client, test_connection):
                 'email': 'nilesh.p@fylehq.com'
             },
         ]),
-        'auto_create_vendor': True
+        'auto_create_vendor': True,
+        'sync_sage_300_to_fyle_payments': True
     }
 
     response = api_client.post(url, payload)
@@ -275,6 +276,7 @@ def test_advanced_settings(api_client, test_connection):
         },
     ]
     assert response.data['auto_create_vendor'] == True
+    assert response.data['sync_sage_300_to_fyle_payments'] == True
 
     response = api_client.get(url)
 
