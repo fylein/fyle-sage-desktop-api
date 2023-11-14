@@ -193,6 +193,8 @@ class Base:
 
         destination_attributes_count = DestinationAttribute.objects.filter(**filters).count()
 
+        is_auto_sync_status_allowed = self.get_auto_sync_permission()
+
         # If there are no destination attributes, mark the import as complete
         if destination_attributes_count == 0:
             import_log.status = 'COMPLETE'

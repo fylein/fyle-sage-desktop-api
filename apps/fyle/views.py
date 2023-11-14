@@ -1,5 +1,8 @@
 import logging
 from rest_framework import generics
+from rest_framework.views import status
+from rest_framework.response import Response
+
 from sage_desktop_api.utils import LookupFieldMixin
 from apps.workspaces.models import Workspace
 from apps.fyle.serializers import (
@@ -10,6 +13,9 @@ from apps.fyle.serializers import (
     DependentFieldSettingSerializer
 )
 from apps.fyle.models import ExpenseFilter, DependentFieldSetting
+from apps.fyle.helpers import get_exportable_accounting_exports_ids
+from apps.fyle.queue import queue_import_reimbursable_expenses, queue_import_credit_card_expenses
+
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -64,8 +70,37 @@ class DependentFieldSettingView(generics.CreateAPIView, generics.RetrieveUpdateA
     """
     Dependent Field view
     """
-    authentication_classes = []
-    permission_classes = []
     serializer_class = DependentFieldSettingSerializer
     lookup_field = 'workspace_id'
     queryset = DependentFieldSetting.objects.all()
+
+
+class ExportableExpenseGroupsView(generics.RetrieveAPIView):
+    """
+    List Exportable Expense Groups
+    """
+    def get(self, request, *args, **kwargs):
+
+        exportable_ids = get_exportable_accounting_exports_ids(workspace_id=kwargs['workspace_id'])
+
+        return Response(
+            data={'exportable_expense_group_ids': exportable_ids},
+            status=status.HTTP_200_OK
+        )
+
+
+class AccoutingExportSyncView(generics.CreateAPIView):
+    """
+    Create expense groups
+    """
+    def post(self, request, *args, **kwargs):
+        """
+        Post expense groups creation
+        """
+
+        queue_import_reimbursable_expenses(kwargs['workspace_id'], synchronous=True)
+        queue_import_credit_card_expenses(kwargs['workspace_id'], synchronous=True)
+
+        return Response(
+            status=status.HTTP_200_OK
+        )

@@ -1,13 +1,13 @@
 from django.db import models
 
-from apps.workspaces.models import BaseForeignWorkspaceModel
+from apps.workspaces.models import BaseForeignWorkspaceModel, BaseModel
 from sage_desktop_api.models.fields import (
     CustomJsonField,
     StringNotNullField,
     StringOptionsField,
     IntegerNotNullField,
-    StringNullField,
-    CustomDateTimeField
+    CustomDateTimeField,
+    IntegerNullField
 )
 
 IMPORT_STATUS_CHOICES = (
@@ -30,12 +30,23 @@ class ImportLog(BaseForeignWorkspaceModel):
     total_batches_count = IntegerNotNullField(help_text='Queued batches', default=0)
     processed_batches_count = IntegerNotNullField(help_text='Processed batches', default=0)
     last_successful_run_at = CustomDateTimeField(help_text='Last successful run')
-    accounts_version = StringNullField(help_text='latest sync version of accounts')
-    job_version = StringNullField(help_text='latest sync version of job')
-    categories_version = StringNullField(help_text='latest sync version of categories')
-    cost_code_version = StringNullField(help_text='latest sync version of cost code')
-    vendor_version = StringNullField(help_text='latest sync version of vendor')
 
     class Meta:
         db_table = 'import_logs'
         unique_together = ('workspace', 'attribute_type')
+
+
+class Version(BaseModel):
+    """
+    Table to store versions
+    """
+
+    id = models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)
+    account = IntegerNullField(help_text='version for account')
+    job = IntegerNullField(help_text='version for job')
+    standard_category = IntegerNullField(help_text='version for standard category')
+    standard_cost_code = IntegerNullField(help_text='version for standard costcode')
+    cost_category = IntegerNullField(help_text='version for job category')
+    cost_code = IntegerNullField(help_text='version for costcode')
+    vendor = IntegerNullField(help_text='version for vendor')
+    commitment = IntegerNullField(help_text='version for commitment')

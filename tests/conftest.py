@@ -9,12 +9,14 @@ import pytest
 from rest_framework.test import APIClient
 from fyle.platform.platform import Platform
 from fyle_rest_auth.models import User, AuthToken
+from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
     Workspace,
     FyleCredential,
-    Sage300Credential
+    Sage300Credential,
+    ExportSetting
 )
 from apps.fyle.models import ExpenseFilter
 from apps.accounting_exports.models import AccountingExport, Error, AccountingExportSummary
@@ -274,4 +276,93 @@ def add_accounting_export_summary():
             total_accounting_export_count = 10,
             successful_accounting_export_count = 5,
             failed_accounting_export_count = 5
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_project_mappings():
+    """
+    Pytest fixtue to add project mappings to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            destination_id='10064',
+            detail='Sage 300 Project - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            destination_id='10081',
+            detail='Sage 300 Project - Platform APIs, Id - 10081',
+            active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_cost_center_mappings():
+    """
+    Pytest fixtue to add cost center mappings to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CENTER',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            destination_id='10064',
+            detail='Cost Center - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CENTER',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            destination_id='10081',
+            detail='Cost Center - Platform APIs, Id - 10081',
+            active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_export_settings():
+    """
+    Pytest fixtue to add export_settings to a workspace
+    """
+
+    workspace_ids = [
+        1, 2, 3
+    ]
+
+    for workspace_id in workspace_ids:
+        ExportSetting.objects.create(
+            workspace_id=workspace_id,
+            reimbursable_expenses_export_type='BILL' if workspace_id in [1, 2] else 'JOURNAL_ENTRY',
+            default_bank_account_name='Accounts Payable',
+            default_back_account_id='1',
+            reimbursable_expense_state='PAYMENT_PROCESSING',
+            reimbursable_expense_date='current_date' if workspace_id == 1 else 'last_spent_at',
+            reimbursable_expense_grouped_by='REPORT' if workspace_id == 1 else 'EXPENSE',
+            credit_card_expense_export_type='CREDIT_CARD_PURCHASE' if workspace_id in [1, 2] else 'JOURNAL_ENTRY',
+            credit_card_expense_state='PAYMENT_PROCESSING',
+            default_ccc_credit_card_account_name='Visa',
+            default_ccc_credit_card_account_id='12',
+            credit_card_expense_grouped_by='EXPENSE' if workspace_id == 3 else 'REPORT',
+            credit_card_expense_date='spent_at'
         )

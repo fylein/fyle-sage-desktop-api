@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
+from django_q.models import Schedule
 
 from sage_desktop_api.models.fields import (
     StringNotNullField,
@@ -26,7 +27,7 @@ ONBOARDING_STATE_CHOICES = (
 
 
 def get_default_onboarding_state():
-    return 'EXPORT_SETTINGS'
+    return 'CONNECTION'
 
 
 class Workspace(models.Model):
@@ -212,11 +213,11 @@ class AdvancedSetting(BaseModel):
     )
     schedule_is_enabled = BooleanFalseField(help_text='Boolean to check if schedule is enabled')
     schedule_start_datetime = CustomDateTimeField(help_text='Schedule start date and time')
-    schedule_id = StringNullField(help_text='Schedule id')
     interval_hours = IntegerNullField(help_text='Interval in hours')
     emails_selected = CustomJsonField(help_text='Emails Selected For Email Notification')
     emails_added = CustomJsonField(help_text='Emails Selected For Email Notification')
     auto_create_vendor = BooleanFalseField(help_text='Auto create vendor')
+    schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
 
     class Meta:
         db_table = 'advanced_settings'
