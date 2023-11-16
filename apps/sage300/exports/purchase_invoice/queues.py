@@ -31,7 +31,7 @@ def check_accounting_export_and_start_import(self, export_type: str, accounting_
         if accounting_export.count() == index + 1:
             last_export = True
 
-            chain.append('apps.sage300.purchace_invoice.queues.create_purchace_invoice', accounting_export, last_export)
+            chain.append('apps.sage300.purchase_invoice.queues.create_purchase_invoice', accounting_export, last_export)
 
         if chain.length() > 1:
             chain.run()

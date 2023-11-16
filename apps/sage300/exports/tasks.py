@@ -1,10 +1,10 @@
 from typing import List
 
-from sage300.exports.purchase_invoice.tasks import PurchaceInvoice
+from sage300.exports.purchase_invoice.tasks import PurchaseInvoice
 from accounting_exports.models import AccountingExport
 
 EXPORT_CLASS_MAP = {
-    'PURCHACE_INVOICE': PurchaceInvoice,
+    'PURCHACE_INVOICE': PurchaseInvoice,
 }
 
 
