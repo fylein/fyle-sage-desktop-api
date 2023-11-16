@@ -46,7 +46,7 @@ class Version(BaseModel):
     job = IntegerNullField(help_text='version for job')
     standard_category = IntegerNullField(help_text='version for standard category')
     standard_cost_code = IntegerNullField(help_text='version for standard costcode')
-    job_category = IntegerNullField(help_text='version for job category')
+    cost_category = IntegerNullField(help_text='version for job category')
     cost_code = IntegerNullField(help_text='version for costcode')
     vendor = IntegerNullField(help_text='version for vendor')
     commitment = IntegerNullField(help_text='version for commitment')

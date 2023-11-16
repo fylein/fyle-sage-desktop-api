@@ -14,6 +14,7 @@ from apps.fyle.serializers import (
 )
 from apps.fyle.models import ExpenseFilter, DependentFieldSetting
 from apps.fyle.helpers import get_exportable_accounting_exports_ids
+from apps.fyle.queue import queue_import_reimbursable_expenses, queue_import_credit_card_expenses
 
 
 logger = logging.getLogger(__name__)
@@ -84,5 +85,22 @@ class ExportableExpenseGroupsView(generics.RetrieveAPIView):
 
         return Response(
             data={'exportable_expense_group_ids': exportable_ids},
+            status=status.HTTP_200_OK
+        )
+
+
+class AccoutingExportSyncView(generics.CreateAPIView):
+    """
+    Create expense groups
+    """
+    def post(self, request, *args, **kwargs):
+        """
+        Post expense groups creation
+        """
+
+        queue_import_reimbursable_expenses(kwargs['workspace_id'], synchronous=True)
+        queue_import_credit_card_expenses(kwargs['workspace_id'], synchronous=True)
+
+        return Response(
             status=status.HTTP_200_OK
         )

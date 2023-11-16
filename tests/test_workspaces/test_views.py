@@ -317,7 +317,8 @@ def test_advanced_settings(api_client, test_connection):
                 'email': 'nilesh.p@fylehq.com'
             },
         ]),
-        'auto_create_vendor': True
+        'auto_create_vendor': True,
+        'sync_sage_300_to_fyle_payments': True
     }
 
     response = api_client.post(url, payload)
@@ -331,7 +332,6 @@ def test_advanced_settings(api_client, test_connection):
         'expense_link'
     ]
     assert response.data['schedule_is_enabled'] is False
-    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
@@ -343,6 +343,7 @@ def test_advanced_settings(api_client, test_connection):
         },
     ]
     assert response.data['auto_create_vendor'] == True
+    assert response.data['sync_sage_300_to_fyle_payments'] == True
 
     response = api_client.get(url)
 
@@ -355,7 +356,6 @@ def test_advanced_settings(api_client, test_connection):
         'expense_link'
     ]
     assert response.data['schedule_is_enabled'] is False
-    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
@@ -381,7 +381,6 @@ def test_advanced_settings(api_client, test_connection):
         'report_number'
     ]
     assert response.data['schedule_is_enabled'] is False
-    assert response.data['schedule_id'] is None
     assert response.data['emails_selected'] == [
         {
             'name': 'Shwetabh Kumar',
