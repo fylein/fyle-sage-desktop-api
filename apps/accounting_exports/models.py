@@ -66,14 +66,13 @@ def _group_expenses(expenses: List[Expense], export_setting: ExportSetting, fund
     group_by_field = fund_source_data.get('group_by')
     date_field = fund_source_data.get('date_field')
 
-    default_fields.extend([group_by_field, fund_source])
+    default_fields.extend(group_by_field)
 
     if date_field:
         default_fields.append(date_field)
 
     # Extract expense IDs from the provided expenses
     expense_ids = [expense.id for expense in expenses]
-
     # Retrieve expenses from the database
     expenses = Expense.objects.filter(id__in=expense_ids).all()
 
@@ -109,7 +108,6 @@ class AccountingExport(BaseForeignWorkspaceModel):
         """
         Group expenses by report_id and fund_source, format date fields, and create AccountingExport objects.
         """
-
         # Retrieve the ExportSetting for the workspace
         export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
 
