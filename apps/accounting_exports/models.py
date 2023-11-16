@@ -140,6 +140,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
                 workspace_id=workspace_id,
                 fund_source=accounting_export['fund_source'],
                 description=accounting_export,
+                status='COMPLETE'
             )
 
             # Add related expenses to the AccountingExport object

@@ -17,5 +17,5 @@ def trigger_export_via_schedule(workspace_id: int, export_type: str, accounting_
     """
 
     module_class = EXPORT_CLASS_MAP[export_type]
-    item = module_class(workspace_id, accounting_exports)
+    item = module_class()
     item.trigger_export()
