@@ -40,11 +40,9 @@ class PurchaseInvoice(BaseExportModel):
         :param accounting_export: expense group
         :return: purchase invoices object
         """
-        print('virat kolhi')
         description = accounting_export.description
 
         vendor_id = self.get_vendor_id(accounting_export=accounting_export)
-        print('vendor_id', vendor_id)
         amount = self.get_total_amount(accounting_export=accounting_export)
         invoice_date = self.get_invoice_date(accounting_export=accounting_export)
 
@@ -91,7 +89,6 @@ class PurchaseInvoiceLineitems(BaseExportModel):
         :return: purchase invoices object
         """
 
-        print('guitar')
         expenses = accounting_export.expenses.all()
         purchase_invoice = PurchaseInvoice.objects.get(accounting_export=accounting_export)
         dependent_field_setting = DependentFieldSetting.objects.filter(workspace_id=accounting_export.workspace_id).first()

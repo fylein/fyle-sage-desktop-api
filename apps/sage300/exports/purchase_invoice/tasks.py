@@ -4,7 +4,7 @@ from django.db import transaction
 from apps.accounting_exports.models import AccountingExport
 from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
 from apps.workspaces.models import AdvancedSetting
-from apps.sage300.utils import SageDesktopConnector
+from apps.sage300.utils import SageDesktopConnector # noqa
 
 
 class ExportPurchaseInvoice:
@@ -29,7 +29,7 @@ class ExportPurchaseInvoice:
         """
 
         try:
-            purchase_invoice_payload = self.__construct_purchase_invoice(item, lineitem)
+            # purchase_invoice_payload = self.__construct_purchase_invoice(item, lineitem)
 
             # sage300_connection = SageDesktopConnector()
             # created_purchase_invoice_ = sage300_connection.connection.documents.post_document(purchase_invoice_payload)
