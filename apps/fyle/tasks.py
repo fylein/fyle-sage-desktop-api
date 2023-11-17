@@ -39,18 +39,18 @@ def import_expenses(workspace_id, accounting_export: AccountingExport, source_ac
     }
     export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
     workspace = Workspace.objects.get(pk=workspace_id)
-    last_synced_at = getattr(workspace, f"{fund_source_key.lower()}_last_synced_at", None)
+    last_synced_at = getattr(workspace, f"{fund_source_map.get(fund_source_key)}_last_synced_at", None)
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
     platform = PlatformConnector(fyle_credentials)
 
     expenses = platform.expenses.get(
         source_account_type=[source_account_type],
-        state=getattr(export_settings, f"{fund_source_key.lower()}_expense_state"),
+        state=getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state"),
         settled_at=last_synced_at if getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'PAYMENT_PROCESSING' else None,
         approved_at=last_synced_at if getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'APPROVED' else None,
         filter_credit_expenses=(fund_source_key == 'CCC'),
-        last_paid_at=last_synced_at if getattr(export_settings, f"{fund_source_key.lower()}_expense_state") == 'PAID' else None
+        last_paid_at=last_synced_at if getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'PAID' else None
     )
 
     if expenses:
@@ -59,7 +59,7 @@ def import_expenses(workspace_id, accounting_export: AccountingExport, source_ac
 
     with transaction.atomic():
         expenses_object = Expense.create_expense_objects(expenses, workspace_id)
-        AccountingExport.create_accounting_export_report_id(
+        AccountingExport.create_accounting_export(
             expenses_object,
             fund_source=fund_source_key,
             workspace_id=workspace_id
