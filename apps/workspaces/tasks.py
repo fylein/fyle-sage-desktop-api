@@ -29,16 +29,18 @@ def run_import_export(workspace_id: int, export_mode = None):
 
     # For Reimbursable Expenses
     if export_settings.reimbursable_expenses_export_type:
-        queue_import_reimbursable_expenses(workspace_id=workspace_id)
+        queue_import_reimbursable_expenses(workspace_id=workspace_id,  synchronous=True)
         accounting_export = AccountingExport.objects.get(
             workspace_id=workspace_id,
             type='FETCHING_REIMBURSABLE_EXPENSES'
         )
 
+        print('i am here ronadldo', accounting_export.status)
         if accounting_export.status == 'COMPLETE':
             accounting_export_ids = AccountingExport.objects.filter(
                 fund_source='PERSONAL', exported_at__isnull=True).values_list('id', flat=True)
-
+            
+            print('accounting expdts', accounting_export_ids)
             if len(accounting_export_ids):
                 is_expenses_exported = True
 
@@ -47,7 +49,7 @@ def run_import_export(workspace_id: int, export_mode = None):
 
     # For Credit Card Expenses
     if export_settings.credit_card_expense_export_type:
-        queue_import_credit_card_expenses(workspace_id=workspace_id)
+        queue_import_credit_card_expenses(workspace_id=workspace_id, synchronous=True)
         accounting_export = AccountingExport.objects.get(
             workspace_id=workspace_id,
             type='FETCHING_CREDIT_CARD_EXPENSES'

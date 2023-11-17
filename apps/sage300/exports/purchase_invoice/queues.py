@@ -40,7 +40,7 @@ def check_accounting_export_and_start_import(workspace_id: int,  accounting_expo
     
     print('accounting exports', accounting_exports)
     for index, accounting_export_group in enumerate(accounting_exports):
-        accounting_export, _ = AccountingExport.objects.get_or_create(
+        accounting_export, _ = AccountingExport.objects.update_or_create(
             workspace_id=accounting_export_group.workspace_id,
             id=accounting_export_group.id,
             defaults={
