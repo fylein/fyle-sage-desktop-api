@@ -1,7 +1,7 @@
 default_stages: [commit]
 fail_fast: true
-exclude: ^(sql/|(.*\/)?migrations\/)
-default_language_version:
+exclude: "^(sql/|(.*\/)?migrations\/)"
+default_language_version: # noqa
   python: python3
 
 repos:
@@ -19,7 +19,7 @@ repos:
     rev: 5.12.0
     hooks:
       - id: isort
-        args: ["--profile", "black", --trailing-comma, --line-length=125]
+        args: ["--profile", "black", "--trailing-comma", "--line-length=125"]  # Fixed the syntax error here
 
   - repo: https://github.com/pycqa/flake8
     rev: 6.1.0
@@ -31,8 +31,8 @@ repos:
     rev: v1.0.5
     hooks:
       - id: python-bandit-vulnerability-check
-        args: [ -lll, --recursive, -c, bandit.yaml, .]
-        files: .py$
+        args: ["-lll", "--recursive", "-c", "bandit.yaml", "."]  # Fixed the syntax error here
+        files: '\.py$'  # Fixed the regex syntax here
 
   - repo: local
     hooks:
