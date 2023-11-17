@@ -12,7 +12,6 @@ from apps.workspaces.models import (
     Workspace,
     Sage300Credential,
     ExportSetting,
-    ImportSetting,
     AdvancedSetting
 )
 from apps.workspaces.serializers import (
@@ -99,14 +98,14 @@ class ExportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
     queryset = ExportSetting.objects.all()
 
 
-class ImportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
+class ImportSettingView(generics.RetrieveUpdateAPIView):
     """
-    Retrieve or Create Export Settings
+    Retrieve or Create Import Settings
     """
     serializer_class = ImportSettingsSerializer
-    lookup_field = 'workspace_id'
 
-    queryset = ImportSetting.objects.all()
+    def get_object(self):
+        return Workspace.objects.filter(id=self.kwargs['workspace_id']).first()
 
 
 class AdvancedSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
