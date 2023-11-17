@@ -42,7 +42,6 @@ def import_expenses(workspace_id, accounting_export: AccountingExport, source_ac
     last_synced_at = getattr(workspace, f"{fund_source_map.get(fund_source_key)}_last_synced_at", None)
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
-    last_synced_at = None
     platform = PlatformConnector(fyle_credentials)
 
     expenses = platform.expenses.get(
