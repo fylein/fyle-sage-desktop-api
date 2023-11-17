@@ -253,8 +253,6 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         Create Import Settings
         """
 
-        print('validaed', validated)
-
         mapping_settings = validated.pop('mapping_settings')
         import_settings = validated.pop('import_settings')
         dependent_field_settings = validated.pop('dependent_field_settings')
