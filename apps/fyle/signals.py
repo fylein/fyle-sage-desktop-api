@@ -31,7 +31,7 @@ def run_pre_save_dependent_field_settings_triggers(sender, instance: DependentFi
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=instance.workspace_id)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    instance.project_field_id = platform.expense_fields.get_project_field_id()
+    instance.project_field_id = platform.dependent_fields.get_project_field_id()
 
     cost_code = create_dependent_custom_field_in_fyle(
         workspace_id=instance.workspace_id,
@@ -45,9 +45,9 @@ def run_pre_save_dependent_field_settings_triggers(sender, instance: DependentFi
 
     cost_category = create_dependent_custom_field_in_fyle(
         workspace_id=instance.workspace_id,
-        fyle_attribute_type=instance.category_field_name,
+        fyle_attribute_type=instance.cost_category_field_name,
         platform=platform,
-        source_placeholder=instance.category_placeholder,
+        source_placeholder=instance.cost_category_placeholder,
         parent_field_id=instance.cost_code_field_id,
     )
     instance.category_field_id = cost_category['data']['id']

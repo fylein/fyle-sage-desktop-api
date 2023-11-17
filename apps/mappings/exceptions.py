@@ -35,7 +35,7 @@ def handle_import_exceptions(func):
             import_log.status = 'FAILED'
 
         except (Sage300Credential.DoesNotExist, InvalidUserCredentials):
-            error['message'] = 'Invalid Token or Sage Intacct credentials does not exist workspace_id - {0}'.format(workspace_id)
+            error['message'] = 'Invalid Token or Sage 300 credentials does not exist workspace_id - {0}'.format(workspace_id)
             error['alert'] = False
             import_log.status = 'FAILED'
 
