@@ -200,5 +200,127 @@ fixtures = {
         "successful_accounting_export_count":5,
         "failed_accounting_export_count":5,
         "workspace":1
-    }
+    },
+    "import_settings_payload": {
+        "import_settings": {
+            "import_categories": True,
+            "import_vendors_as_merchants": True,
+        },
+        "mapping_settings": [
+            {
+                "source_field": "COST_CENTER",
+                "destination_field": "DEPARTMENT",
+                "import_to_fyle": True,
+                "is_custom": False,
+                "source_placeholder": "cost center",
+            },
+            {
+                "source_field": "PROJECT",
+                "destination_field": "JOB",
+                "import_to_fyle": True,
+                "is_custom": False,
+                "source_placeholder": "project",
+            },
+        ],
+        "dependent_field_settings": {
+            "cost_code_field_name": "Cost Code Jake Jellenahal",
+            "cost_code_placeholder": "this is a dummy placeholder for cost code",
+            "cost_category_field_name": "Cost Type Logan paul",
+            "cost_category_placeholder": "this sia is dummy placeholder for cost type",
+            "is_import_enabled": True,
+        },
+    },
+    "import_settings_without_mapping": {
+        "import_settings": {
+            "import_categories": True,
+            "import_vendors_as_merchants": True,
+        },
+        "mapping_settings": [
+            {
+                "source_field": "CLASS",
+                "destination_field": "CUSTOMER",
+                "import_to_fyle": True,
+                "is_custom": True,
+                "source_placeholder": "class",
+            }
+        ],
+        "dependent_field_settings": None,
+    },
+    "import_settings_schedule_check": {
+        "import_settings": {
+            "import_categories": True,
+            "import_vendors_as_merchants": True,
+        },
+        "mapping_settings": [
+            {
+                "source_field": "PROJECT",
+                "destination_field": "PROJECT",
+                "import_to_fyle": True,
+                "is_custom": False,
+                "source_placeholder": "Select Project",
+            }
+        ],
+        "dependent_field_settings": None,
+    },
+    "response": {
+        "import_settings": {
+            "import_categories": True,
+            "import_vendors_as_merchants": True,
+        },
+        "mapping_settings": [
+            {
+                "source_field": "COST_CENTER",
+                "destination_field": "CLASS",
+                "import_to_fyle": True,
+                "is_custom": False,
+                "source_placeholder": "",
+            },
+            {
+                "source_field": "PROJECT",
+                "destination_field": "DEPARTMENT",
+                "import_to_fyle": True,
+                "is_custom": False,
+                "source_placeholder": "",
+            },
+            {
+                "source_field": "CLASS",
+                "destination_field": "CUSTOMER",
+                "import_to_fyle": True,
+                "is_custom": True,
+                "source_placeholder": "",
+            },
+        ],
+        "workspace_id": 9,
+        "dependent_field_settings": {
+            "cost_code_field_name": "Cost Code Jake Jellenahal",
+            "cost_code_placeholder": "this is a dummy placeholder for cost code",
+            "cost_category_field_name": "Cost Type Logan paul",
+            "cost_category_placeholder": "this sia is dummy placeholder for cost type",
+            "is_import_enabled": True,
+        },
+    },
+    "invalid_general_mappings": {
+        "import_settings": {
+            "import_categories": True,
+            "import_vendors_as_merchants": True,
+        },
+        "mapping_settings": [
+            {
+                "source_field": "COST_CENTER",
+                "destination_field": "DEPARTMENT",
+                "import_to_fyle": True,
+                "is_custom": False,
+                "source_placeholder": "cost center",
+            }
+        ],
+        "dependent_field_settings": None,
+    },
+    "invalid_mapping_settings": {
+        "import_settings": {
+            "import_categories": True,
+            "import_vendors_as_merchants": True,
+        },
+        "mapping_settings": None,
+        "dependent_field_settings": None,
+    },
 }

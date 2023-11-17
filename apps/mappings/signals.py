@@ -49,7 +49,7 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
     instance.source_field = instance.source_field.upper().replace(' ', '_')
 
     if instance.source_field not in default_attributes and instance.import_to_fyle:
-        # TODO: sync intacct fields before we upload custom field
+        # TODO: sync sage 300 fields before we upload custom field
         try:
             workspace_id = int(instance.workspace_id)
             # Checking is import_log exists or not if not create one
