@@ -7,7 +7,7 @@ from fyle.platform.exceptions import NoPrivilegeError
 from apps.workspaces.models import FyleCredential
 
 logger = logging.getLogger(__name__)
-logger.level = logging.INFO
+logger.level = logging.INFO 
 
 
 def handle_exceptions(func):
