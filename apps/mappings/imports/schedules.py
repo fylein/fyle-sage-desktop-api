@@ -6,23 +6,23 @@ from apps.fyle.models import DependentFieldSetting
 from apps.workspaces.models import ImportSetting
 
 
-def schedule_or_delete_dependent_field_tasks(import_settings: ImportSetting):
+def schedule_or_delete_dependent_field_tasks(workspace_id: int):
     """
     :param configuration: Workspace Configuration Instance
     :return: None
     """
     project_mapping = MappingSetting.objects.filter(
         source_field='PROJECT',
-        workspace_id=import_settings.workspace_id,
+        workspace_id=workspace_id,
         import_to_fyle=True
     ).first()
-    dependent_fields = DependentFieldSetting.objects.filter(workspace_id=import_settings.workspace_id, is_import_enabled=True).first()
+    dependent_fields = DependentFieldSetting.objects.filter(workspace_id=workspace_id, is_import_enabled=True).first()
 
     if project_mapping and dependent_fields:
         start_datetime = datetime.now()
         Schedule.objects.update_or_create(
             func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
-            args='{}'.format(import_settings.workspace_id),
+            args='{}'.format(workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
                 'minutes': 24 * 60,
@@ -32,7 +32,7 @@ def schedule_or_delete_dependent_field_tasks(import_settings: ImportSetting):
     elif not (project_mapping and dependent_fields):
         Schedule.objects.filter(
             func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
-            args='{}'.format(import_settings.workspace_id)
+            args='{}'.format(workspace_id)
         ).delete()
 
 
@@ -80,4 +80,4 @@ def schedule_or_delete_fyle_import_tasks(import_settings: ImportSetting, mapping
         ).delete()
 
     # Schedule or delete dependent field tasks
-    schedule_or_delete_dependent_field_tasks(import_settings=import_settings)
+    schedule_or_delete_dependent_field_tasks(import_settings.workspace_id)
