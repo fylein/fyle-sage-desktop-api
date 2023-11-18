@@ -5,6 +5,8 @@ from fyle_accounting_mappings.models import MappingSetting
 from apps.mappings.models import ImportLog
 from apps.mappings.imports.modules.categories import Category
 from apps.mappings.imports.modules.projects import Project
+from apps.mappings.imports.modules.cost_centers import CostCenter
+from apps.mappings.imports.modules.merchants import Merchant
 from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
 from apps.fyle.models import DependentFieldSetting
 
@@ -12,6 +14,8 @@ from apps.fyle.models import DependentFieldSetting
 SOURCE_FIELD_CLASS_MAP = {
     'CATEGORY': Category,
     'PROJECT': Project,
+    'COST_CENTER': CostCenter,
+    'MERCHANT': Merchant
 }
 
 
@@ -48,7 +52,7 @@ def auto_import_and_map_fyle_fields(workspace_id):
     chain = Chain()
 
     if project_mapping and dependent_fields:
-        chain.append('apps.sage_intacct.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
+        chain.append('apps.sage_300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
 
     if chain.length() > 0:
         chain.run()

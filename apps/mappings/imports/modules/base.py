@@ -154,7 +154,7 @@ class Base:
         :param platform: PlatformConnector object
         """
         platform_class = self.get_platform_class(platform)
-        if self.platform_class_name == 'expense_custom_fields':
+        if self.platform_class_name in ['expense_custom_fields', 'merchants']:
             platform_class.sync()
         else:
             platform_class.sync(sync_after=self.sync_after if self.sync_after else None)
@@ -187,6 +187,8 @@ class Base:
         """
         Construct Payload and Import to fyle in Batches
         """
+        is_auto_sync_status_allowed = self.get_auto_sync_permission()
+
         filters = self.construct_attributes_filter(self.destination_field)
 
         destination_attributes_count = DestinationAttribute.objects.filter(**filters).count()
@@ -272,7 +274,7 @@ class Base:
         :param is_last_batch: bool
         :param import_log: ImportLog object
         """
-        if fyle_payload and self.platform_class_name == 'expense_custom_fields':
+        if fyle_payload and self.platform_class_name in ['expense_custom_fields', 'merchants']:
             resource_class.post(fyle_payload)
         elif fyle_payload:
             resource_class.post_bulk(fyle_payload)
