@@ -1,67 +1,53 @@
-from datetime import datetime
-from django.db import transaction
-
+from apps.sage300.exports.accounting_export import AccountingDataExporter
 from apps.accounting_exports.models import AccountingExport
-from apps.workspaces.models import ExportSetting
+from apps.sage300.utils import SageDesktopConnector
+from apps.sage300.exports.purchase_invoice.queues import check_accounting_export_and_start_import
 
 
-class AccountingDataExporter:
+class ExportPurchaseInvoice(AccountingDataExporter):
     """
-    Base class for exporting accounting data to an external accounting system.
-    Subclasses should implement the 'post' method for posting data.
+    Class for handling the export of purchase invoices to Sage 300.
+    Extends the base AccountingDataExporter class.
     """
 
-    body_model = None
-    lineitem_model = None
-
-    def post(self, body, lineitems):
+    def trigger_export(self, workspace_id, accounting_export_ids):
         """
-        Implement this method to post data to the external accounting system.
+        Trigger the import process for the Project module.
         """
-        raise NotImplementedError("Please implement this method")
+        check_accounting_export_and_start_import(workspace_id, accounting_export_ids)
 
-    def create_sage300_object(self, accounting_export: AccountingExport):
+    def __construct_purchase_invoice(self, item, lineitem):
         """
-        Create a purchase invoice in the external accounting system.
-
-        Args:
-            accounting_export (AccountingExport): The accounting export object.
-
-        Raises:
-            NotImplementedError: If the method is not implemented in the subclass.
+        Construct the payload for the purchase invoice.
         """
+        # Implementation for constructing the purchase invoice payload goes here
+        pass
 
-        # Retrieve export settings for the current workspace
-        export_settings = ExportSetting.objects.filter(workspace_id=accounting_export.workspace_id)
-
-        # Check and update the status of the accounting export
-        if accounting_export.status not in ['IN_PROGRESS', 'COMPLETE']:
-            accounting_export.status = 'IN_PROGRESS'
-            accounting_export.save()
-        else:
-            # If the status is already 'IN_PROGRESS' or 'COMPLETE', return without further processing
-            return
-
+    def post(self, item, lineitem):
+        """
+        Export the purchase invoice to Sage 300.
+        """
         try:
-            with transaction.atomic():
-                # Create or update the main body of the accounting object
-                body_model_object = self.body_model.create_or_update_object(accounting_export)
+            purchase_invoice_payload = self.__construct_purchase_invoice(item, lineitem)
 
-                # Create or update line items for the accounting object
-                lineitems_model_objects = self.lineitem_model.create_or_update_object(
-                    accounting_export, export_settings
-                )
+            # Establish a connection to Sage 300
+            sage300_connection = SageDesktopConnector()
 
-                # Post the data to the external accounting system
-                created_object = self.post(body_model_object, lineitems_model_objects)
-
-                # Update the accounting export details
-                accounting_export.detail = created_object
-                accounting_export.status = 'COMPLETE'
-                accounting_export.exported_at = datetime.now()
-
-                accounting_export.save()
+            # Post the purchase invoice to Sage 300
+            created_purchase_invoice = sage300_connection.connection.documents.post_document(purchase_invoice_payload)
+            return created_purchase_invoice
 
         except Exception as e:
             print(e)
-            # Handle exceptions specific to the export process here
+
+
+def create_purchase_invoice(accounting_export: AccountingExport):
+    """
+    Helper function to create and export a purchase invoice.
+    """
+    export_purchase_invoice_instance = ExportPurchaseInvoice()
+
+    # Create and export the purchase invoice using the base class method
+    exported_purchase_invoice = export_purchase_invoice_instance.create_sage300_object(accounting_export=accounting_export)
+
+    return exported_purchase_invoice
