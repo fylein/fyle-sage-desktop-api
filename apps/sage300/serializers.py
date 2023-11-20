@@ -90,7 +90,6 @@ class Sage300FieldSerializer(serializers.Serializer):
             "PAYMENT",
         ]
 
-        run_import_export(workspace_id=workspace_id, export_mode='MANUAL')
         attributes = (
             DestinationAttribute.objects.filter(
                 ~Q(attribute_type__in=attribute_types),
