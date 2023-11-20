@@ -1,5 +1,5 @@
 from apps.accounting_exports.models import AccountingExport
-from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice 
+from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
 
 
 def create_purchase_invoice(accounting_export: AccountingExport):
