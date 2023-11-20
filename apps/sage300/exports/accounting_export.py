@@ -2,7 +2,7 @@ from datetime import datetime
 from django.db import transaction
 
 from apps.accounting_exports.models import AccountingExport
-from apps.workspaces.models import ExportSetting
+from apps.workspaces.models import AdvancedSetting
 
 
 class AccountingDataExporter:
@@ -11,8 +11,9 @@ class AccountingDataExporter:
     Subclasses should implement the 'post' method for posting data.
     """
 
-    body_model = None
-    lineitem_model = None
+    def __init__(self):
+        self.body_model = None
+        self.lineitem_model = None
 
     def post(self, body, lineitems):
         """
@@ -31,8 +32,8 @@ class AccountingDataExporter:
             NotImplementedError: If the method is not implemented in the subclass.
         """
 
-        # Retrieve export settings for the current workspace
-        export_settings = ExportSetting.objects.filter(workspace_id=accounting_export.workspace_id)
+        # Retrieve advance settings for the current workspace
+        advance_settings = AdvancedSetting.objects.filter(workspace_id=accounting_export.workspace_id).first()
 
         # Check and update the status of the accounting export
         if accounting_export.status not in ['IN_PROGRESS', 'COMPLETE']:
@@ -49,7 +50,7 @@ class AccountingDataExporter:
 
                 # Create or update line items for the accounting object
                 lineitems_model_objects = self.lineitem_model.create_or_update_object(
-                    accounting_export, export_settings
+                    accounting_export, advance_settings
                 )
 
                 # Post the data to the external accounting system

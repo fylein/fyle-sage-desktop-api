@@ -87,7 +87,6 @@ class Sage300FieldSerializer(serializers.Serializer):
             "COST_CODE",
             "PAYMENT",
         ]
-
         attributes = (
             DestinationAttribute.objects.filter(
                 ~Q(attribute_type__in=attribute_types),
