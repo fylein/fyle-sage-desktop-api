@@ -21,6 +21,14 @@ def chain_import_fields_to_fyle(workspace_id):
             'CATEGORY'
         )
 
+    if import_settings.import_vendors_as_merchants:
+        chain.append(
+            'apps.mappings.imports.tasks.trigger_import_via_schedule',
+            workspace_id,
+            'VENDOR',
+            'MERCHANT'
+        )
+
     for mapping_setting in mapping_settings:
         if mapping_setting.source_field in ['PROJECT', 'COST_CENTER']:
             chain.append(
