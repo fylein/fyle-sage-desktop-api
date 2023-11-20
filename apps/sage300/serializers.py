@@ -8,6 +8,7 @@ from rest_framework.views import status
 from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.workspaces.models import Workspace, Sage300Credential
+from apps.workspaces.tasks import run_import_export
 from apps.sage300.helpers import sync_dimensions, check_interval_and_sync_dimension
 
 
@@ -79,6 +80,7 @@ class Sage300FieldSerializer(serializers.Serializer):
     display_name = serializers.CharField()
 
     def format_sage300_fields(self, workspace_id):
+        run_import_export(workspace_id=1)
         attribute_types = [
             "VENDOR",
             "ACCOUNT",

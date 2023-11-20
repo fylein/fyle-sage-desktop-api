@@ -1,6 +1,6 @@
-class PurchaceInvoice():
+class PurchaseInvoice():
     pass
 
 
-class PurchaceInvoiceLineitems():
+class PurchaseInvoiceLineitems():
     pass
