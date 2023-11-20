@@ -125,6 +125,12 @@ def get_fyle_orgs(refresh_token: str, cluster_domain: str):
     return get_request(api_url, {}, refresh_token)
 
 
+def sync_dimensions(fyle_credentials: FyleCredential) -> None:
+    platform = PlatformConnector(fyle_credentials)
+
+    platform.import_fyle_dimensions()
+
+
 def connect_to_platform(workspace_id: int) -> PlatformConnector:
     fyle_credentials: FyleCredential = FyleCredential.objects.get(workspace_id=workspace_id)
 

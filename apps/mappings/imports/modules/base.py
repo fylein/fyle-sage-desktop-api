@@ -172,7 +172,7 @@ class Base:
             'JOB': sage300_connection.sync_jobs,
             'COMMITMENT': sage300_connection.sync_commitments,
             'VENDOR': sage300_connection.sync_vendors,
-            'STANDARD_COST_CODES': sage300_connection.sync_standard_cost_codes,
+            'STANDARD_COST_CODE': sage300_connection.sync_standard_cost_codes,
             'ACCOUNT': sage300_connection.sync_accounts,
         }
 

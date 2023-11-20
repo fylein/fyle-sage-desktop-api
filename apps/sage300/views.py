@@ -22,6 +22,7 @@ class Sage300FieldsView(generics.ListAPIView):
     Sage300 Expense Fields View
     """
     serializer_class = Sage300FieldSerializer
+    pagination_class = None
 
     def get_queryset(self):
         return Sage300FieldSerializer().format_sage300_fields(self.kwargs["workspace_id"])
