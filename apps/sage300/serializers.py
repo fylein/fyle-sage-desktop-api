@@ -11,8 +11,6 @@ from apps.workspaces.models import Workspace, Sage300Credential
 from apps.sage300.helpers import sync_dimensions, check_interval_and_sync_dimension
 
 
-from apps.workspaces.tasks import run_import_export
-
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
@@ -90,7 +88,6 @@ class Sage300FieldSerializer(serializers.Serializer):
             "PAYMENT",
         ]
 
-        run_import_export(workspace_id=workspace_id, export_mode='MANUAL')
         attributes = (
             DestinationAttribute.objects.filter(
                 ~Q(attribute_type__in=attribute_types),

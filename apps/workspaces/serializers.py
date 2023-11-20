@@ -212,6 +212,9 @@ class DependentFieldSettingSerializer(serializers.ModelSerializer):
     """
     Dependent Field serializer
     """
+    cost_code_field_name = serializers.CharField(required=False)
+    cost_category_field_name = serializers.CharField(required=False)
+
     class Meta:
         model = DependentFieldSetting
         fields = [
@@ -302,9 +305,6 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
 
         if data.get('mapping_settings') is None:
             raise serializers.ValidationError('Mapping settings are required')
-
-        if not data.get('dependent_field_settings'):
-            pass
 
         return data
 

@@ -112,7 +112,7 @@ class PurchaseInvoiceLineitems(BaseExportModel):
 
             if dependent_field_setting:
                 cost_category_id = self.get_cost_category_id_or_none(accounting_export, lineitem, dependent_field_setting, job_id)
-                cost_code_id = self.get_cost_type_id_or_none(accounting_export, lineitem, dependent_field_setting, job_id, cost_category_id)           
+                cost_code_id = self.get_cost_type_id_or_none(accounting_export, lineitem, dependent_field_setting, job_id, cost_category_id)
 
             purchase_invoice_lineitem_objects, _ = PurchaseInvoiceLineitems.objects.update_or_create(
                 purchase_invoice_id=purchase_invoice.id,

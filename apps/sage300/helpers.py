@@ -7,6 +7,7 @@ from django.utils.module_loading import import_string
 from apps.workspaces.models import Workspace, Sage300Credential
 from apps.mappings.models import Version
 
+
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
