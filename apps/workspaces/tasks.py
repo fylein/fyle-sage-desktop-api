@@ -39,7 +39,7 @@ def run_import_export(workspace_id: int, export_mode = None):
         if accounting_export.status == 'COMPLETE':
             accounting_export_ids = AccountingExport.objects.filter(
                 fund_source='PERSONAL', exported_at__isnull=True).values_list('id', flat=True)
-            
+
             if len(accounting_export_ids):
                 is_expenses_exported = True
 

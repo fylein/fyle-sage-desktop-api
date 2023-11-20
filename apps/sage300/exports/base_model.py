@@ -68,5 +68,6 @@ class BaseExportModel(models.Model):
 
     def get_standard_cost_code_id(accounting_export: AccountingExport, expense: Expense):
         return '123123'
+
     class Meta:
         abstract = True
