@@ -11,8 +11,6 @@ from apps.workspaces.models import Workspace, Sage300Credential
 from apps.sage300.helpers import sync_dimensions, check_interval_and_sync_dimension
 
 
-from apps.workspaces.tasks import run_import_export
-
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
