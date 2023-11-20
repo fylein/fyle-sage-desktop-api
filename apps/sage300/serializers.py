@@ -80,7 +80,6 @@ class Sage300FieldSerializer(serializers.Serializer):
     display_name = serializers.CharField()
 
     def format_sage300_fields(self, workspace_id):
-        run_import_export(workspace_id=1)
         attribute_types = [
             "VENDOR",
             "ACCOUNT",
