@@ -12,7 +12,6 @@ from sage_desktop_api.models.fields import (
     BooleanFalseField,
     IntegerNullField,
     CustomJsonField,
-    BooleanTrueField
 )
 
 User = get_user_model()
@@ -123,7 +122,8 @@ REIMBURSABLE_EXPENSES_DATE_TYPE_CHOICES = (
 
 # Credit Card Expense Choices
 CREDIT_CARD_EXPENSE_EXPORT_TYPE_CHOICES = (
-    ('JOURNAL_ENTRY', 'JOURNAL_ENTRY'),
+    ('PURCHASE_INVOICE', 'PURCHASE_INVOICE'),
+    ('DIRECT_COST', 'DIRECT_COST')
 )
 
 CREDIT_CARD_EXPENSE_STATE_CHOICES = (
@@ -171,12 +171,11 @@ class ExportSetting(BaseModel):
     credit_card_expense_state = StringOptionsField(
         choices=CREDIT_CARD_EXPENSE_STATE_CHOICES
     )
-    default_reimbursable_account_name = StringNullField(help_text='Reimbursable account name')
-    default_reimbursable_account_id = StringNullField(help_text='Reimbursable Account ID')
+
     default_ccc_credit_card_account_name = StringNullField(help_text='CCC Credit card account name')
     default_ccc_credit_card_account_id = StringNullField(help_text='CCC Credit Card Account ID')
-    default_reimbursable_credit_card_account_name = StringNullField(help_text='Reimbursable Credit card account name')
-    default_reimbursable_credit_card_account_id = StringNullField(help_text='Reimbursable Credit card account name')
+    default_debit_card_account_name = StringNullField(help_text='Debit card account name')
+    default_debit_card_account_id = StringNullField(help_text='Debit card account name')
     credit_card_expense_grouped_by = StringOptionsField(
         choices=CREDIT_CARD_EXPENSES_GROUPED_BY_CHOICES
     )
@@ -185,7 +184,6 @@ class ExportSetting(BaseModel):
     )
     default_vendor_name = StringNullField(help_text='default Vendor Name')
     default_vendor_id = StringNullField(help_text='default Vendor Id')
-    auto_map_employees = BooleanTrueField(help_text='Auto map employees')
 
     class Meta:
         db_table = 'export_settings'
