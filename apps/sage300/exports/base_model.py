@@ -167,7 +167,7 @@ class BaseExportModel(models.Model):
         commitment_id = None
         source_id = None
 
-        if accounting_export:
+        if accounting_export and commitment_setting:
             if expense:
                 if commitment_setting.source_field == 'PROJECT':
                     source_id = expense.project_id
@@ -237,26 +237,27 @@ class BaseExportModel(models.Model):
         # Retrieve mapping settings for standard category
         standard_category_setting: MappingSetting = MappingSetting.objects.filter(
             workspace_id=accounting_export.workspace_id,
-            destination_field='CLASS'
+            destination_field='STANDARD_CATEGORY'
         ).first()
 
-        # Retrieve the attribute corresponding to the source field
-        attribute = ExpenseAttribute.objects.filter(attribute_type=standard_category_setting.source_field).first()
+        if standard_category_setting:
+            # Retrieve the attribute corresponding to the source field
+            attribute = ExpenseAttribute.objects.filter(attribute_type=standard_category_setting.source_field).first()
 
-        # Determine the source value based on the configured source field
-        source_value = expense.custom_properties.get(attribute.display_name, None)
+            # Determine the source value based on the configured source field
+            source_value = expense.custom_properties.get(attribute.display_name, None)
 
-        # Check for a mapping based on the source value
-        mapping: Mapping = Mapping.objects.filter(
-            source_type=standard_category_setting.source_field,
-            destination_type='STANDARD_CATEGORY',
-            source__value=source_value,
-            workspace_id=accounting_export.workspace_id
-        ).first()
+            # Check for a mapping based on the source value
+            mapping: Mapping = Mapping.objects.filter(
+                source_type=standard_category_setting.source_field,
+                destination_type='STANDARD_CATEGORY',
+                source__value=source_value,
+                workspace_id=accounting_export.workspace_id
+            ).first()
 
-        # If a mapping is found, retrieve the destination standard category ID
-        if mapping:
-            standard_category_id = mapping.destination.destination_id
+            # If a mapping is found, retrieve the destination standard category ID
+            if mapping:
+                standard_category_id = mapping.destination.destination_id
 
         return standard_category_id
 
@@ -276,25 +277,26 @@ class BaseExportModel(models.Model):
         # Retrieve mapping settings for standard cost code
         standard_cost_code_setting: MappingSetting = MappingSetting.objects.filter(
             workspace_id=accounting_export.workspace_id,
-            destination_field='CLASS'
+            destination_field='STANDARD_COST_CODE'
         ).first()
 
-        # Retrieve the attribute corresponding to the source field
-        attribute = ExpenseAttribute.objects.filter(attribute_type=standard_cost_code_setting.source_field).first()
+        if standard_cost_code_setting:
+            # Retrieve the attribute corresponding to the source field
+            attribute = ExpenseAttribute.objects.filter(attribute_type=standard_cost_code_setting.source_field).first()
 
-        # Determine the source value based on the configured source field
-        source_value = expense.custom_properties.get(attribute.display_name, None)
+            # Determine the source value based on the configured source field
+            source_value = expense.custom_properties.get(attribute.display_name, None)
 
-        # Check for a mapping based on the source value
-        mapping: Mapping = Mapping.objects.filter(
-            source_type=standard_cost_code_setting.source_field,
-            destination_type='STANDARD_CATEGORY',
-            source__value=source_value,
-            workspace_id=accounting_export.workspace_id
-        ).first()
+            # Check for a mapping based on the source value
+            mapping: Mapping = Mapping.objects.filter(
+                source_type=standard_cost_code_setting.source_field,
+                destination_type='STANDARD_COST_CODE',
+                source__value=source_value,
+                workspace_id=accounting_export.workspace_id
+            ).first()
 
-        # If a mapping is found, retrieve the destination standard cost code ID
-        if mapping:
-            standard_cost_code_id = mapping.destination.destination_id
+            # If a mapping is found, retrieve the destination standard cost code ID
+            if mapping:
+                standard_cost_code_id = mapping.destination.destination_id
 
         return standard_cost_code_id

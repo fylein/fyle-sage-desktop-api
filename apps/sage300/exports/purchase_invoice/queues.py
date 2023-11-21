@@ -20,7 +20,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
     fyle_credentials = FyleCredential.objects.filter(workspace_id=workspace_id).first()
 
     accounting_exports = AccountingExport.objects.filter(
-        status='IN_PROGRESS',
+        status__in=['IN_PROGRESS', 'ENQUEUED'],
         workspace_id=workspace_id, id__in=accounting_export_ids, purchaseinvoice__id__isnull=True,
         exported_at__isnull=True
     ).all()
