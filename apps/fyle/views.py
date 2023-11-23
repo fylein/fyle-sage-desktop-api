@@ -4,7 +4,6 @@ from rest_framework.views import status
 from rest_framework.response import Response
 
 from sage_desktop_api.utils import LookupFieldMixin
-from apps.workspaces.models import Workspace
 from apps.fyle.serializers import (
     ImportFyleAttributesSerializer,
     ExpenseFilterSerializer,
@@ -50,9 +49,6 @@ class CustomFieldView(generics.ListAPIView):
     """
     Custom Field view
     """
-    authentication_classes = []
-    permission_classes = []
-
     serializer_class = ExpenseFieldSerializer
     pagination_class = None
 
