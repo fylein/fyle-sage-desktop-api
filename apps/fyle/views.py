@@ -50,8 +50,9 @@ class CustomFieldView(generics.ListAPIView):
     """
     Custom Field view
     """
-
     serializer_class = ExpenseFieldSerializer
+    pagination_class = None
+
     queryset = Workspace.objects.all()
 
 
