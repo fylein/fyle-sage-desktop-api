@@ -84,14 +84,15 @@ class ExpenseFieldSerializer(serializers.Serializer):
     """
     Workspace Admin Serializer
     """
-    expense_fields = serializers.SerializerMethodField()
 
-    def get_expense_fields(self, validated_data):
+    field_name = serializers.CharField()
+    type = serializers.CharField()
+    is_custom = serializers.BooleanField()
+
+    def get_expense_fields(self, workspace_id):
         """
         Get Expense Fields
         """
-
-        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
         expense_fields = get_expense_fields(workspace_id=workspace_id)
 
         return expense_fields
