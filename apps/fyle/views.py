@@ -50,10 +50,14 @@ class CustomFieldView(generics.ListAPIView):
     """
     Custom Field view
     """
+    authentication_classes = []
+    permission_classes = []
+
     serializer_class = ExpenseFieldSerializer
     pagination_class = None
 
-    queryset = Workspace.objects.all()
+    def get_queryset(self):
+        return ExpenseFieldSerializer().get_expense_fields(self.kwargs["workspace_id"])
 
 
 class FyleFieldsView(generics.ListAPIView):
