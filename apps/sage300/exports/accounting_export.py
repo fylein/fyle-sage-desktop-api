@@ -4,6 +4,7 @@ from django.db import transaction
 
 from apps.accounting_exports.models import AccountingExport
 from apps.workspaces.models import AdvancedSetting
+from apps.sage300.exports.helpers import validate_expense_group
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -47,6 +48,7 @@ class AccountingDataExporter:
             # If the status is already 'IN_PROGRESS' or 'COMPLETE', return without further processing
             return
 
+        validate_expense_group(accounting_export)
         with transaction.atomic():
             # Create or update the main body of the accounting object
             body_model_object = self.body_model.create_or_update_object(accounting_export)
