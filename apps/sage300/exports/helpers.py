@@ -20,7 +20,7 @@ def get_filtered_mapping(
     return Mapping.objects.filter(**filters).first()
 
 
-def validate_expense_group(accounting_export: AccountingExport):
+def validate_accounting_export(accounting_export: AccountingExport):
     bulk_errors = []
     row = 0
 
