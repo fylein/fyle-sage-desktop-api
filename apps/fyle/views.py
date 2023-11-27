@@ -4,7 +4,6 @@ from rest_framework.views import status
 from rest_framework.response import Response
 
 from sage_desktop_api.utils import LookupFieldMixin
-from apps.workspaces.models import Workspace
 from apps.fyle.serializers import (
     ImportFyleAttributesSerializer,
     ExpenseFilterSerializer,
@@ -50,9 +49,11 @@ class CustomFieldView(generics.ListAPIView):
     """
     Custom Field view
     """
-
     serializer_class = ExpenseFieldSerializer
-    queryset = Workspace.objects.all()
+    pagination_class = None
+
+    def get_queryset(self):
+        return ExpenseFieldSerializer().get_expense_fields(self.kwargs["workspace_id"])
 
 
 class FyleFieldsView(generics.ListAPIView):
@@ -61,6 +62,7 @@ class FyleFieldsView(generics.ListAPIView):
     """
 
     serializer_class = FyleFieldsSerializer
+    pagination_class = None
 
     def get_queryset(self):
         return FyleFieldsSerializer().format_fyle_fields(self.kwargs["workspace_id"])
