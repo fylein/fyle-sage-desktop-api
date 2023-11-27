@@ -16,6 +16,8 @@ from sage_desktop_api.models.fields import (
 )
 from apps.accounting_exports.models import AccountingExport
 
+from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems # noqa
+
 
 class Invoice(BaseModel):
     """

@@ -113,7 +113,6 @@ class AccountingExport(BaseForeignWorkspaceModel):
 
         # Group expenses based on specified fields and fund_source
         accounting_exports = _group_expenses(expense_objects, export_setting, fund_source)
-
         fund_source_map = {
             'PERSONAL': 'reimbursable',
             'CCC': 'credit_card'
@@ -138,6 +137,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
                 workspace_id=workspace_id,
                 fund_source=accounting_export['fund_source'],
                 description=accounting_export,
+                status='ENQUEUED'
             )
 
             # Add related expenses to the AccountingExport object
