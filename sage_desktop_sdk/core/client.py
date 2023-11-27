@@ -174,7 +174,7 @@ class Client:
             return json.loads(response.text)
 
         if response.status_code == 400:
-            raise WrongParamsError('Some of the parameters are wrong', response.text)
+            raise WrongParamsError('Some of the parameters are wrong', json.loads(response.text))
 
         if response.status_code == 406:
             raise NotAcceptableClientError('Forbidden, the user has insufficient privilege', response.text)

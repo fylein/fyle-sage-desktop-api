@@ -52,7 +52,8 @@ class PurchaseInvoice(BaseExportModel):
                 'amount': amount,
                 'vendor_id': vendor_id,
                 'description': description,
-                'invoice_date': invoice_date
+                'invoice_date': invoice_date,
+                'workspace_id': accounting_export.workspace_id
             }
         )
 
@@ -126,7 +127,8 @@ class PurchaseInvoiceLineitems(BaseExportModel):
                     'standard_cost_code_id': standard_cost_code_id,
                     'category_id': cost_category_id,
                     'cost_code_id': cost_code_id,
-                    'description': description
+                    'description': description,
+                    'workspace_id': accounting_export.workspace_id
                 }
             )
             purchase_invoice_lineitem_objects.append(purchase_invoice_lineitem_object)

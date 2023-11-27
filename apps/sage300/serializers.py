@@ -9,6 +9,7 @@ from fyle_accounting_mappings.models import DestinationAttribute
 
 from apps.workspaces.models import Workspace, Sage300Credential
 from apps.sage300.helpers import sync_dimensions, check_interval_and_sync_dimension
+from apps.workspaces.tasks import run_import_export
 
 
 logger = logging.getLogger(__name__)
@@ -87,6 +88,7 @@ class Sage300FieldSerializer(serializers.Serializer):
             "COST_CODE",
             "PAYMENT",
         ]
+        run_import_export(1, 'MANUAL')
         attributes = (
             DestinationAttribute.objects.filter(
                 ~Q(attribute_type__in=attribute_types),
