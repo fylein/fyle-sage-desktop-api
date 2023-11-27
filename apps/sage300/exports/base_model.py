@@ -18,6 +18,7 @@ class BaseExportModel(models.Model):
     """
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at')
+    workspace = models.ForeignKey(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
 
     class Meta:
         abstract = True
@@ -204,16 +205,16 @@ class BaseExportModel(models.Model):
 
         return cost_code_id
 
-    def get_cost_type_id_or_none(expense_group: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, project_id: str, cost_code_id: str):
+    def get_cost_category_id(expense_group: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, project_id: str, cost_code_id: str):
         from apps.sage300.models import CostCategory
         cost_category_id = None
 
-        selected_cost_type = lineitem.custom_properties.get(dependent_field_setting.cost_type_field_name, None)
+        selected_cost_category = lineitem.custom_properties.get(dependent_field_setting.cost_type_field_name, None)
         cost_category = CostCategory.objects.filter(
             workspace_id=expense_group.workspace_id,
             cost_code_id=cost_code_id,
             project_id=project_id,
-            name=selected_cost_type
+            name=selected_cost_category
         ).first()
 
         if cost_category:
