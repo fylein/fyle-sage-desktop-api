@@ -61,6 +61,7 @@ class FyleFieldsView(generics.ListAPIView):
     """
 
     serializer_class = FyleFieldsSerializer
+    pagination_class = None
 
     def get_queryset(self):
         return FyleFieldsSerializer().format_fyle_fields(self.kwargs["workspace_id"])
