@@ -5,6 +5,8 @@ from django_q.models import Schedule
 
 from apps.workspaces.models import ExportSetting, AdvancedSetting
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
+from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
+from apps.fyle.queue import queue_import_reimbursable_expenses, queue_import_credit_card_expenses
 
 
 logger = logging.getLogger(__name__)
@@ -19,13 +21,16 @@ def run_import_export(workspace_id: int, export_mode = None):
 
     export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
     advance_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
-    accounting_summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
+    accounting_summary, _ = AccountingExportSummary.objects.update_or_create(
+        workspace_id=workspace_id
+    )
 
     last_exported_at = datetime.now()
     is_expenses_exported = False
 
     # For Reimbursable Expenses
     if export_settings.reimbursable_expenses_export_type:
+        queue_import_reimbursable_expenses(workspace_id=workspace_id,  synchronous=True)
         accounting_export = AccountingExport.objects.get(
             workspace_id=workspace_id,
             type='FETCHING_REIMBURSABLE_EXPENSES'
@@ -38,17 +43,16 @@ def run_import_export(workspace_id: int, export_mode = None):
             if len(accounting_export_ids):
                 is_expenses_exported = True
 
-                """
-                Export Logic goes here
-                """
+                purchase_invoice = ExportPurchaseInvoice()
+                purchase_invoice.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
 
     # For Credit Card Expenses
     if export_settings.credit_card_expense_export_type:
+        queue_import_credit_card_expenses(workspace_id=workspace_id, synchronous=True)
         accounting_export = AccountingExport.objects.get(
             workspace_id=workspace_id,
-            type='FETCHING_CREDIT_CARD_EXPENENSES'
+            type='FETCHING_CREDIT_CARD_EXPENSES'
         )
-
         if accounting_export.status == 'COMPLETE':
             accounting_export_ids = AccountingExport.objects.filter(
                 fund_source='CCC', exported_at__isnull=True).values_list('id', flat=True)
@@ -56,9 +60,8 @@ def run_import_export(workspace_id: int, export_mode = None):
             if len(accounting_export_ids):
                 is_expenses_exported = True
 
-                """
-                Export Logic goes here
-                """
+                purchase_invoice = ExportPurchaseInvoice()
+                purchase_invoice.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
 
     if is_expenses_exported:
         accounting_summary.last_exported_at = last_exported_at

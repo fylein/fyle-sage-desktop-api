@@ -24,7 +24,7 @@ class Documents(Client):
         Get Vendor Types
         :return: List of Dicts in Vendor Types Schema
         """
-        return self._post_request(Documents.POST_DOCUMENT, data=json.dumps(data.__dict__))
+        return self._post_request(Documents.POST_DOCUMENT, data=json.dumps(data))
 
     def export_document(self, document_id: str):
         """
