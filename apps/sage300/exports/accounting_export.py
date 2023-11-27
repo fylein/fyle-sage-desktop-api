@@ -15,7 +15,7 @@ class AccountingDataExporter:
         self.body_model = None
         self.lineitem_model = None
 
-    def post(self, body, lineitems):
+    def post(self, workspace_id, body, lineitems):
         """
         Implement this method to post data to the external accounting system.
         """
@@ -54,7 +54,7 @@ class AccountingDataExporter:
                 )
 
                 # Post the data to the external accounting system
-                created_object = self.post(body_model_object, lineitems_model_objects)
+                created_object = self.post(accounting_export.workspace_id, body_model_object, lineitems_model_objects)
 
                 # Update the accounting export details
                 accounting_export.detail = created_object

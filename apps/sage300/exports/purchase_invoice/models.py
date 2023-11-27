@@ -105,20 +105,21 @@ class PurchaseInvoiceLineitems(BaseExportModel):
             ).first()
 
             job_id = self.get_job_id(accounting_export, lineitem)
-            commitment_id = self.get_job_id(accounting_export, lineitem)
-            standard_category_id = self.get_job_id(accounting_export, lineitem)
-            standard_cost_code_id = self.get_job_id(accounting_export, lineitem)
+            commitment_id = self.get_commitment_id(accounting_export, lineitem)
+            standard_category_id = self.get_standard_category_id(accounting_export, lineitem)
+            standard_cost_code_id = self.get_standard_cost_code_id(accounting_export, lineitem)
             description = self.get_expense_purpose(accounting_export.workspace_id, lineitem, lineitem.category, advance_setting)
 
             if dependent_field_setting:
-                cost_category_id = self.get_cost_category_id_or_none(accounting_export, lineitem, dependent_field_setting, job_id)
-                cost_code_id = self.get_cost_type_id_or_none(accounting_export, lineitem, dependent_field_setting, job_id, cost_category_id)
+                cost_category_id = self.get_cost_category_id(accounting_export, lineitem, dependent_field_setting, job_id)
+                cost_code_id = self.get_cost_code_id(accounting_export, lineitem, dependent_field_setting, job_id, cost_category_id)
 
-            purchase_invoice_lineitem_objects, _ = PurchaseInvoiceLineitems.objects.update_or_create(
+            purchase_invoice_lineitem_object, _ = PurchaseInvoiceLineitems.objects.update_or_create(
                 purchase_invoice_id=purchase_invoice.id,
                 expense_id=lineitem.id,
                 defaults={
-                    'accounts_payable_account_id': account,
+                    'amount': lineitem.amount,
+                    'accounts_payable_account_id': account.destination_account.destination_id,
                     'job_id': job_id,
                     'commitment_id': commitment_id,
                     'standard_category_id': standard_category_id,
@@ -128,5 +129,6 @@ class PurchaseInvoiceLineitems(BaseExportModel):
                     'description': description
                 }
             )
+            purchase_invoice_lineitem_objects.append(purchase_invoice_lineitem_object)
 
-            return purchase_invoice_lineitem_objects
+        return purchase_invoice_lineitem_objects
