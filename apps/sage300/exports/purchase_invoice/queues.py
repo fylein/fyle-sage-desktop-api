@@ -1,8 +1,15 @@
 from typing import List
 from django_q.tasks import Chain
+from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import AccountingExport
 from apps.workspaces.models import FyleCredential
+
+
+def import_fyle_dimensions(fyle_credentials: FyleCredential):
+
+    platform = PlatformConnector(fyle_credentials)
+    platform.import_fyle_dimensions()
 
 
 def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str]):
@@ -13,15 +20,16 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
     fyle_credentials = FyleCredential.objects.filter(workspace_id=workspace_id).first()
 
     accounting_exports = AccountingExport.objects.filter(
-        status='ENQUEUED',
-        workspace_id=workspace_id, id__in=accounting_export_ids,
+        status__in=['IN_PROGRESS', 'ENQUEUED'],
+        workspace_id=workspace_id, id__in=accounting_export_ids, purchaseinvoice__id__isnull=True,
         exported_at__isnull=True
     ).all()
 
     chain = Chain()
     chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials)
+
     for index, accounting_export_group in enumerate(accounting_exports):
-        accounting_export, _ = AccountingExport.objects.get_or_create(
+        accounting_export, _ = AccountingExport.objects.update_or_create(
             workspace_id=accounting_export_group.workspace_id,
             id=accounting_export_group.id,
             defaults={
