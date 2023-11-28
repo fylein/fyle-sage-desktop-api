@@ -5,14 +5,14 @@ import json
 from sage_desktop_sdk.core.client import Client
 
 
-class DirectCost(Client):
+class DirectCosts(Client):
     """Class for Direct Cost APIs."""
 
     POST_DIRECT_COST = '/JobCosting/Api/V1/JobTransaction.svc/transactions/direct-costs'
 
-    def post_document(self, data: dict):
+    def post_direct_cost(self, data: dict):
         """
         Get Vendor Types
-        :return: List of Dicts in Vendor Types Schema
+        :return: id of exported direct cost
         """
-        return self._post_request(DirectCost.POST_DIRECT_COST, data=json.dumps(data.__dict__))
+        return self._post_request(DirectCosts.POST_DIRECT_COST, data=json.dumps(data))
