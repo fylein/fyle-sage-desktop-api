@@ -78,7 +78,7 @@ fixtures = {
                 "sage300_errors":[],
                 "exported_at":"None",
                 "workspace":1,
-                "exported_id": 123,
+                "export_id": 123,
                 "expenses":[]
             },
             {
@@ -94,7 +94,7 @@ fixtures = {
                 "detail":[],
                 "sage300_errors":[],
                 "exported_at":"None",
-                "exported_id": 123,
+                "export_id": 123,
                 "workspace":1,
                 "expenses":[]
             }
