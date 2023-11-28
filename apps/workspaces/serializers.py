@@ -315,7 +315,15 @@ class AdvancedSettingSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = AdvancedSetting
-        fields = '__all__'
+        fields = [
+            'expense_memo_structure',
+            'schedule_is_enabled',
+            'interval_hours',
+            'emails_selected',
+            'emails_added',
+            'auto_create_vendor',
+            'sync_sage_300_to_fyle_payments'
+        ]
         read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
 
     def create(self, validated_data):
