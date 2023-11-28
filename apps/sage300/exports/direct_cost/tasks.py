@@ -23,7 +23,6 @@ class ExportDirectCost(AccountingDataExporter):
         """
         Trigger the import process for the Project module.
         """
-        print('i am here direct')
         check_accounting_export_and_start_import(workspace_id, accounting_export_ids)
 
     def __construct_direct_cost(self, body: DirectCost) -> Dict:
@@ -36,17 +35,18 @@ class ExportDirectCost(AccountingDataExporter):
 
         transaction_date = '2023-08-17'
         direct_cost_payload = {
-            "AccountingDate": "2023-11-17",
-            "Amount": 120,
+            "AccountingDate": transaction_date,
+            "Amount": body.amount,
             "Code": 234234,
-            "CategoryId": "ece00064-b585-4f87-b0bc-b06100a9bec8",
-            "CostCodeId": "d3b321be-1e6c-4d4b-add4-b06100a9bd2c",
-            "CreditAccountId": "b8524a2e-5aef-435f-8823-b05b00f3c52f",
-            "DebitAccountId": "5aa3ee7f-9c0d-42a6-86bf-b05b00f3c9dd",
+            "CategoryId": body.category_id,
+            "CostCodeId": body.cost_code_id,
+            "CreditAccountId": body.credit_card_account_id,
+            "DebitAccountId": body.debit_card_account_id,
             "Description": "Fyle - Line 1 Wow",
-            "JobId": "5e0eb476-b189-4409-b9b3-b061009602a4",
+            "JobId": body.job_id,
             "TransactionDate": transaction_date,
-            "StandardCategoryId": "302918fb-2f89-4d7f-972a-b05b00f3c431",
+            "StandardCategoryId": body.standard_category_id,
+            "StandardCostCodeId": body.standard_cost_code_id,
             "TransactionType": 1
         }
 
@@ -68,9 +68,9 @@ class ExportDirectCost(AccountingDataExporter):
         accounting_export.export_id = created_direct_cost_export_id
         accounting_export.save()
 
-        # exported_purchase_invoice_id = sage300_connection.connection.documents.export_document(direct_cost_payload)
+        exported_direct_cost_id = sage300_connection.connection.direct_costs.export_direct_cost(created_direct_cost_export_id)
 
-        return created_direct_cost_export_id
+        return exported_direct_cost_id
 
 
 @handle_sage300_exceptions()
