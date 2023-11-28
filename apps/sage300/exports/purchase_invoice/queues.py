@@ -1,7 +1,6 @@
 from typing import List
 from django.db.models import Q
 from django_q.tasks import Chain
-from django.db.models import Q
 from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import AccountingExport

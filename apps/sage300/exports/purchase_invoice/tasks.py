@@ -58,7 +58,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                 'Header': {
                     'AccountingDate': transaction_date,
                     'Amount': body.amount,
-                    "Code": 'expense1',
+                    "Code": 'hello',
                     "Description": 'sample description',
                     "InvoiceDate": transaction_date,
                     "VendorId": body.vendor_id
@@ -81,6 +81,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
         # Post the purchase invoice to Sage 300
         created_purchase_invoice_id = sage300_connection.connection.documents.post_document(purchase_invoice_payload)
 
+        print('createds sdoijsodif', created_purchase_invoice_id)
         accounting_export.export_id = created_purchase_invoice_id
         accounting_export.save()
 
