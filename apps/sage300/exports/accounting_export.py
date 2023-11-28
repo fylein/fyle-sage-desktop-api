@@ -59,7 +59,7 @@ class AccountingDataExporter:
             )
 
             # Post the data to the external accounting system
-            created_object = self.post(accounting_export.workspace_id, body_model_object, lineitems_model_objects)
+            created_object = self.post(accounting_export, body_model_object, lineitems_model_objects)
 
             # Update the accounting export details
             accounting_export.detail = created_object
