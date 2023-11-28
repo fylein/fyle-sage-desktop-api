@@ -97,7 +97,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
     description = CustomJsonField(help_text='Description')
     status = StringNotNullField(help_text='Task Status')
     detail = CustomJsonField(help_text='Task Response')
-    sage_300_errors = CustomJsonField(help_text='Sage 300 Errors')
+    sage300_errors = CustomJsonField(help_text='Sage 300 Errors')
     exported_at = CustomDateTimeField(help_text='time of export')
 
     class Meta:
