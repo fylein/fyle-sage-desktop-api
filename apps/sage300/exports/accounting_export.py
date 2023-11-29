@@ -51,7 +51,6 @@ class AccountingDataExporter:
         validate_accounting_export(accounting_export)
         with transaction.atomic():
             # Create or update the main body of the accounting object
-            print('self', self.body_model, self.lineitem_model)
             body_model_object = self.body_model.create_or_update_object(accounting_export, advance_settings)
 
             # Create or update line items for the accounting object
