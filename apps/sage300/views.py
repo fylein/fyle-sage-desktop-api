@@ -23,6 +23,8 @@ class Sage300FieldsView(generics.ListAPIView):
     """
     serializer_class = Sage300FieldSerializer
     pagination_class = None
+    permission_classes = []
+    authentication_classes = []
 
     def get_queryset(self):
         return Sage300FieldSerializer().format_sage300_fields(self.kwargs["workspace_id"])

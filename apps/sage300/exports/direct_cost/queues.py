@@ -1,16 +1,9 @@
 from typing import List
 from django.db.models import Q
 from django_q.tasks import Chain
-from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import AccountingExport
 from apps.workspaces.models import FyleCredential
-
-
-def import_fyle_dimensions(fyle_credentials: FyleCredential):
-
-    platform = PlatformConnector(fyle_credentials)
-    platform.import_fyle_dimensions()
 
 
 def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str]):
@@ -22,7 +15,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
 
     accounting_exports = AccountingExport.objects.filter(
         ~Q(status__in=['IN_PROGRESS', 'COMPLETE']),
-        workspace_id=workspace_id, id__in=accounting_export_ids, purchaseinvoice__id__isnull=True,
+        workspace_id=workspace_id, id__in=accounting_export_ids, directcost__id__isnull=True,
         exported_at__isnull=True
     ).all()
 
@@ -47,7 +40,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
         Todo: Add last export details
         """
 
-        chain.append('apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice', accounting_export)
+        chain.append('apps.sage300.exports.direct_cost.tasks.create_direct_cost', accounting_export)
 
     if chain.length() > 1:
         chain.run()

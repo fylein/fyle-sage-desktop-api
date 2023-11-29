@@ -75,9 +75,10 @@ fixtures = {
                 "description":[],
                 "status":"IN_PROGRESS",
                 "detail":[],
-                "sage_300_errors":[],
+                "sage300_errors":[],
                 "exported_at":"None",
                 "workspace":1,
+                "export_id": 123,
                 "expenses":[]
             },
             {
@@ -91,8 +92,9 @@ fixtures = {
                 "description":[],
                 "status":"IN_PROGRESS",
                 "detail":[],
-                "sage_300_errors":[],
+                "sage300_errors":[],
                 "exported_at":"None",
+                "export_id": 123,
                 "workspace":1,
                 "expenses":[]
             }

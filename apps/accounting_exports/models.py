@@ -97,7 +97,8 @@ class AccountingExport(BaseForeignWorkspaceModel):
     description = CustomJsonField(help_text='Description')
     status = StringNotNullField(help_text='Task Status')
     detail = CustomJsonField(help_text='Task Response')
-    sage_300_errors = CustomJsonField(help_text='Sage 300 Errors')
+    sage300_errors = CustomJsonField(help_text='Sage 300 Errors')
+    export_id = StringNullField(help_text='id of the exported expense')
     exported_at = CustomDateTimeField(help_text='time of export')
 
     class Meta:
@@ -113,6 +114,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
 
         # Group expenses based on specified fields and fund_source
         accounting_exports = _group_expenses(expense_objects, export_setting, fund_source)
+
         fund_source_map = {
             'PERSONAL': 'reimbursable',
             'CCC': 'credit_card'
@@ -137,7 +139,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
                 workspace_id=workspace_id,
                 fund_source=accounting_export['fund_source'],
                 description=accounting_export,
-                status='ENQUEUED'
+                status='EXPORT_READY'
             )
 
             # Add related expenses to the AccountingExport object
