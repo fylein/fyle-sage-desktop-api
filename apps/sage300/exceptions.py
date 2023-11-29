@@ -2,6 +2,7 @@
 import logging
 import traceback
 
+from sage_desktop_api.exceptions import BulkError
 from apps.workspaces.models import FyleCredential, Sage300Credential
 from sage_desktop_sdk.exceptions.hh2_exceptions import WrongParamsError
 from apps.accounting_exports.models import AccountingExport
@@ -53,6 +54,14 @@ def handle_sage300_exceptions():
 
             except WrongParamsError as exception:
                 handle_sage300_error(exception, accounting_export, 'Purchase Invoice')
+
+            except BulkError as exception:
+                logger.info(exception.response)
+                detail = exception.response
+                accounting_export.status = 'FAILED'
+                accounting_export.detail = detail
+
+                accounting_export.save()
 
             except Exception as error:
                 error = traceback.format_exc()

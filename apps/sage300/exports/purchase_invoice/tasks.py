@@ -58,7 +58,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                 'Header': {
                     'AccountingDate': transaction_date,
                     'Amount': body.amount,
-                    "Code": 'difgdofjig',
+                    "Code": 'hello',
                     "Description": 'sample description',
                     "InvoiceDate": transaction_date,
                     "VendorId": body.vendor_id
@@ -68,18 +68,21 @@ class ExportPurchaseInvoice(AccountingDataExporter):
 
         return purchase_invoice_payload
 
-    def post(self, workspace_id, item, lineitem):
+    def post(self, accounting_export, item, lineitem):
         """
         Export the purchase invoice to Sage 300.
         """
 
         purchase_invoice_payload = self.__construct_purchase_invoice(item, lineitem)
-        sage300_credentials = Sage300Credential.objects.filter(workspace_id=workspace_id).first()
+        sage300_credentials = Sage300Credential.objects.filter(workspace_id=accounting_export.workspace_id).first()
         # Establish a connection to Sage 300
-        sage300_connection = SageDesktopConnector(sage300_credentials, workspace_id)
+        sage300_connection = SageDesktopConnector(sage300_credentials, accounting_export.workspace_id)
 
         # Post the purchase invoice to Sage 300
         created_purchase_invoice_id = sage300_connection.connection.documents.post_document(purchase_invoice_payload)
+
+        accounting_export.export_id = created_purchase_invoice_id
+        accounting_export.save()
 
         exported_purchase_invoice_id = sage300_connection.connection.documents.export_document(created_purchase_invoice_id)
 
