@@ -9,6 +9,9 @@ from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, Purcha
 from apps.sage300.exceptions import handle_sage300_exceptions
 
 
+DOCUMENT_TYPE_ID = '76744AB9-4697-430A-ADB5-701E633472A9'
+
+
 class ExportPurchaseInvoice(AccountingDataExporter):
     """
     Class for handling the export of purchase invoices to Sage 300.
@@ -41,7 +44,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                 "Amount": lineitem.amount,
                 "CategoryId": lineitem.category_id,
                 "CostCodeId": lineitem.cost_code_id,
-                "Description": 'sample description',
+                "Description": lineitem.description[0:30],
                 "ExpenseAccountId": lineitem.accounts_payable_account_id,
                 "JobId": lineitem.job_id,
                 "StandardCategoryId": lineitem.standard_category_id,
@@ -50,17 +53,16 @@ class ExportPurchaseInvoice(AccountingDataExporter):
 
             purchase_invoice_lineitem_payload.append(expense)
 
-        transaction_date = '2023-08-17'
         purchase_invoice_payload = {
-            'DocumentTypeId': '76744AB9-4697-430A-ADB5-701E633472A9',
+            'DocumentTypeId': DOCUMENT_TYPE_ID,
             'Snapshot': {
                 'Distributions': purchase_invoice_lineitem_payload,
                 'Header': {
-                    'AccountingDate': transaction_date,
+                    'AccountingDate': body.invoice_date,
                     'Amount': body.amount,
-                    "Code": 'hallabol',
-                    "Description": 'sample description',
-                    "InvoiceDate": transaction_date,
+                    "Code": '{}-{}'.format(body.description['fund_source'], body['id']),
+                    "Description": body.description['email'],
+                    "InvoiceDate": body.invoice_date,
                     "VendorId": body.vendor_id
                 }
             }

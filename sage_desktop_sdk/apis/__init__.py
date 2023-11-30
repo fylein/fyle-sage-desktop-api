@@ -10,7 +10,7 @@ from .operation_status import OperationStatus
 from .categories import Categories
 from .cost_codes import CostCodes
 from .direct_costs import DirectCosts
-from .event_faliure import EventFaliures
+from .event_failures import EventFailures
 
 
 __all__ = [
@@ -23,5 +23,5 @@ __all__ = [
     'Categories',
     'CostCodes',
     'DirectCosts',
-    'EventFaliures'
+    'EventFailures'
 ]
