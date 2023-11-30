@@ -25,7 +25,7 @@ def handle_sage300_error(exception, accounting_export: AccountingExport, export_
 
     accounting_export.status = 'FAILED'
     accounting_export.detail = None
-    accounting_export.sage_300_errors = sage300_error
+    accounting_export.sage300_errors = sage300_error
     accounting_export.save()
 
 

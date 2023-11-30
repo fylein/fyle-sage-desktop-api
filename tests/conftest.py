@@ -224,6 +224,26 @@ def add_accounting_export_expenses():
             }
         )
 
+        AccountingExport.objects.update_or_create(
+            workspace_id=workspace_id,
+            type='PURCHASE_INVOICE',
+            defaults={
+                'status': 'EXPORT_QUEUED',
+                'detail': {'export_id': '123'},
+                'export_id': 1234
+            }
+        )
+
+        AccountingExport.objects.update_or_create(
+            workspace_id=workspace_id,
+            type='DIRECT_COST',
+            defaults={
+                'status': 'EXPORT_QUEUED',
+                'detail': {'export_id': '123'},
+                'export_id': 1234
+            }
+        )
+
 
 @pytest.fixture()
 @pytest.mark.django_db(databases=['default'])

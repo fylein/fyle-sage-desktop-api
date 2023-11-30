@@ -1,7 +1,7 @@
 """
 Sage Desktop Python Connector
 """
-from .apis import Accounts, Vendors, Jobs, Commitments, Documents, OperationStatus, Categories, CostCodes, DirectCosts
+from .apis import Accounts, Vendors, Jobs, Commitments, Documents, OperationStatus, Categories, CostCodes, DirectCosts, EventFaliures
 from .core.client import Client
 
 
@@ -36,6 +36,7 @@ class SageDesktopSDK:
         self.categories = Categories()
         self.cost_codes = CostCodes()
         self.direct_costs = DirectCosts()
+        self.event_faliures = EventFaliures()
 
         self.update_api_url()
         self.update_user_id_and_password()
@@ -52,6 +53,7 @@ class SageDesktopSDK:
         self.cost_codes.set_user_id_and_password(self.__user_name, self.__password)
         self.categories.set_user_id_and_password(self.__user_name, self.__password)
         self.direct_costs.set_user_id_and_password(self.__user_name, self.__password)
+        self.event_faliures.set_user_id_and_password(self.__user_name, self.__password)
 
     def update_api_url(self):
         self.client.set_api_url(self.__indentifier)
@@ -64,6 +66,7 @@ class SageDesktopSDK:
         self.cost_codes.set_api_url(self.__indentifier)
         self.categories.set_api_url(self.__indentifier)
         self.direct_costs.set_api_url(self.__indentifier)
+        self.event_faliures.set_api_url(self.__indentifier)
 
     def update_cookie(self):
         self.client.update_cookie(self.__api_key, self.__api_secret)
@@ -76,4 +79,4 @@ class SageDesktopSDK:
         self.cost_codes.update_cookie(self.__api_key, self.__api_secret)
         self.categories.update_cookie(self.__api_key, self.__api_secret)
         self.direct_costs.update_cookie(self.__api_key, self.__api_secret)
-
+        self.event_faliures.update_cookie(self.__api_key, self.__api_secret)

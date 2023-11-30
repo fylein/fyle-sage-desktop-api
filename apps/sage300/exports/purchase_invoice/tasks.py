@@ -58,7 +58,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                 'Header': {
                     'AccountingDate': transaction_date,
                     'Amount': body.amount,
-                    "Code": 'hello',
+                    "Code": 'hallabol',
                     "Description": 'sample description',
                     "InvoiceDate": transaction_date,
                     "VendorId": body.vendor_id

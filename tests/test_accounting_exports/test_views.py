@@ -12,7 +12,7 @@ def test_get_accounting_exports(api_client, test_connection, create_temp_workspa
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
 
-    response = api_client.get(url)
+    response = api_client.get(url, {'status__in': 'IN_PROGRESS'})
     assert response.status_code == 200
     response = json.loads(response.content)
 

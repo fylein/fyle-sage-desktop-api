@@ -33,13 +33,15 @@ class ExportDirectCost(AccountingDataExporter):
         :return: constructed expense_report
         """
 
+        body = body[0]
+
         transaction_date = '2023-08-17'
         direct_cost_payload = {
             "AccountingDate": transaction_date,
             "Amount": body.amount,
-            "Code": 234234,
-            "CategoryId": body.category_id,
-            "CostCodeId": body.cost_code_id,
+            "Code": 'hello',
+            "CategoryId": "ece00064-b585-4f87-b0bc-b06100a9bec8",
+            "CostCodeId": "d3b321be-1e6c-4d4b-add4-b06100a9bd2c",
             "CreditAccountId": body.credit_card_account_id,
             "DebitAccountId": body.debit_card_account_id,
             "Description": "Fyle - Line 1 Wow",
