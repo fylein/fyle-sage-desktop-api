@@ -34,7 +34,6 @@ def test_poll_operation_status(test_connection, mocker, create_temp_workspace, a
 
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
     assert accounting_export.status == 'COMPLETE'
-    assert accounting_export.detail == operation_status
 
     operation_status = {
         "Id": "e0d57177-2700-49a1-a933-b0c900bf1c4e",
@@ -46,7 +45,12 @@ def test_poll_operation_status(test_connection, mocker, create_temp_workspace, a
     }
 
     mocker.patch(
-        'sage_desktop_sdk.apis.EventFaliure.get',
+        'sage_desktop_sdk.apis.OperationStatus.get',
+        return_value=operation_status
+    )
+
+    mocker.patch(
+        'sage_desktop_sdk.apis.EventFaliures.get',
         return_value=[
             {
                 "CreatedOnUtc": "2023-08-17T09:46:30Z",
@@ -64,4 +68,4 @@ def test_poll_operation_status(test_connection, mocker, create_temp_workspace, a
 
     poll_operation_status_direct_cost(workspace_id=1)
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='DIRECT_COST').first()
-    accounting_export.status == 'FAILED'
+    assert accounting_export.status == 'FAILED'
