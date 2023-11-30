@@ -66,3 +66,11 @@ def validate_accounting_export(accounting_export: AccountingExport):
 
     if bulk_errors:
         raise BulkError('Mappings are missing', bulk_errors)
+
+
+def resolve_errors_for_exported_accounting_export(accounting_export: AccountingExport):
+    """
+    Resolve errors for exported expense group
+    :param expense_group: Expense group
+    """
+    Error.objects.filter(workspace_id=accounting_export.workspace_id, accounting_export=accounting_export, is_resolved=False).update(is_resolved=True)

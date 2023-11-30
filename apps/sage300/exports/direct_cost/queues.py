@@ -4,10 +4,11 @@ from django.db.models import Q
 from django_q.tasks import Chain
 from django_q.models import Schedule
 
-from apps.accounting_exports.models import AccountingExport
+from apps.accounting_exports.models import AccountingExport, Error
 from apps.workspaces.models import FyleCredential
 from apps.workspaces.models import Sage300Credential
 from apps.sage300.utils import SageDesktopConnector
+from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
 
 
 def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str]):
@@ -116,12 +117,25 @@ def poll_operation_status(workspace_id: int):
             # Save the updated accounting export
             accounting_export.save()
 
+            Error.objects.update_or_create(
+                workspace_id=accounting_export.workspace_id,
+                accounting_export=accounting_export,
+                defaults={
+                    'error_title': 'Failed to create Direct Cost',
+                    'type': 'SAGE300_ERROR',
+                    'error_detail': sage300_errors,
+                    'is_resolved': False
+                }
+            )
+
             # Continue to the next iteration
             continue
 
         accounting_export.status = 'COMPLETE'
+        accounting_export.sage300_errors = None
         detail = accounting_export.detail
         detail['operation_status'] = operation_status
         accounting_export.detail = detail
         accounting_export.exported_at = datetime.now()
         accounting_export.save()
+        resolve_errors_for_exported_accounting_export(accounting_export)

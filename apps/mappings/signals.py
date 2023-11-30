@@ -4,12 +4,13 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from rest_framework.exceptions import ValidationError
-from fyle_accounting_mappings.models import MappingSetting
+from fyle_accounting_mappings.models import MappingSetting, CategoryMapping
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle.platform.exceptions import WrongParamsError
 
 from apps.mappings.imports.schedules import schedule_or_delete_fyle_import_tasks
 from apps.workspaces.models import ImportSetting
+from apps.accounting_exports.models import Error
 from apps.mappings.models import ImportLog
 from apps.workspaces.models import FyleCredential
 from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
@@ -113,3 +114,13 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
             last_successful_run_at = import_log.last_successful_run_at - timedelta(minutes=30)
             import_log.last_successful_run_at = last_successful_run_at
             import_log.save()
+
+
+@receiver(post_save, sender=CategoryMapping)
+def resolve_post_category_mapping_errors(sender, instance: CategoryMapping, **kwargs):
+    """
+    Resolve errors after mapping is created
+    """
+    Error.objects.filter(expense_attribute_id=instance.source_category).update(
+        is_resolved=True
+    )

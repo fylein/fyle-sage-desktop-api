@@ -16,7 +16,8 @@ from apps.workspaces.models import (
     Workspace,
     FyleCredential,
     Sage300Credential,
-    ExportSetting
+    ExportSetting,
+    ImportSetting
 )
 from apps.fyle.models import ExpenseFilter
 from apps.accounting_exports.models import AccountingExport, Error, AccountingExportSummary
@@ -385,4 +386,23 @@ def add_export_settings():
             default_ccc_credit_card_account_id='12',
             credit_card_expense_grouped_by='EXPENSE' if workspace_id == 3 else 'REPORT',
             credit_card_expense_date='spent_at'
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_import_settings():
+    """
+    Pytest fixtue to add export_settings to a workspace
+    """
+
+    workspace_ids = [
+        1, 2, 3
+    ]
+
+    for workspace_id in workspace_ids:
+        ImportSetting.objects.create(
+            workspace_id=workspace_id,
+            import_categories=False,
+            import_vendors_as_merchants=False
         )
