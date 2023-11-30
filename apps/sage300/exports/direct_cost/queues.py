@@ -1,5 +1,5 @@
 from typing import List
-from datetime import datetime, timedelta
+from datetime import datetime
 from django.db.models import Q
 from django_q.tasks import Chain
 from django_q.models import Schedule
@@ -45,18 +45,29 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
         """
 
         chain.append('apps.sage300.exports.direct_cost.tasks.create_direct_cost', accounting_export)
+        chain.append('apps.sage300.exports.direct_cost.queues.poll_operation_status', workspace_id)
 
     if chain.length() > 1:
-        schedule, _ = Schedule.objects.update_or_create(
-            func='apps.sage300.exports.direct_cost.queues.poll_operation_status',
-            args='{}'.format(workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': 5,
-                'next_run': datetime.now() + timedelta(minutes=10)
-            }
-        )
         chain.run()
+
+
+def create_schedule_for_polling(workspace_id: int):
+    """
+    Create Schedule for running operation status polling
+
+    Returns:
+        None
+    """
+
+    Schedule.objects.update_or_create(
+        func='apps.sage300.exports.direct_cost.queues.poll_operation_status',
+        args='{}'.format(workspace_id),
+        defaults={
+            'schedule_type': Schedule.MINUTES,
+            'minutes': 5,
+            'next_run': datetime.now()
+        }
+    )
 
 
 def poll_operation_status(workspace_id: int):
