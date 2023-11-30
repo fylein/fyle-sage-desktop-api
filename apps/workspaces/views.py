@@ -23,7 +23,6 @@ from apps.workspaces.serializers import (
     WorkspaceAdminSerializer
 )
 
-
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 

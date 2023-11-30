@@ -6,6 +6,7 @@ from django_q.models import Schedule
 from apps.workspaces.models import ExportSetting, AdvancedSetting
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
 from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
+from apps.sage300.exports.direct_cost.tasks import ExportDirectCost
 from apps.fyle.queue import queue_import_reimbursable_expenses, queue_import_credit_card_expenses
 
 
@@ -43,8 +44,8 @@ def run_import_export(workspace_id: int, export_mode = None):
             if len(accounting_export_ids):
                 is_expenses_exported = True
 
-                purchase_invoice = ExportPurchaseInvoice()
-                purchase_invoice.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
+                direct_cost = ExportDirectCost()
+                direct_cost.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
 
     # For Credit Card Expenses
     if export_settings.credit_card_expense_export_type:

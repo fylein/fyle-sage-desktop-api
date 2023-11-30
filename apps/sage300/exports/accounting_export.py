@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 from django.db import transaction
 
 from apps.accounting_exports.models import AccountingExport
@@ -64,8 +63,10 @@ class AccountingDataExporter:
             created_object = self.post(accounting_export, body_model_object, lineitems_model_objects)
 
             # Update the accounting export details
-            accounting_export.detail = created_object
-            accounting_export.status = 'COMPLETE'
-            accounting_export.exported_at = datetime.now()
+            detail = {
+                'export_id': created_object
+            }
 
+            accounting_export.detail = detail
+            accounting_export.status = 'EXPORT_QUEUED'
             accounting_export.save()
