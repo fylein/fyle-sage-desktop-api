@@ -104,12 +104,10 @@ def poll_operation_status(workspace_id: int):
         # Get the operation status for the current export_id from Sage 300
         operation_status = sage300_connection.connection.operation_status.get(export_id=export_id)
 
-        print('i am not here', operation_status['DisabledOn'])
         # Check if the operation is disabled
         if operation_status['DisabledOn'] is not None:
-            print('i am here')
             # Retrieve Sage 300 errors for the current export
-            sage300_errors = sage300_connection.connection.event_faliures.get(accounting_export.export_id)
+            sage300_errors = sage300_connection.connection.event_failures.get(accounting_export.export_id)
 
             # Update the accounting export object with Sage 300 errors and status
             accounting_export.sage300_errors = sage300_errors

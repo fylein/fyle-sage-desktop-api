@@ -50,7 +50,7 @@ def test_poll_operation_status(test_connection, mocker, create_temp_workspace, a
     )
 
     mocker.patch(
-        'sage_desktop_sdk.apis.EventFaliures.get',
+        'sage_desktop_sdk.apis.EventFailures.get',
         return_value=[
             {
                 "CreatedOnUtc": "2023-08-17T09:46:30Z",
