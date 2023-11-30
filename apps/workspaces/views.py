@@ -23,6 +23,8 @@ from apps.workspaces.serializers import (
     WorkspaceAdminSerializer
 )
 
+from apps.workspaces.tasks import run_import_export
+
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
@@ -67,6 +69,7 @@ class ReadyView(generics.RetrieveAPIView):
         """
         Ready call
         """
+        run_import_export(1)
         Workspace.objects.first()
 
         return Response(
