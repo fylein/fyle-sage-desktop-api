@@ -33,8 +33,8 @@ def test_poll_operation_status(test_connection, mocker, create_temp_workspace, a
     poll_operation_status(workspace_id=1)
 
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
-    accounting_export.status == 'COMPLETE'
-    accounting_export.detail == operation_status
+    assert accounting_export.status == 'COMPLETE'
+    assert accounting_export.detail == operation_status
 
     operation_status = {
         "Id": "e0d57177-2700-49a1-a933-b0c900bf1c4e",
