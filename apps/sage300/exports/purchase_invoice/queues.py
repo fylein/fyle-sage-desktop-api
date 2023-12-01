@@ -6,10 +6,11 @@ from django_q.models import Schedule
 
 from fyle_integrations_platform_connector import PlatformConnector
 
-from apps.accounting_exports.models import AccountingExport
+from apps.accounting_exports.models import AccountingExport, Error
 from apps.workspaces.models import FyleCredential
 from apps.workspaces.models import Sage300Credential
 from apps.sage300.utils import SageDesktopConnector
+from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
 
 
 def import_fyle_dimensions(fyle_credentials: FyleCredential):
@@ -122,6 +123,17 @@ def poll_operation_status(workspace_id: int):
             accounting_export.sage300_errors = sage300_errors
             accounting_export.status = 'FAILED'
 
+            Error.objects.update_or_create(
+                workspace_id=accounting_export.workspace_id,
+                accounting_export=accounting_export,
+                defaults={
+                    'error_title': 'Failed to create purchase invoice',
+                    'type': 'SAGE300_ERROR',
+                    'error_detail': sage300_errors,
+                    'is_resolved': False
+                }
+            )
+
             # Save the updated accounting export
             accounting_export.save()
 
@@ -129,8 +141,10 @@ def poll_operation_status(workspace_id: int):
             continue
 
         accounting_export.status = 'COMPLETE'
+        accounting_export.sage300_errors = None
         detail = accounting_export.detail
         detail['operation_status'] = operation_status
         accounting_export.detail = detail
         accounting_export.exported_at = datetime.now()
         accounting_export.save()
+        resolve_errors_for_exported_accounting_export(accounting_export)
