@@ -446,3 +446,16 @@ def test_trigger_export(
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
     accounting_export.status == 'COMPLETE'
     assert response.status_code == 200
+
+
+def test_ready_view(api_client, test_connection):
+    '''
+    Test ready view
+    '''
+    url = reverse(
+        'ready'
+    )
+
+    response = api_client.get(url)
+
+    assert response.status_code == 200
