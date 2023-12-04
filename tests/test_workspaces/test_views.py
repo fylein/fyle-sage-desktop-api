@@ -413,18 +413,18 @@ def test_get_workspace_admins(api_client, test_connection):
 
 
 def test_trigger_export(
-    mocker,    
-    api_client, 
-    test_connection, 
-    create_temp_workspace, 
-    add_fyle_credentials, 
+    mocker,
+    api_client,
+    test_connection,
+    create_temp_workspace,
+    add_fyle_credentials,
     add_accounting_export_expenses,
     add_export_settings,
     add_import_settings
-    ):
-    '''
+):
+    """
     Test Export Trigger API
-    '''
+    """
 
     url = reverse('trigger-exports', kwargs={'workspace_id': 1})
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
