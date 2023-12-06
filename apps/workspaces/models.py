@@ -236,7 +236,7 @@ class LastExportDetail(BaseModel):
     id = models.AutoField(primary_key=True)
     last_exported_at = models.DateTimeField(help_text='Last exported at datetime', null=True)
     export_mode = models.CharField(max_length=50, help_text='Mode of the export Auto / Manual', choices=EXPORT_MODE_CHOICES, null=True)
-    total_accounting_exports_count = models.IntegerField(help_text='Total count of expense groups exported', null=True)
+    total_accounting_exports_count = models.IntegerField(help_text='Total count of accounting exports exported', null=True)
     successful_accounting_exports_count = models.IntegerField(help_text='count of successful accounting_exports ', null=True)
     failed_accounting_exports_count = models.IntegerField(help_text='count of failed accounting_exports ', null=True)
 
