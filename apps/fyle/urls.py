@@ -31,7 +31,7 @@ from apps.fyle.views import (
 
 accounting_exports_path = [
     path('exportable_accounting_exports/', ExportableExpenseGroupsView.as_view(), name='exportable-accounting-exports'),
-    path('expense_groups/sync/', AccoutingExportSyncView.as_view(), name='sync-accounting-exports'),
+    path('accounting_exports/sync/', AccoutingExportSyncView.as_view(), name='sync-accounting-exports'),
 ]
 
 other_paths = [
