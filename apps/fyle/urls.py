@@ -24,13 +24,13 @@ from apps.fyle.views import (
     CustomFieldView,
     FyleFieldsView,
     DependentFieldSettingView,
-    ExportableExpenseGroupsView,
+    ExportableAccountingExportView,
     AccoutingExportSyncView
 )
 
 
 accounting_exports_path = [
-    path('exportable_accounting_exports/', ExportableExpenseGroupsView.as_view(), name='exportable-accounting-exports'),
+    path('exportable_accounting_exports/', ExportableAccountingExportView.as_view(), name='exportable-accounting-exports'),
     path('accounting_exports/sync/', AccoutingExportSyncView.as_view(), name='sync-accounting-exports'),
 ]
 
