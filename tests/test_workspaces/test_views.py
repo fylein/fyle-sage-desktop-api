@@ -440,12 +440,12 @@ def test_trigger_export(
     )
 
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
-    accounting_export.status == 'IN_PROGRESS'
+    assert accounting_export.status == 'IN_PROGRESS'
 
     response = api_client.post(url)
-    accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
-    accounting_export.status == 'COMPLETE'
     assert response.status_code == 200
+    accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
+    assert accounting_export.status == 'COMPLETE'
 
 
 def test_ready_view(api_client, test_connection):

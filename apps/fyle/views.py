@@ -91,7 +91,7 @@ class ExportableExpenseGroupsView(generics.RetrieveAPIView):
         )
 
 
-class AccoutingExportSyncView(generics.CreateAPIView):
+class AccountingExportSyncView(generics.CreateAPIView):
     """
     Create expense groups
     """
