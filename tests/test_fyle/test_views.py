@@ -2,6 +2,8 @@ import json
 from unittest import mock
 from django.urls import reverse
 from apps.workspaces.models import FyleCredential, Workspace
+from apps.accounting_exports.models import AccountingExport
+
 from tests.helper import dict_compare_keys
 from .fixtures import fixtures as data
 
@@ -110,3 +112,32 @@ def test_exportable_expense_group_view(api_client, test_connection, create_temp_
 
     response = api_client.get(url)
     assert response.status_code == 200
+
+
+def test_accounting_export_sync(
+    mocker,
+    api_client,
+    test_connection,
+    create_temp_workspace,
+    add_accounting_export_expenses,
+    add_export_settings,
+    add_fyle_credentials
+):
+
+    access_token = test_connection.access_token
+    url = reverse('sync-accounting-exports', kwargs={'workspace_id': 1})
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(access_token))
+
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Expenses.get',
+        return_value=data['expenses']
+    )
+
+    accounting_export = AccountingExport.objects.filter(workspace_id=1, status='EXPORT_READY')
+    assert accounting_export.count() == 0
+
+    response = api_client.post(url)
+
+    assert response.status_code == 200
+    accounting_export = AccountingExport.objects.filter(workspace_id=1, status='EXPORT_READY')
+    assert accounting_export.count() == 1

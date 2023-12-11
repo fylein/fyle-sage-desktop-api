@@ -1,13 +1,13 @@
 import logging
 from django.contrib.auth import get_user_model
-
 from rest_framework import generics
 from rest_framework.views import Response, status
 
 from fyle_rest_auth.utils import AuthUtils
 
-
 from sage_desktop_api.utils import assert_valid
+
+from apps.workspaces.tasks import export_to_sage300
 from apps.workspaces.models import (
     Workspace,
     Sage300Credential,
@@ -124,3 +124,16 @@ class WorkspaceAdminsView(generics.ListAPIView):
     """
     serializer_class = WorkspaceAdminSerializer
     queryset = Workspace.objects.all()
+
+
+class TriggerExportsView(generics.GenericAPIView):
+    """
+    Trigger exports creation
+    """
+
+    def post(self, request, *args, **kwargs):
+        export_to_sage300(workspace_id=kwargs['workspace_id'])
+
+        return Response(
+            status=status.HTTP_200_OK
+        )

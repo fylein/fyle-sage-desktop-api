@@ -123,6 +123,11 @@ class AccountingExport(BaseForeignWorkspaceModel):
         for accounting_export in accounting_exports:
             # Determine the date field based on fund_source
             date_field = getattr(export_setting, f"{fund_source_map.get(fund_source)}_expense_date", None)
+            if date_field:
+                date_field = date_field.lower()
+
+            if date_field:
+                date_field = date_field.lower()
 
             # Calculate and assign 'last_spent_at' based on the chosen date field
             if date_field == 'last_spent_at':
@@ -131,6 +136,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
 
             # Store expense IDs and remove unnecessary keys
             expense_ids = accounting_export['expense_ids']
+            accounting_export[date_field] = accounting_export[date_field].strftime('%Y-%m-%dT%H:%M:%S')
             accounting_export.pop('total')
             accounting_export.pop('expense_ids')
 

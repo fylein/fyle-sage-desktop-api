@@ -29,6 +29,11 @@ def run_import_export(workspace_id: int, export_mode = None):
     last_exported_at = datetime.now()
     is_expenses_exported = False
 
+    export_map = {
+        'PURCHASE_INVOICE': ExportPurchaseInvoice(),
+        'DIRECT_COST': ExportDirectCost()
+    }
+
     # For Reimbursable Expenses
     if export_settings.reimbursable_expenses_export_type:
         queue_import_reimbursable_expenses(workspace_id=workspace_id,  synchronous=True)
@@ -43,9 +48,8 @@ def run_import_export(workspace_id: int, export_mode = None):
 
             if len(accounting_export_ids):
                 is_expenses_exported = True
-
-                direct_cost = ExportDirectCost()
-                direct_cost.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
+                export = export_map[export_settings.reimbursable_expenses_export_type]
+                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
 
     # For Credit Card Expenses
     if export_settings.credit_card_expense_export_type:
@@ -60,9 +64,8 @@ def run_import_export(workspace_id: int, export_mode = None):
 
             if len(accounting_export_ids):
                 is_expenses_exported = True
-
-                purchase_invoice = ExportPurchaseInvoice()
-                purchase_invoice.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
+                export = export_map[export_settings.credit_card_expense_export_type]
+                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
 
     if is_expenses_exported:
         accounting_summary.last_exported_at = last_exported_at
@@ -111,3 +114,58 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
         schedule.delete()
 
     return advance_settings
+
+
+def export_to_sage300(workspace_id: int):
+    """
+    Function to export expenses to Sage 300
+    """
+    # Retrieve export settings for the given workspace
+    export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
+
+    # Update or create an AccountingExportSummary for the workspace
+    accounting_summary, _ = AccountingExportSummary.objects.update_or_create(workspace_id=workspace_id)
+
+    # Set the timestamp for the last export
+    last_exported_at = datetime.now()
+
+    # Flag to track if expenses are exported
+    is_expenses_exported = False
+
+    # Dictionary mapping export types to their corresponding export classes
+    export_map = {
+        'PURCHASE_INVOICE': ExportPurchaseInvoice(),
+        'DIRECT_COST': ExportDirectCost()
+    }
+
+    # Check and export reimbursable expenses if configured
+    if export_settings.reimbursable_expenses_export_type:
+        # Get IDs of unreexported accounting exports for personal fund source
+        accounting_export_ids = AccountingExport.objects.filter(
+            fund_source='PERSONAL', exported_at__isnull=True).values_list('id', flat=True)
+
+        if len(accounting_export_ids):
+            # Set the flag indicating expenses are exported
+            is_expenses_exported = True
+            # Get the appropriate export class and trigger the export
+            export = export_map[export_settings.reimbursable_expenses_export_type]
+            export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
+
+    # Check and export credit card expenses if configured
+    if export_settings.credit_card_expense_export_type:
+        # Get IDs of unreexported accounting exports for credit card fund source
+        accounting_export_ids = AccountingExport.objects.filter(
+            fund_source='CCC', exported_at__isnull=True).values_list('id', flat=True)
+
+        if len(accounting_export_ids):
+            # Set the flag indicating expenses are exported
+            is_expenses_exported = True
+            # Get the appropriate export class and trigger the export
+            export = export_map[export_settings.credit_card_expense_export_type]
+            export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
+
+    # Update the accounting summary if expenses are exported
+    if is_expenses_exported:
+        accounting_summary.last_exported_at = last_exported_at
+        accounting_summary.export_mode = 'MANUAL'
+        accounting_summary.save()

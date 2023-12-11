@@ -9,7 +9,7 @@ import pytest
 from rest_framework.test import APIClient
 from fyle.platform.platform import Platform
 from fyle_rest_auth.models import User, AuthToken
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
 
 from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
@@ -374,18 +374,18 @@ def add_export_settings():
     for workspace_id in workspace_ids:
         ExportSetting.objects.create(
             workspace_id=workspace_id,
-            reimbursable_expenses_export_type='BILL' if workspace_id in [1, 2] else 'JOURNAL_ENTRY',
+            reimbursable_expenses_export_type='PURCHASE_INVOICE' if workspace_id in [1, 2] else 'DIRECT_COST',
             default_bank_account_name='Accounts Payable',
             default_back_account_id='1',
             reimbursable_expense_state='PAYMENT_PROCESSING',
-            reimbursable_expense_date='current_date' if workspace_id == 1 else 'last_spent_at',
+            reimbursable_expense_date='SPENT_AT' if workspace_id == 1 else 'LAST_SPENT_AT',
             reimbursable_expense_grouped_by='REPORT' if workspace_id == 1 else 'EXPENSE',
-            credit_card_expense_export_type='CREDIT_CARD_PURCHASE' if workspace_id in [1, 2] else 'JOURNAL_ENTRY',
+            credit_card_expense_export_type='DIRECT_COST' if workspace_id in [1, 2] else 'PURCHASE_INVOICE',
             credit_card_expense_state='PAYMENT_PROCESSING',
             default_ccc_credit_card_account_name='Visa',
             default_ccc_credit_card_account_id='12',
             credit_card_expense_grouped_by='EXPENSE' if workspace_id == 3 else 'REPORT',
-            credit_card_expense_date='spent_at'
+            credit_card_expense_date='SPENT_AT'
         )
 
 
@@ -405,4 +405,22 @@ def add_import_settings():
             workspace_id=workspace_id,
             import_categories=False,
             import_vendors_as_merchants=False
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_project_mapping_settings():
+    """
+    Pytest fixture to add merchant mappings to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        MappingSetting.objects.create(
+            workspace_id=workspace_id,
+            source_field='PROJECT',
+            destination_field='PROJECT',
+            import_to_fyle=True
         )

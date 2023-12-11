@@ -102,7 +102,7 @@ class BaseExportModel(models.Model):
             return accounting_export.description['posted_at']
 
         # If none of the expected keys are present or if the values are empty, return the current date and time
-        return datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        return datetime.now().strftime("%Y-%m-%d")
 
     def get_job_id(accounting_export: AccountingExport, expense: Expense):
         """
@@ -205,13 +205,13 @@ class BaseExportModel(models.Model):
 
         return cost_code_id
 
-    def get_cost_category_id(expense_group: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, project_id: str, cost_code_id: str):
+    def get_cost_category_id(accounting_export: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, project_id: str, cost_code_id: str):
         from apps.sage300.models import CostCategory
         cost_category_id = None
 
         selected_cost_category = lineitem.custom_properties.get(dependent_field_setting.cost_type_field_name, None)
         cost_category = CostCategory.objects.filter(
-            workspace_id=expense_group.workspace_id,
+            workspace_id=accounting_export.workspace_id,
             cost_code_id=cost_code_id,
             project_id=project_id,
             name=selected_cost_category

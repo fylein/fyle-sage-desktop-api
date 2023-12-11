@@ -46,7 +46,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
         """
 
         chain.append('apps.sage300.exports.direct_cost.tasks.create_direct_cost', accounting_export)
-        chain.append('apps.sage300.exports.direct_cost.queues.poll_operation_status', workspace_id)
+        chain.append('apps.sage300.exports.direct_cost.queues.create_schedule_for_polling', workspace_id)
 
     if chain.length() > 1:
         chain.run()
