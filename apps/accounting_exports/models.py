@@ -126,6 +126,9 @@ class AccountingExport(BaseForeignWorkspaceModel):
             if date_field:
                 date_field = date_field.lower()
 
+            if date_field:
+                date_field = date_field.lower()
+
             # Calculate and assign 'last_spent_at' based on the chosen date field
             if date_field == 'last_spent_at':
                 latest_expense = Expense.objects.filter(id__in=accounting_export['expense_ids']).order_by('-spent_at').first()

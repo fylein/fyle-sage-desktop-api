@@ -3,6 +3,8 @@ from django_q.models import Schedule
 import pytest  # noqa
 from django.urls import reverse
 from fyle_accounting_mappings.models import MappingSetting
+
+from apps.accounting_exports.models import AccountingExport
 from apps.workspaces.models import (
     Workspace,
     Sage300Credential,
@@ -407,4 +409,51 @@ def test_get_workspace_admins(api_client, test_connection):
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
 
     response = api_client.get(url)
+    assert response.status_code == 200
+
+
+def test_trigger_export(
+    mocker,
+    api_client,
+    test_connection,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_accounting_export_expenses,
+    add_export_settings,
+    add_import_settings
+):
+    """
+    Test Export Trigger API
+    """
+
+    url = reverse('trigger-exports', kwargs={'workspace_id': 1})
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+
+    mocker.patch(
+        'apps.sage300.exports.purchase_invoice.tasks.ExportPurchaseInvoice.trigger_export',
+        return_value=None
+    )
+
+    mocker.patch(
+        'apps.sage300.exports.direct_cost.tasks.ExportDirectCost.trigger_export',
+        return_value=None
+    )
+
+    accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
+    assert accounting_export.status == 'EXPORT_QUEUED'
+
+    response = api_client.post(url)
+    assert response.status_code == 200
+
+
+def test_ready_view(api_client, test_connection):
+    '''
+    Test ready view
+    '''
+    url = reverse(
+        'ready'
+    )
+
+    response = api_client.get(url)
+
     assert response.status_code == 200
