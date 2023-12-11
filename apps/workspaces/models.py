@@ -43,7 +43,7 @@ REIMBURSABLE_EXPENSES_GROUPED_BY_CHOICES = (
 
 REIMBURSABLE_EXPENSES_DATE_TYPE_CHOICES = (
     ('LAST_SPENT_AT', 'last_spent_at'),
-    ('CREATED_AT', 'created_at'),
+    ('CREATED_AT', 'expense_created_at'),
     ('SPENT_AT', 'spent_at')
 )
 
@@ -68,7 +68,7 @@ CREDIT_CARD_EXPENSES_GROUPED_BY_CHOICES = (
 CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES = (
     ('LAST_SPENT_AT', 'last_spent_at'),
     ('POSTED_AT', 'posted_at'),
-    ('CREATED_AT', 'created_at')
+    ('CREATED_AT', 'expense_created_at')
 )
 
 EXPORT_MODE_CHOICES = (('MANUAL', 'MANUAL'), ('AUTO', 'AUTO'))
