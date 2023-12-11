@@ -77,16 +77,16 @@ class DependentFieldSettingView(generics.CreateAPIView, generics.RetrieveUpdateA
     queryset = DependentFieldSetting.objects.all()
 
 
-class ExportableExpenseGroupsView(generics.RetrieveAPIView):
+class ExportableAccountingExportView(generics.RetrieveAPIView):
     """
-    List Exportable Expense Groups
+    List Exportable Accounting Exports
     """
     def get(self, request, *args, **kwargs):
 
         exportable_ids = get_exportable_accounting_exports_ids(workspace_id=kwargs['workspace_id'])
 
         return Response(
-            data={'exportable_expense_group_ids': exportable_ids},
+            data={'exportable_accounting_export_ids': exportable_ids},
             status=status.HTTP_200_OK
         )
 

@@ -17,8 +17,7 @@ logger.level = logging.INFO
 def handle_sage300_error(exception, accounting_export: AccountingExport, export_type: str):
     logger.info(exception.response)
 
-    sage300_error = exception.response['Errors']
-
+    sage300_error = exception.response
     error_msg = 'Failed to create {0}'.format(export_type)
 
     Error.objects.update_or_create(workspace_id=accounting_export.workspace_id, accounting_export=accounting_export, defaults={'error_title': error_msg, 'type': 'SAGE300_ERROR', 'error_detail': sage300_error, 'is_resolved': False})

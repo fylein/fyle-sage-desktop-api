@@ -45,46 +45,43 @@ class DirectCost(BaseExportModel):
         :param accounting_export: expense group
         :return: Direct cost object
         """
-        expenses = accounting_export.expenses.all()
+
+        expense = accounting_export.expenses.first()
         dependent_field_setting = DependentFieldSetting.objects.filter(workspace_id=accounting_export.workspace_id).first()
 
         cost_category_id = None
         cost_code_id = None
 
-        direct_cost_objects = []
+        account = CategoryMapping.objects.filter(
+            source_category__value=expense.category,
+            workspace_id=accounting_export.workspace_id
+        ).first()
 
-        for lineitem in expenses:
-            account = CategoryMapping.objects.filter(
-                source_category__value=lineitem.category,
-                workspace_id=accounting_export.workspace_id
-            ).first()
+        job_id = self.get_job_id(accounting_export, expense)
+        commitment_id = self.get_commitment_id(accounting_export, expense)
+        standard_category_id = self.get_standard_category_id(accounting_export, expense)
+        standard_cost_code_id = self.get_standard_cost_code_id(accounting_export, expense)
+        description = self.get_expense_purpose(accounting_export.workspace_id, expense, expense.category, advance_setting)
 
-            job_id = self.get_job_id(accounting_export, lineitem)
-            commitment_id = self.get_commitment_id(accounting_export, lineitem)
-            standard_category_id = self.get_standard_category_id(accounting_export, lineitem)
-            standard_cost_code_id = self.get_standard_cost_code_id(accounting_export, lineitem)
-            description = self.get_expense_purpose(accounting_export.workspace_id, lineitem, lineitem.category, advance_setting)
+        if dependent_field_setting:
+            cost_category_id = self.get_cost_category_id(accounting_export, expense, dependent_field_setting, job_id)
+            cost_code_id = self.get_cost_code_id(accounting_export, expense, dependent_field_setting, job_id, cost_category_id)
 
-            if dependent_field_setting:
-                cost_category_id = self.get_cost_category_id(accounting_export, lineitem, dependent_field_setting, job_id)
-                cost_code_id = self.get_cost_code_id(accounting_export, lineitem, dependent_field_setting, job_id, cost_category_id)
+        direct_cost_object, _ = DirectCost.objects.update_or_create(
+            expense_id=expense.id,
+            accounting_export=accounting_export,
+            defaults={
+                'amount': expense.amount,
+                'credit_card_account_id': account.destination_account.destination_id,
+                'job_id': job_id,
+                'commitment_id': commitment_id,
+                'standard_category_id': standard_category_id,
+                'standard_cost_code_id': standard_cost_code_id,
+                'category_id': cost_category_id,
+                'cost_code_id': cost_code_id,
+                'description': description,
+                'workspace_id': accounting_export.workspace_id
+            }
+        )
 
-            direct_cost_object, _ = DirectCost.objects.update_or_create(
-                expense_id=lineitem.id,
-                accounting_export=accounting_export,
-                defaults={
-                    'amount': lineitem.amount,
-                    'credit_card_account_id': account.destination_account.destination_id,
-                    'job_id': job_id,
-                    'commitment_id': commitment_id,
-                    'standard_category_id': standard_category_id,
-                    'standard_cost_code_id': standard_cost_code_id,
-                    'category_id': cost_category_id,
-                    'cost_code_id': cost_code_id,
-                    'description': description,
-                    'workspace_id': accounting_export.workspace_id
-                }
-            )
-            direct_cost_objects.append(direct_cost_object)
-
-        return direct_cost_objects
+        return direct_cost_object

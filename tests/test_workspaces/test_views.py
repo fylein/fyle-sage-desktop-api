@@ -134,7 +134,7 @@ def test_export_settings(api_client, test_connection):
         'reimbursable_expense_state': 'PAYMENT_PROCESSING',
         'reimbursable_expense_date': 'LAST_SPENT_AT',
         'reimbursable_expense_grouped_by': 'EXPENSE',
-        'credit_card_expense_export_type': 'JOURNAL_ENTRY',
+        'credit_card_expense_export_type': 'DIRECT_COST',
         'credit_card_expense_state': 'PAID',
         'credit_card_expense_grouped_by': 'EXPENSE',
         'credit_card_expense_date': 'CREATED_AT',
@@ -159,7 +159,7 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.reimbursable_expense_state == 'PAYMENT_PROCESSING'
     assert export_settings.reimbursable_expense_date == 'LAST_SPENT_AT'
     assert export_settings.reimbursable_expense_grouped_by == 'EXPENSE'
-    assert export_settings.credit_card_expense_export_type == 'JOURNAL_ENTRY'
+    assert export_settings.credit_card_expense_export_type == 'DIRECT_COST'
     assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
     assert export_settings.credit_card_expense_date == 'CREATED_AT'
@@ -179,7 +179,7 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.reimbursable_expense_state == 'PAYMENT_PROCESSING'
     assert export_settings.reimbursable_expense_date == 'LAST_SPENT_AT'
     assert export_settings.reimbursable_expense_grouped_by == 'EXPENSE'
-    assert export_settings.credit_card_expense_export_type == 'JOURNAL_ENTRY'
+    assert export_settings.credit_card_expense_export_type == 'DIRECT_COST'
     assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
     assert export_settings.credit_card_expense_date == 'CREATED_AT'
