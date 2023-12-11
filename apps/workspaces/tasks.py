@@ -29,6 +29,11 @@ def run_import_export(workspace_id: int, export_mode = None):
     last_exported_at = datetime.now()
     is_expenses_exported = False
 
+    export_map = {
+        'PURCHASE_INVOICE': ExportPurchaseInvoice(),
+        'DIRECT_COST': ExportDirectCost()
+    }
+
     # For Reimbursable Expenses
     if export_settings.reimbursable_expenses_export_type:
         queue_import_reimbursable_expenses(workspace_id=workspace_id,  synchronous=True)
@@ -43,9 +48,8 @@ def run_import_export(workspace_id: int, export_mode = None):
 
             if len(accounting_export_ids):
                 is_expenses_exported = True
-
-                direct_cost = ExportDirectCost()
-                direct_cost.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
+                export = export_map[export_settings.reimbursable_expenses_export_type]
+                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
 
     # For Credit Card Expenses
     if export_settings.credit_card_expense_export_type:
@@ -60,9 +64,8 @@ def run_import_export(workspace_id: int, export_mode = None):
 
             if len(accounting_export_ids):
                 is_expenses_exported = True
-
-                purchase_invoice = ExportPurchaseInvoice()
-                purchase_invoice.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
+                export = export_map[export_settings.credit_card_expense_export_type]
+                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
 
     if is_expenses_exported:
         accounting_summary.last_exported_at = last_exported_at

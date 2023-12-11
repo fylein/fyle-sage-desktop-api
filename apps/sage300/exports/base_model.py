@@ -102,7 +102,7 @@ class BaseExportModel(models.Model):
             return accounting_export.description['posted_at']
 
         # If none of the expected keys are present or if the values are empty, return the current date and time
-        return datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        return datetime.now().strftime("%Y-%m-%d")
 
     def get_job_id(accounting_export: AccountingExport, expense: Expense):
         """

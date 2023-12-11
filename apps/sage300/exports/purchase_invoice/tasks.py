@@ -60,8 +60,8 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                 'Header': {
                     'AccountingDate': body.invoice_date,
                     'Amount': body.amount,
-                    "Code": '{}-{}'.format(body.description['fund_source'], body['id']),
-                    "Description": body.description['email'],
+                    "Code": '{}-{}'.format(body.description['fund_source'], body.id),
+                    "Description": body.description['employee_email'],
                     "InvoiceDate": body.invoice_date,
                     "VendorId": body.vendor_id
                 }

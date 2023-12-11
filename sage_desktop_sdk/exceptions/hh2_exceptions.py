@@ -19,6 +19,7 @@ class SageDesktopSDKError(Exception):
     def __str__(self):
         return repr(self.message)
 
+
 class NotAcceptableClientError(SageDesktopSDKError):
     """Wrong client secret and/or refresh token, 406 error."""
 
