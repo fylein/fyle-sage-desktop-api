@@ -137,7 +137,7 @@ def test_export_settings(api_client, test_connection):
         'credit_card_expense_export_type': 'DIRECT_COST',
         'credit_card_expense_state': 'PAID',
         'credit_card_expense_grouped_by': 'EXPENSE',
-        'credit_card_expense_date': 'CREATED_AT',
+        'credit_card_expense_date': 'POSTED_AT',
         'default_reimbursable_account_name': 'reimbursable account',
         'default_reimbursable_account_id': '123',
         'default_ccc_credit_card_account_name': 'CCC credit card account',
