@@ -4,19 +4,11 @@ from django.db.models import Q
 from django_q.tasks import Chain
 from django_q.models import Schedule
 
-from fyle_integrations_platform_connector import PlatformConnector
-
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.workspaces.models import FyleCredential
 from apps.workspaces.models import Sage300Credential
 from apps.sage300.utils import SageDesktopConnector
 from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
-
-
-def import_fyle_dimensions(fyle_credentials: FyleCredential):
-
-    platform = PlatformConnector(fyle_credentials)
-    platform.import_fyle_dimensions()
 
 
 def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str]):
@@ -28,7 +20,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
 
     accounting_exports = AccountingExport.objects.filter(
         ~Q(status__in=['IN_PROGRESS', 'COMPLETE', 'EXPORT_QUEUED']),
-        workspace_id=workspace_id, id__in=accounting_export_ids, purchaseinvoice__id__isnull=True,
+        workspace_id=workspace_id, id__in=accounting_export_ids, directcost__id__isnull=True,
         exported_at__isnull=True
     ).all()
 
@@ -41,7 +33,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
             id=accounting_export_group.id,
             defaults={
                 'status': 'ENQUEUED',
-                'type': 'PURCHASE_INVOICE'
+                'type': 'DIRECT_COST'
             }
         )
 
@@ -53,8 +45,8 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
         Todo: Add last export details
         """
 
-        chain.append('apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice', accounting_export)
-        chain.append('apps.sage300.exports.purchase_invoice.queues.create_schedule_for_polling', workspace_id)
+        chain.append('apps.sage300.exports.direct_cost.tasks.create_direct_cost', accounting_export)
+        chain.append('apps.sage300.exports.direct_cost.queues.create_schedule_for_polling', workspace_id)
 
     if chain.length() > 1:
         chain.run()
@@ -69,7 +61,7 @@ def create_schedule_for_polling(workspace_id: int):
     """
 
     Schedule.objects.update_or_create(
-        func='apps.sage300.exports.purchase_invoice.queues.poll_operation_status',
+        func='apps.sage300.exports.direct_cost.queues.poll_operation_status',
         args='{}'.format(workspace_id),
         defaults={
             'schedule_type': Schedule.MINUTES,
@@ -91,10 +83,10 @@ def poll_operation_status(workspace_id: int):
     """
 
     # Retrieve all queued accounting exports for purchase invoices
-    accounting_exports = AccountingExport.objects.filter(status='EXPORT_QUEUED', workspace_id=workspace_id, type='PURCHASE_INVOICE').all()
+    accounting_exports = AccountingExport.objects.filter(status='EXPORT_QUEUED', workspace_id=workspace_id, type='DIRECT_COST').all()
 
     if not accounting_exports:
-        schedule = Schedule.objects.filter(args=workspace_id, func='apps.sage300.exports.purchase_invoice.queues.poll_operation_status').first()
+        schedule = Schedule.objects.filter(args=workspace_id, func='apps.sage300.exports.direct_cost.queues.poll_operation_status').first()
         if schedule:
             schedule.delete()
 
@@ -114,8 +106,7 @@ def poll_operation_status(workspace_id: int):
         operation_status = sage300_connection.connection.operation_status.get(export_id=export_id)
 
         # Check if the operation is disabled
-        if operation_status.get('DisabledOn'):
-
+        if operation_status['DisabledOn'] is not None:
             # Retrieve Sage 300 errors for the current export
             sage300_errors = sage300_connection.connection.event_failures.get(accounting_export.export_id)
 
@@ -123,19 +114,19 @@ def poll_operation_status(workspace_id: int):
             accounting_export.sage300_errors = sage300_errors
             accounting_export.status = 'FAILED'
 
+            # Save the updated accounting export
+            accounting_export.save()
+
             Error.objects.update_or_create(
                 workspace_id=accounting_export.workspace_id,
                 accounting_export=accounting_export,
                 defaults={
-                    'error_title': 'Failed to create purchase invoice',
+                    'error_title': 'Failed to create Direct Cost',
                     'type': 'SAGE300_ERROR',
                     'error_detail': sage300_errors,
                     'is_resolved': False
                 }
             )
-
-            # Save the updated accounting export
-            accounting_export.save()
 
             # Continue to the next iteration
             continue

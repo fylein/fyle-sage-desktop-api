@@ -3,6 +3,8 @@ from django_q.models import Schedule
 import pytest  # noqa
 from django.urls import reverse
 from fyle_accounting_mappings.models import MappingSetting
+
+from apps.accounting_exports.models import AccountingExport
 from apps.workspaces.models import (
     Workspace,
     Sage300Credential,
@@ -132,10 +134,10 @@ def test_export_settings(api_client, test_connection):
         'reimbursable_expense_state': 'PAYMENT_PROCESSING',
         'reimbursable_expense_date': 'LAST_SPENT_AT',
         'reimbursable_expense_grouped_by': 'EXPENSE',
-        'credit_card_expense_export_type': 'JOURNAL_ENTRY',
+        'credit_card_expense_export_type': 'DIRECT_COST',
         'credit_card_expense_state': 'PAID',
         'credit_card_expense_grouped_by': 'EXPENSE',
-        'credit_card_expense_date': 'CREATED_AT',
+        'credit_card_expense_date': 'POSTED_AT',
         'default_reimbursable_account_name': 'reimbursable account',
         'default_reimbursable_account_id': '123',
         'default_ccc_credit_card_account_name': 'CCC credit card account',
@@ -157,10 +159,10 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.reimbursable_expense_state == 'PAYMENT_PROCESSING'
     assert export_settings.reimbursable_expense_date == 'LAST_SPENT_AT'
     assert export_settings.reimbursable_expense_grouped_by == 'EXPENSE'
-    assert export_settings.credit_card_expense_export_type == 'JOURNAL_ENTRY'
+    assert export_settings.credit_card_expense_export_type == 'DIRECT_COST'
     assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
-    assert export_settings.credit_card_expense_date == 'CREATED_AT'
+    assert export_settings.credit_card_expense_date == 'POSTED_AT'
     assert export_settings.default_reimbursable_account_name == 'reimbursable account'
     assert export_settings.default_reimbursable_account_id == '123'
     assert export_settings.default_ccc_credit_card_account_name == 'CCC credit card account'
@@ -177,10 +179,10 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.reimbursable_expense_state == 'PAYMENT_PROCESSING'
     assert export_settings.reimbursable_expense_date == 'LAST_SPENT_AT'
     assert export_settings.reimbursable_expense_grouped_by == 'EXPENSE'
-    assert export_settings.credit_card_expense_export_type == 'JOURNAL_ENTRY'
+    assert export_settings.credit_card_expense_export_type == 'DIRECT_COST'
     assert export_settings.credit_card_expense_state == 'PAID'
     assert export_settings.credit_card_expense_grouped_by == 'EXPENSE'
-    assert export_settings.credit_card_expense_date == 'CREATED_AT'
+    assert export_settings.credit_card_expense_date == 'POSTED_AT'
     assert export_settings.default_reimbursable_account_name == 'reimbursable account'
     assert export_settings.default_reimbursable_account_id == '123'
     assert export_settings.default_ccc_credit_card_account_name == 'CCC credit card account'
@@ -407,4 +409,51 @@ def test_get_workspace_admins(api_client, test_connection):
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
 
     response = api_client.get(url)
+    assert response.status_code == 200
+
+
+def test_trigger_export(
+    mocker,
+    api_client,
+    test_connection,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_accounting_export_expenses,
+    add_export_settings,
+    add_import_settings
+):
+    """
+    Test Export Trigger API
+    """
+
+    url = reverse('trigger-exports', kwargs={'workspace_id': 1})
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+
+    mocker.patch(
+        'apps.sage300.exports.purchase_invoice.tasks.ExportPurchaseInvoice.trigger_export',
+        return_value=None
+    )
+
+    mocker.patch(
+        'apps.sage300.exports.direct_cost.tasks.ExportDirectCost.trigger_export',
+        return_value=None
+    )
+
+    accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
+    assert accounting_export.status == 'EXPORT_QUEUED'
+
+    response = api_client.post(url)
+    assert response.status_code == 200
+
+
+def test_ready_view(api_client, test_connection):
+    '''
+    Test ready view
+    '''
+    url = reverse(
+        'ready'
+    )
+
+    response = api_client.get(url)
+
     assert response.status_code == 200

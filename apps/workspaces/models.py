@@ -25,6 +25,53 @@ ONBOARDING_STATE_CHOICES = (
     ('COMPLETE', 'COMPLETE')
 )
 
+# Reimbursable Expense Choices
+REIMBURSABLE_EXPENSE_EXPORT_TYPE_CHOICES = (
+    ('PURCHASE_INVOICE', 'PURCHASE_INVOICE'),
+    ('DIRECT_COST', 'DIRECT_COST')
+)
+
+REIMBURSABLE_EXPENSE_STATE_CHOICES = (
+    ('PAYMENT_PROCESSING', 'PAYMENT_PROCESSING'),
+    ('PAID', 'PAID')
+)
+
+REIMBURSABLE_EXPENSES_GROUPED_BY_CHOICES = (
+    ('REPORT', 'report_id'),
+    ('EXPENSE', 'expense_id')
+)
+
+REIMBURSABLE_EXPENSES_DATE_TYPE_CHOICES = (
+    ('LAST_SPENT_AT', 'last_spent_at'),
+    ('CURRENT_DATE', 'current_date'),
+    ('SPENT_AT', 'spent_at')
+)
+
+# Credit Card Expense Choices
+CREDIT_CARD_EXPENSE_EXPORT_TYPE_CHOICES = (
+    ('PURCHASE_INVOICE', 'PURCHASE_INVOICE'),
+    ('DIRECT_COST', 'DIRECT_COST')
+)
+
+
+CREDIT_CARD_EXPENSE_STATE_CHOICES = (
+    ('APPROVED', 'APPROVED'),
+    ('PAYMENT_PROCESSING', 'PAYMENT_PROCESSING'),
+    ('PAID', 'PAID')
+)
+
+CREDIT_CARD_EXPENSES_GROUPED_BY_CHOICES = (
+    ('REPORT', 'report_id'),
+    ('EXPENSE', 'expense_id')
+)
+
+CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES = (
+    ('LAST_SPENT_AT', 'last_spent_at'),
+    ('POSTED_AT', 'posted_at'),
+)
+
+EXPORT_MODE_CHOICES = (('MANUAL', 'MANUAL'), ('AUTO', 'AUTO'))
+
 
 def get_default_onboarding_state():
     return 'CONNECTION'
@@ -97,52 +144,6 @@ class Sage300Credential(BaseModel):
 
     class Meta:
         db_table = 'sage300_credentials'
-
-
-# Reimbursable Expense Choices
-REIMBURSABLE_EXPENSE_EXPORT_TYPE_CHOICES = (
-    ('PURCHASE_INVOICE', 'PURCHASE_INVOICE'),
-    ('DIRECT_COST', 'DIRECT_COST')
-)
-
-REIMBURSABLE_EXPENSE_STATE_CHOICES = (
-    ('PAYMENT_PROCESSING', 'PAYMENT_PROCESSING'),
-    ('PAID', 'PAID')
-)
-
-REIMBURSABLE_EXPENSES_GROUPED_BY_CHOICES = (
-    ('REPORT', 'report_id'),
-    ('EXPENSE', 'expense_id')
-)
-
-REIMBURSABLE_EXPENSES_DATE_TYPE_CHOICES = (
-    ('LAST_SPENT_AT', 'last_spent_at'),
-    ('CREATED_AT', 'created_at'),
-    ('SPENT_AT', 'spent_at')
-)
-
-# Credit Card Expense Choices
-CREDIT_CARD_EXPENSE_EXPORT_TYPE_CHOICES = (
-    ('JOURNAL_ENTRY', 'JOURNAL_ENTRY'),
-)
-
-
-CREDIT_CARD_EXPENSE_STATE_CHOICES = (
-    ('APPROVED', 'APPROVED'),
-    ('PAYMENT_PROCESSING', 'PAYMENT_PROCESSING'),
-    ('PAID', 'PAID')
-)
-
-CREDIT_CARD_EXPENSES_GROUPED_BY_CHOICES = (
-    ('REPORT', 'report_id'),
-    ('EXPENSE', 'expense_id')
-)
-
-CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES = (
-    ('LAST_SPENT_AT', 'last_spent_at'),
-    ('POSTED_AT', 'posted_at'),
-    ('CREATED_AT', 'created_at')
-)
 
 
 class ExportSetting(BaseModel):
@@ -224,3 +225,19 @@ class AdvancedSetting(BaseModel):
 
     class Meta:
         db_table = 'advanced_settings'
+
+
+class LastExportDetail(BaseModel):
+    """
+    Table to store Last Export Details
+    """
+
+    id = models.AutoField(primary_key=True)
+    last_exported_at = models.DateTimeField(help_text='Last exported at datetime', null=True)
+    export_mode = models.CharField(max_length=50, help_text='Mode of the export Auto / Manual', choices=EXPORT_MODE_CHOICES, null=True)
+    total_accounting_exports_count = models.IntegerField(help_text='Total count of accounting exports exported', null=True)
+    successful_accounting_exports_count = models.IntegerField(help_text='count of successful accounting_exports ', null=True)
+    failed_accounting_exports_count = models.IntegerField(help_text='count of failed accounting_exports ', null=True)
+
+    class Meta:
+        db_table = 'last_export_details'

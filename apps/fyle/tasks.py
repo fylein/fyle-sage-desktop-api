@@ -54,19 +54,19 @@ def import_expenses(workspace_id, accounting_export: AccountingExport, source_ac
     )
 
     if expenses:
-        setattr(workspace, f"{fund_source_map.get(fund_source_key)}_last_synced_at", datetime.now())
-        workspace.save()
+        with transaction.atomic():
 
-    with transaction.atomic():
-        expenses_object = Expense.create_expense_objects(expenses, workspace_id)
-        AccountingExport.create_accounting_export(
-            expenses_object,
-            fund_source=fund_source_key,
-            workspace_id=workspace_id
-        )
+            setattr(workspace, f"{fund_source_map.get(fund_source_key)}_last_synced_at", datetime.now())
+            workspace.save()
+            expenses_object = Expense.create_expense_objects(expenses, workspace_id)
+            AccountingExport.create_accounting_export(
+                expenses_object,
+                fund_source=fund_source_key,
+                workspace_id=workspace_id
+            )
 
     accounting_export.status = 'COMPLETE'
-    accounting_export.errors = None
+    accounting_export.detail = None
 
     accounting_export.save()
 

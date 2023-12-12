@@ -21,7 +21,7 @@ class PurchaseInvoice(BaseExportModel):
     Purchase Invoice Model
     """
 
-    accounting_export = models.OneToOneField(AccountingExport, on_delete=models.PROTECT, help_text='Expense group reference')
+    accounting_export = models.OneToOneField(AccountingExport, on_delete=models.PROTECT, help_text='Accounting Export reference')
     accounting_date = CustomDateTimeField(help_text='accounting date of purchase invoice')
     amount = FloatNullField(help_text='Total Amount of the invoice')
     code = StringNullField(max_length=10, help_text='unique code for invoice')
@@ -34,7 +34,7 @@ class PurchaseInvoice(BaseExportModel):
         db_table = 'purchase_invoices'
 
     @classmethod
-    def create_or_update_object(self, accounting_export: AccountingExport):
+    def create_or_update_object(self, accounting_export: AccountingExport, advance_settings: AdvancedSetting = None):
         """
         Create Purchase Invoice
         :param accounting_export: expense group
@@ -52,7 +52,8 @@ class PurchaseInvoice(BaseExportModel):
                 'amount': amount,
                 'vendor_id': vendor_id,
                 'description': description,
-                'invoice_date': invoice_date
+                'invoice_date': invoice_date,
+                'workspace_id': accounting_export.workspace_id
             }
         )
 
@@ -126,7 +127,8 @@ class PurchaseInvoiceLineitems(BaseExportModel):
                     'standard_cost_code_id': standard_cost_code_id,
                     'category_id': cost_category_id,
                     'cost_code_id': cost_code_id,
-                    'description': description
+                    'description': description,
+                    'workspace_id': accounting_export.workspace_id
                 }
             )
             purchase_invoice_lineitem_objects.append(purchase_invoice_lineitem_object)

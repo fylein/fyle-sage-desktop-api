@@ -1,12 +1,24 @@
 from rest_framework import serializers
 
-from .models import AccountingExport, Error, AccountingExportSummary
+from .models import AccountingExport, Error, AccountingExportSummary, Expense
+
+
+class ExpenseSerializer(serializers.ModelSerializer):
+    """
+    Expense serializer
+    """
+
+    class Meta:
+        model = Expense
+        fields = ['updated_at', 'claim_number', 'employee_email', 'employee_name', 'fund_source', 'expense_number', 'payment_number', 'vendor', 'category', 'amount', 'report_id', 'settlement_id', 'expense_id']
 
 
 class AccountingExportSerializer(serializers.ModelSerializer):
     """
     Accounting Export serializer
     """
+
+    expenses = ExpenseSerializer(many=True)
 
     class Meta:
         model = AccountingExport

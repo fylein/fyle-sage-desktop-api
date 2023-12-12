@@ -9,6 +9,9 @@ from .documents import Documents
 from .operation_status import OperationStatus
 from .categories import Categories
 from .cost_codes import CostCodes
+from .direct_costs import DirectCosts
+from .event_failures import EventFailures
+
 
 __all__ = [
     'Accounts',
@@ -18,5 +21,7 @@ __all__ = [
     'Documents',
     'OperationStatus',
     'Categories',
-    'CostCodes'
+    'CostCodes',
+    'DirectCosts',
+    'EventFailures'
 ]

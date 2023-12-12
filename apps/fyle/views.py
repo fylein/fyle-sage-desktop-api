@@ -11,6 +11,8 @@ from apps.fyle.serializers import (
     FyleFieldsSerializer,
     DependentFieldSettingSerializer
 )
+
+from apps.workspaces.models import ExportSetting
 from apps.fyle.models import ExpenseFilter, DependentFieldSetting
 from apps.fyle.helpers import get_exportable_accounting_exports_ids
 from apps.fyle.queue import queue_import_reimbursable_expenses, queue_import_credit_card_expenses
@@ -77,21 +79,21 @@ class DependentFieldSettingView(generics.CreateAPIView, generics.RetrieveUpdateA
     queryset = DependentFieldSetting.objects.all()
 
 
-class ExportableExpenseGroupsView(generics.RetrieveAPIView):
+class ExportableAccountingExportView(generics.RetrieveAPIView):
     """
-    List Exportable Expense Groups
+    List Exportable Accounting Exports
     """
     def get(self, request, *args, **kwargs):
 
         exportable_ids = get_exportable_accounting_exports_ids(workspace_id=kwargs['workspace_id'])
 
         return Response(
-            data={'exportable_expense_group_ids': exportable_ids},
+            data={'exportable_accounting_export_ids': exportable_ids},
             status=status.HTTP_200_OK
         )
 
 
-class AccoutingExportSyncView(generics.CreateAPIView):
+class AccountingExportSyncView(generics.CreateAPIView):
     """
     Create expense groups
     """
@@ -100,8 +102,12 @@ class AccoutingExportSyncView(generics.CreateAPIView):
         Post expense groups creation
         """
 
-        queue_import_reimbursable_expenses(kwargs['workspace_id'], synchronous=True)
-        queue_import_credit_card_expenses(kwargs['workspace_id'], synchronous=True)
+        export_settings = ExportSetting.objects.get(workspace_id=kwargs['workspace_id'])
+        if export_settings.reimbursable_expenses_export_type:
+            queue_import_reimbursable_expenses(kwargs['workspace_id'], synchronous=True)
+
+        if export_settings.credit_card_expense_export_type:
+            queue_import_credit_card_expenses(kwargs['workspace_id'], synchronous=True)
 
         return Response(
             status=status.HTTP_200_OK
