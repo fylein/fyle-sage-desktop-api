@@ -9,7 +9,6 @@ import sage_desktop_api.models.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_q', '0014_alter_ormq_id_alter_schedule_id'),
         ('workspaces', '0001_initial'),
     ]
 
