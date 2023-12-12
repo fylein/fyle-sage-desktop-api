@@ -52,12 +52,12 @@ def _group_expenses(expenses: List[Expense], export_setting: ExportSetting, fund
     # Define a mapping for fund sources and their associated group fields
     fund_source_mapping = {
         'CCC': {
-            'group_by': report_grouping_fields if credit_card_expense_grouped_by == 'REPORT' else expense_grouping_fields,
-            'date_field': credit_card_expense_date.lower() if credit_card_expense_date != 'LAST_SPENT_AT' else None
+            'group_by': report_grouping_fields if (export_setting.credit_card_expense_grouped_by and credit_card_expense_grouped_by == 'REPORT') else expense_grouping_fields,
+            'date_field': credit_card_expense_date.lower() if (export_setting.credit_card_expense_date and credit_card_expense_date != 'LAST_SPENT_AT') else None
         },
         'PERSONAL': {
-            'group_by': report_grouping_fields if reimbursable_expense_grouped_by == 'REPORT' else expense_grouping_fields,
-            'date_field': reimbursable_expense_date.lower() if reimbursable_expense_date != 'LAST_SPENT_AT' else None
+            'group_by': report_grouping_fields if (export_setting.reimbursable_expense_grouped_by and reimbursable_expense_grouped_by == 'REPORT') else expense_grouping_fields,
+            'date_field': reimbursable_expense_date.lower() if (export_setting.reimbursable_expense_grouped_by and reimbursable_expense_date != 'LAST_SPENT_AT') else None
         }
     }
 
@@ -68,7 +68,7 @@ def _group_expenses(expenses: List[Expense], export_setting: ExportSetting, fund
 
     default_fields.extend(group_by_field)
 
-    if date_field:
+    if date_field and date_field != 'current_date':
         default_fields.append(date_field)
 
     # Extract expense IDs from the provided expenses
@@ -122,12 +122,10 @@ class AccountingExport(BaseForeignWorkspaceModel):
 
         for accounting_export in accounting_exports:
             # Determine the date field based on fund_source
-            date_field = getattr(export_setting, f"{fund_source_map.get(fund_source)}_expense_date", None)
-            if date_field:
-                date_field = date_field.lower()
+            date_field = getattr(export_setting, f"{fund_source_map.get(fund_source)}_expense_date", None).lower()        
 
-            if date_field:
-                date_field = date_field.lower()
+            if date_field and date_field != 'current_date':
+                accounting_export[date_field] = accounting_export[date_field].strftime('%Y-%m-%d')
 
             # Calculate and assign 'last_spent_at' based on the chosen date field
             if date_field == 'last_spent_at':
@@ -136,7 +134,6 @@ class AccountingExport(BaseForeignWorkspaceModel):
 
             # Store expense IDs and remove unnecessary keys
             expense_ids = accounting_export['expense_ids']
-            accounting_export[date_field] = accounting_export[date_field].strftime('%Y-%m-%dT%H:%M:%S')
             accounting_export.pop('total')
             accounting_export.pop('expense_ids')
 
