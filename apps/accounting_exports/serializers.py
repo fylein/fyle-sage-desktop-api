@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
 from .models import AccountingExport, Error, AccountingExportSummary, Expense
 
 
@@ -39,6 +39,8 @@ class ErrorSerializer(serializers.ModelSerializer):
     """
     Serializer for the Errors
     """
+
+    expense_attribute = ExpenseAttributeSerializer()
 
     class Meta:
         model = Error
