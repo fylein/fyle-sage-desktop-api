@@ -27,9 +27,9 @@ from apps.workspaces.models import (
     Sage300Credential,
     ExportSetting,
     ImportSetting,
-    AdvancedSetting,
-    LastExportDetail
+    AdvancedSetting
 )
+from apps.accounting_exports.models import AccountingExportSummary
 from apps.users.models import User
 from apps.fyle.helpers import get_cluster_domain
 from apps.workspaces.triggers import ImportSettingsTrigger
@@ -77,7 +77,7 @@ class WorkspaceSerializer(serializers.ModelSerializer):
 
             cluster_domain = get_cluster_domain(auth_tokens.refresh_token)
 
-            LastExportDetail.objects.create(workspace_id=workspace.id)
+            AccountingExportSummary.objects.create(workspace_id=workspace.id)
 
             FyleCredential.objects.update_or_create(
                 refresh_token=auth_tokens.refresh_token,

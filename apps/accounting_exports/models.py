@@ -123,8 +123,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
         for accounting_export in accounting_exports:
             # Determine the date field based on fund_source
             date_field = getattr(export_setting, f"{fund_source_map.get(fund_source)}_expense_date", None).lower()
-
-            if date_field and date_field != 'current_date':
+            if date_field and date_field not in ['current_date', 'last_spent_at']:
                 accounting_export[date_field] = accounting_export[date_field].strftime('%Y-%m-%d')
 
             # Calculate and assign 'last_spent_at' based on the chosen date field
