@@ -78,6 +78,8 @@ def construct_expense_filter(expense_filter):
 
 def construct_expense_filter_query(expense_filters: List[ExpenseFilter]):
     final_filter = None
+    join_by = None
+
     for expense_filter in expense_filters:
         constructed_expense_filter = construct_expense_filter(expense_filter)
 
