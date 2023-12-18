@@ -13,7 +13,7 @@ from fyle_accounting_mappings.models import ExpenseAttribute
 
 from datetime import datetime, timezone
 from apps.workspaces.models import Workspace, FyleCredential
-from apps.fyle.models import ExpenseFilter, DependentFieldSetting, Expense
+from apps.fyle.models import ExpenseFilter, DependentFieldSetting
 from apps.fyle.helpers import get_expense_fields
 
 
