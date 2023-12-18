@@ -41,7 +41,7 @@ other_paths = [
     path('expense_fields/', CustomFieldView.as_view(), name='fyle-expense-fields'),
     path('fields/', FyleFieldsView.as_view(), name='fyle-fields'),
     path('dependent_field_settings/', DependentFieldSettingView.as_view(), name='dependent-field'),
-    path('skipped_expenses/', SkippedExpenseView.as_view(), name='expenses'),
+    path('expenses/', SkippedExpenseView.as_view(), name='expenses'),
 ]
 
 fyle_dimension_paths = [
