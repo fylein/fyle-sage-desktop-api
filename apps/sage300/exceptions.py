@@ -7,7 +7,7 @@ from apps.workspaces.models import FyleCredential, Sage300Credential
 from sage_desktop_sdk.exceptions.hh2_exceptions import WrongParamsError
 from apps.accounting_exports.models import AccountingExport
 from apps.accounting_exports.models import Error
-from apps.sage300.actions import update_last_export_details
+from apps.sage300.actions import update_accounting_export_summary
 
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ def handle_sage300_exceptions():
                 accounting_export.save()
                 logger.error('Something unexpected happened workspace_id: %s %s', accounting_export.workspace_id, accounting_export.detail)
 
-            update_last_export_details(accounting_export.workspace_id)
+            update_accounting_export_summary(accounting_export.workspace_id)
 
         return new_fn
 
