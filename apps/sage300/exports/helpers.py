@@ -1,6 +1,6 @@
 from fyle_accounting_mappings.models import CategoryMapping, ExpenseAttribute, Mapping
-from apps.accounting_exports.models import AccountingExport, Error
 
+from apps.accounting_exports.models import AccountingExport, Error
 from sage_desktop_api.exceptions import BulkError
 
 
@@ -54,6 +54,7 @@ def validate_accounting_export(accounting_export: AccountingExport):
                 Error.objects.update_or_create(
                     workspace_id=accounting_export.workspace_id,
                     expense_attribute=category_attribute,
+                    accounting_export=accounting_export,
                     defaults={
                         'type': 'CATEGORY_MAPPING',
                         'error_title': category_attribute.value,
