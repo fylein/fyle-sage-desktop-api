@@ -1,15 +1,14 @@
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
 from django.db import models
 from django.db.models import Sum
-
-from fyle_accounting_mappings.models import MappingSetting, ExpenseAttribute, Mapping
+from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting
 
 from apps.accounting_exports.models import AccountingExport
-from apps.fyle.models import Expense, DependentFieldSetting
-from apps.workspaces.models import Workspace, FyleCredential, AdvancedSetting
-
+from apps.fyle.models import DependentFieldSetting, Expense
 from apps.sage300.exports.helpers import get_filtered_mapping
+from apps.workspaces.models import AdvancedSetting, FyleCredential, Workspace
 
 
 class BaseExportModel(models.Model):
@@ -32,7 +31,7 @@ class BaseExportModel(models.Model):
         workspace.cluster_domain = cluster_domain
         workspace.save()
 
-        expense_link = '{0}/app/main/#/enterprise/view_expense/{1}?org_id={2}'.format(
+        expense_link = '{0}/app/admin/#/enterprise/view_expense/{1}?org_id={2}'.format(
             cluster_domain, lineitem.expense_id, org_id
         )
 
