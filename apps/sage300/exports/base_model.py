@@ -8,7 +8,7 @@ from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSe
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.models import DependentFieldSetting, Expense
 from apps.sage300.exports.helpers import get_filtered_mapping
-from apps.workspaces.models import AdvancedSetting, FyleCredential, Workspace
+from apps.workspaces.models import AdvancedSetting, FyleCredential, Workspace, ExportSetting
 
 
 class BaseExportModel(models.Model):
@@ -57,8 +57,34 @@ class BaseExportModel(models.Model):
 
         return purpose
 
-    def get_vendor_id(accounting_export: AccountingExport):
-        return '3a3485d9-5cc7-4668-9557-b06100a3e8c9'
+    def get_vendor_id(accounting_export: AccountingExport, expense: Expense):
+
+        vendor_id = None
+
+        if expense.vendor:
+            # Retrieve mapping settings for job
+            vendor_setting: MappingSetting = MappingSetting.objects.filter(
+                workspace_id=accounting_export.workspace_id,
+                destination_field='VENDOR',
+                source_field='MERCHANT'
+            ).first()
+
+            if vendor_setting:
+                source_value = expense.vendor
+                mapping: Mapping = Mapping.objects.filter(
+                    source_type='MERCHANT',
+                    destination_type='VENDOR',
+                    source__value=source_value,
+                    workspace_id=accounting_export.workspace_id
+                ).first()
+
+                if mapping:
+                    vendor_id = mapping.destination.destination_id
+        else:
+            export_settings = ExportSetting.objects.get(workspace_id=accounting_export.workspace_id)
+            vendor_id = export_settings.default_vendor_id
+
+        return vendor_id
 
     def get_total_amount(accounting_export: AccountingExport):
         """
