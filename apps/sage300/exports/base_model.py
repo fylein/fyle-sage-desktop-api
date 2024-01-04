@@ -86,7 +86,6 @@ class BaseExportModel(models.Model):
 
         return vendor_id
 
-
     def get_total_amount(accounting_export: AccountingExport):
         """
          Calculate the total amount of expenses associated with a given AccountingExport
