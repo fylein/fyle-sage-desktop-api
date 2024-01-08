@@ -1,7 +1,7 @@
 from typing import Dict, List
 from django.db.models import Q
 
-from apps.mappings.imports.schedules import schedule_or_delete_dependent_field_tasks, schedule_or_delete_fyle_import_tasks
+from apps.mappings.imports.schedules import schedule_or_delete_fyle_import_tasks
 from apps.workspaces.models import ImportSetting
 from fyle_accounting_mappings.models import MappingSetting
 
