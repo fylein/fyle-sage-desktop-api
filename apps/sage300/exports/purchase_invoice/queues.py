@@ -25,7 +25,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
     Check accounting export group and start export
     """
 
-    fyle_credentials = FyleCredential.objects.filter(workspace_id=workspace_id).first()
+    # fyle_credentials = FyleCredential.objects.filter(workspace_id=workspace_id).first()
 
     accounting_exports = AccountingExport.objects.filter(
         ~Q(status__in=['IN_PROGRESS', 'COMPLETE', 'EXPORT_QUEUED']),
@@ -34,9 +34,9 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
     ).all()
 
     chain = Chain()
-    
+
     # Todo: uncomment this later
-    # chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials) 
+    # chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials)
 
     for index, accounting_export_group in enumerate(accounting_exports):
         accounting_export, _ = AccountingExport.objects.update_or_create(

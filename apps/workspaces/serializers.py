@@ -273,7 +273,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
                 mapping_settings=mapping_settings,
                 workspace_id=instance.id
             )
-            
+
             for setting in mapping_settings:
                 MappingSetting.objects.update_or_create(
                     destination_field=setting['destination_field'],

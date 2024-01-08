@@ -92,7 +92,7 @@ class Base:
                 attribute_values.append(destination_attribute.value.lower())
 
         return unique_attributes
-        
+
     def __get_mapped_attributes_ids(self, errored_attribute_ids: List[int]):
         """
         Get mapped attributes ids
@@ -115,7 +115,6 @@ class Base:
             ).values_list('source_category_id', flat=True)
 
         return mapped_attribute_ids
-
 
     def resolve_expense_attribute_errors(self):
         """

@@ -45,7 +45,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
         last_export = False
         if accounting_exports.count() == index + 1:
             last_export = True
-        
+
         chain.append('apps.sage300.exports.direct_cost.tasks.create_direct_cost', accounting_export, last_export)
         chain.append('apps.sage300.exports.direct_cost.queues.create_schedule_for_polling', workspace_id, last_export)
 
@@ -82,7 +82,7 @@ def poll_operation_status(workspace_id: int, last_export: bool):
     Returns:
         None
     """
-    
+
     # Retrieve all queued accounting exports for purchase invoices
     accounting_exports = AccountingExport.objects.filter(status='EXPORT_QUEUED', workspace_id=workspace_id, type='DIRECT_COST').all()
 
@@ -131,7 +131,7 @@ def poll_operation_status(workspace_id: int, last_export: bool):
 
             # Continue to the next iteration
             continue
-            
+
         accounting_export.status = 'COMPLETE'
         accounting_export.sage300_errors = None
         detail = accounting_export.detail
@@ -139,7 +139,7 @@ def poll_operation_status(workspace_id: int, last_export: bool):
         accounting_export.detail = detail
         accounting_export.exported_at = datetime.now()
         accounting_export.save()
-        
+
         if last_export:
             update_accounting_export_summary(workspace_id=workspace_id)
 
