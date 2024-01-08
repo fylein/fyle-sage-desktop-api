@@ -10,6 +10,7 @@ from apps.accounting_exports.models import AccountingExport, Error
 from apps.workspaces.models import FyleCredential
 from apps.workspaces.models import Sage300Credential
 from apps.sage300.utils import SageDesktopConnector
+from apps.sage300.actions import update_accounting_export_summary
 from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
 
 
@@ -33,7 +34,9 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
     ).all()
 
     chain = Chain()
-    chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials)
+    
+    # Todo: uncomment this later
+    # chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials) 
 
     for index, accounting_export_group in enumerate(accounting_exports):
         accounting_export, _ = AccountingExport.objects.update_or_create(
@@ -49,18 +52,18 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
             accounting_export.status = 'ENQUEUED'
             accounting_export.save()
 
-        """
-        Todo: Add last export details
-        """
+        last_export = False
+        if accounting_exports.count() == index + 1:
+            last_export = True
 
-        chain.append('apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice', accounting_export)
-        chain.append('apps.sage300.exports.purchase_invoice.queues.create_schedule_for_polling', workspace_id)
+        chain.append('apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice', accounting_export, last_export)
+        chain.append('apps.sage300.exports.purchase_invoice.queues.create_schedule_for_polling', workspace_id, last_export)
 
     if chain.length() > 1:
         chain.run()
 
 
-def create_schedule_for_polling(workspace_id: int):
+def create_schedule_for_polling(workspace_id: int, last_export: bool):
     """
     Create Schedule for running operation status polling
 
@@ -70,7 +73,7 @@ def create_schedule_for_polling(workspace_id: int):
 
     Schedule.objects.update_or_create(
         func='apps.sage300.exports.purchase_invoice.queues.poll_operation_status',
-        args='{}'.format(workspace_id),
+        args='{},{}'.format(workspace_id, last_export),
         defaults={
             'schedule_type': Schedule.MINUTES,
             'minutes': 5,
@@ -79,7 +82,7 @@ def create_schedule_for_polling(workspace_id: int):
     )
 
 
-def poll_operation_status(workspace_id: int):
+def poll_operation_status(workspace_id: int, last_export: bool):
     """
     Polls the operation status for queued accounting exports and updates their status accordingly.
 
@@ -148,3 +151,6 @@ def poll_operation_status(workspace_id: int):
         accounting_export.exported_at = datetime.now()
         accounting_export.save()
         resolve_errors_for_exported_accounting_export(accounting_export)
+
+        if last_export:
+            update_accounting_export_summary(workspace_id=workspace_id)

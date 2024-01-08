@@ -57,10 +57,11 @@ class BaseExportModel(models.Model):
 
         return purpose
 
-    def get_vendor_id(accounting_export: AccountingExport, expense: Expense):
+    def get_vendor_id(accounting_export: AccountingExport):
 
         vendor_id = None
 
+        expense = accounting_export.expenses.first()
         if expense.vendor:
             # Retrieve mapping settings for job
             vendor_setting: MappingSetting = MappingSetting.objects.filter(
