@@ -45,5 +45,4 @@ class ImportSettingsTrigger:
 
         import_settings = ImportSetting.objects.filter(workspace_id=self.__workspace_id).first()
 
-        schedule_or_delete_fyle_import_tasks(import_settings, self.__mapping_settings)
-        schedule_or_delete_dependent_field_tasks(self.__workspace_id)
+        schedule_or_delete_fyle_import_tasks(import_settings)
