@@ -64,11 +64,10 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                     "Code": '{}-{}'.format(body.description['fund_source'], body.id),
                     "Description": body.description['employee_email'],
                     "InvoiceDate": body.invoice_date,
-                    "VendorId": '89f592a3-4c75-49a4-b571-b061009bf883'
+                    "VendorId": '551312b6-04db-47e3-891d-b06c0083ecb0'
                 }
             }
         }
-
         return purchase_invoice_payload
 
     def post(self, accounting_export, item, lineitem):
