@@ -48,7 +48,7 @@ def schedule_or_delete_fyle_import_tasks(import_settings: ImportSetting, mapping
     if mapping_setting_instance and mapping_setting_instance.import_to_fyle:
         task_to_be_scheduled = mapping_setting_instance
 
-    if task_to_be_scheduled or import_settings.import_categories:
+    if task_to_be_scheduled or import_settings.import_categories or import_settings.import_vendors_as_merchants:
         Schedule.objects.update_or_create(
             func='apps.mappings.imports.queues.chain_import_fields_to_fyle',
             args='{}'.format(import_settings.workspace_id),

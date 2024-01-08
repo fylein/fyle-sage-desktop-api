@@ -7,6 +7,7 @@ from apps.sage300.utils import SageDesktopConnector
 from apps.sage300.exports.purchase_invoice.queues import check_accounting_export_and_start_import
 from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
 from apps.sage300.exceptions import handle_sage300_exceptions
+from apps.sage300.actions import update_accounting_export_summary
 
 
 DOCUMENT_TYPE_ID = '76744AB9-4697-430A-ADB5-701E633472A9'
@@ -67,7 +68,6 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                 }
             }
         }
-
         return purchase_invoice_payload
 
     def post(self, accounting_export, item, lineitem):
@@ -92,7 +92,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
 
 
 @handle_sage300_exceptions()
-def create_purchase_invoice(accounting_export: AccountingExport):
+def create_purchase_invoice(accounting_export: AccountingExport, last_export: bool):
     """
     Helper function to create and export a purchase invoice.
     """
@@ -100,5 +100,8 @@ def create_purchase_invoice(accounting_export: AccountingExport):
 
     # Create and export the purchase invoice using the base class method
     exported_purchase_invoice = export_purchase_invoice_instance.create_sage300_object(accounting_export=accounting_export)
+
+    if last_export:
+        update_accounting_export_summary(accounting_export.workspace_id)
 
     return exported_purchase_invoice

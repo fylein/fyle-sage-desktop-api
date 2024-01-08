@@ -30,10 +30,8 @@ def handle_sage300_error(exception, accounting_export: AccountingExport, export_
 
 def handle_sage300_exceptions():
     def decorator(func):
-        def new_fn(*args):
-
+        def wrapper(*args):
             accounting_export = args[0]
-
             try:
                 return func(*args)
             except (FyleCredential.DoesNotExist):
@@ -72,6 +70,6 @@ def handle_sage300_exceptions():
 
             update_accounting_export_summary(accounting_export.workspace_id)
 
-        return new_fn
+        return wrapper
 
     return decorator

@@ -30,7 +30,7 @@ def test_poll_operation_status(test_connection, mocker, create_temp_workspace, a
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
     assert accounting_export.status == 'EXPORT_QUEUED'
 
-    poll_operation_status(workspace_id=1)
+    poll_operation_status(workspace_id=1, last_export=False)
 
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
     assert accounting_export.status == 'COMPLETE'
@@ -66,6 +66,6 @@ def test_poll_operation_status(test_connection, mocker, create_temp_workspace, a
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='DIRECT_COST').first()
     assert accounting_export.status == 'EXPORT_QUEUED'
 
-    poll_operation_status_direct_cost(workspace_id=1)
+    poll_operation_status_direct_cost(workspace_id=1, last_export=False)
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='DIRECT_COST').first()
     assert accounting_export.status == 'FAILED'
