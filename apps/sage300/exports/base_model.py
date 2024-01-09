@@ -3,10 +3,9 @@ from typing import Optional
 
 from django.db import models
 from django.db.models import Sum
-from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting
+from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting, EmployeeMapping
 
 from apps.accounting_exports.models import AccountingExport
-from apps.workspaces.models import ImportSetting
 from apps.fyle.models import DependentFieldSetting, Expense
 from apps.sage300.exports.helpers import get_filtered_mapping
 from apps.workspaces.models import AdvancedSetting, FyleCredential, Workspace, ExportSetting
@@ -59,28 +58,24 @@ class BaseExportModel(models.Model):
         return purpose
 
     def get_vendor_id(accounting_export: AccountingExport):
+
         # Retrieve import and export settings for the given workspace
-        import_settings = ImportSetting.objects.get(workspace_id=accounting_export.workspace_id)
         export_settings = ExportSetting.objects.get(workspace_id=accounting_export.workspace_id)
 
         # Get the first expense from the accounting export
-        expense = accounting_export.expenses.first()
+        description = accounting_export.description
 
-        # Check if the expense has a vendor and import vendors as merchants setting is enabled
-        if expense.vendor and import_settings.import_vendors_as_merchants:
-            # Retrieve mapping settings for the vendor
-            source_value = expense.vendor
-            mapping = Mapping.objects.filter(
-                source_type='MERCHANT',
-                destination_type='VENDOR',
-                source__value=source_value,
+        vendor_id = None
+        if accounting_export.fund_source == 'PERSONAL':
+            vendor = EmployeeMapping.objects.get(
+                source_employee__value=description.get('employee_email'),
                 workspace_id=accounting_export.workspace_id
-            ).first()
+            )
 
-            # If a mapping exists, use the mapped vendor_id; otherwise, use the default_vendor_id from export settings
-            vendor_id = mapping.destination.destination_id if mapping else export_settings.default_vendor_id
-        else:
-            # If there is no vendor in the expense or import vendors as merchants is not enabled, use the default_vendor_id
+            if vendor:
+                vendor_id = vendor.destination_vendor.destination_id
+
+        elif accounting_export.fund_source == 'CCC':
             vendor_id = export_settings.default_vendor_id
 
         # Return the determined vendor_id
