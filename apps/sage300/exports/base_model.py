@@ -3,10 +3,9 @@ from typing import Optional
 
 from django.db import models
 from django.db.models import Sum
-from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting
+from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting, EmployeeMapping, DestinationAttribute
 
 from apps.accounting_exports.models import AccountingExport
-from apps.workspaces.models import ImportSetting
 from apps.fyle.models import DependentFieldSetting, Expense
 from apps.sage300.exports.helpers import get_filtered_mapping
 from apps.workspaces.models import AdvancedSetting, FyleCredential, Workspace, ExportSetting
@@ -59,29 +58,40 @@ class BaseExportModel(models.Model):
         return purpose
 
     def get_vendor_id(accounting_export: AccountingExport):
-        # Retrieve import and export settings for the given workspace
-        import_settings = ImportSetting.objects.get(workspace_id=accounting_export.workspace_id)
+        # Retrieve export settings for the given workspace
         export_settings = ExportSetting.objects.get(workspace_id=accounting_export.workspace_id)
 
-        # Get the first expense from the accounting export
-        expense = accounting_export.expenses.first()
+        # Extract the description from the accounting export
+        description = accounting_export.description
 
-        # Check if the expense has a vendor and import vendors as merchants setting is enabled
-        if expense.vendor and import_settings.import_vendors_as_merchants:
-            # Retrieve mapping settings for the vendor
-            source_value = expense.vendor
-            mapping = Mapping.objects.filter(
-                source_type='MERCHANT',
-                destination_type='VENDOR',
-                source__value=source_value,
+        # Initialize vendor_id to None
+        vendor_id = None
+
+        # Check if the fund source is 'PERSONAL'
+        if accounting_export.fund_source == 'PERSONAL':
+            # Retrieve the vendor using EmployeeMapping
+            vendor = EmployeeMapping.objects.filter(
+                source_employee__value=description.get('employee_email'),
                 workspace_id=accounting_export.workspace_id
-            ).first()
+            ).values_list('destination_vendor__destination_id', flat=True).first()
 
-            # If a mapping exists, use the mapped vendor_id; otherwise, use the default_vendor_id from export settings
-            vendor_id = mapping.destination.destination_id if mapping else export_settings.default_vendor_id
-        else:
-            # If there is no vendor in the expense or import vendors as merchants is not enabled, use the default_vendor_id
-            vendor_id = export_settings.default_vendor_id
+            # Update vendor_id with the retrieved vendor
+            vendor_id = vendor
+
+        # Check if the fund source is 'CCC'
+        elif accounting_export.fund_source == 'CCC':
+            # Retrieve the vendor from the first expense
+            expense_vendor = accounting_export.expenses.first().vendor
+
+            # Query DestinationAttribute for the vendor with case-insensitive search
+            vendor = DestinationAttribute.objects.filter(
+                workspace_id=accounting_export.workspace_id,
+                value__icontains=expense_vendor,
+                attribute_type='VENDOR'
+            ).values_list('destination_id', flat=True).first() or export_settings.default_vendor_id
+
+            # Update vendor_id with the retrieved vendor or default to export settings
+            vendor_id = vendor
 
         # Return the determined vendor_id
         return vendor_id
