@@ -223,7 +223,7 @@ class BaseExportModel(models.Model):
         cost_code = CostCategory.objects.filter(
             workspace_id=accounting_export.workspace_id,
             cost_code_name=selected_cost_code,
-            project_id=job_id
+            job_id=job_id
         ).first()
 
         if cost_code:
@@ -235,11 +235,11 @@ class BaseExportModel(models.Model):
         from apps.sage300.models import CostCategory
         cost_category_id = None
 
-        selected_cost_category = lineitem.custom_properties.get(dependent_field_setting.cost_type_field_name, None)
+        selected_cost_category = lineitem.custom_properties.get(dependent_field_setting.cost_category_field_name, None)
         cost_category = CostCategory.objects.filter(
             workspace_id=accounting_export.workspace_id,
             cost_code_id=cost_code_id,
-            project_id=project_id,
+            job_id=project_id,
             name=selected_cost_category
         ).first()
 

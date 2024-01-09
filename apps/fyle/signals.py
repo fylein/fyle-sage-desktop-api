@@ -10,7 +10,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 from apps.workspaces.models import FyleCredential, ImportSetting
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.dependent_fields import create_dependent_custom_field_in_fyle
-from apps.mappings.imports.schedules import schedule_or_delete_fyle_import_tasks
+from apps.mappings.imports.schedules import schedule_or_delete_dependent_field_tasks
 
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def run_pre_save_dependent_field_settings_triggers(sender, instance: DependentFi
         source_placeholder=instance.cost_category_placeholder,
         parent_field_id=instance.cost_code_field_id,
     )
-    instance.category_field_id = cost_category['data']['id']
+    instance.cost_category_field_id = cost_category['data']['id']
 
 
 @receiver(post_save, sender=DependentFieldSetting)
@@ -60,5 +60,4 @@ def run_post_save_dependent_field_settings_triggers(sender, instance: DependentF
     :param instance: Row instance of Sender Class
     :return: None
     """
-    import_settings = ImportSetting.objects.filter(workspace_id=instance.workspace_id).first()
-    schedule_or_delete_fyle_import_tasks(import_settings)
+    schedule_or_delete_dependent_field_tasks(instance.workspace_id)

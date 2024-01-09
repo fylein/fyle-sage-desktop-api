@@ -64,8 +64,8 @@ class DirectCost(BaseExportModel):
         description = self.get_expense_purpose(accounting_export.workspace_id, expense, expense.category, advance_setting)
 
         if dependent_field_setting:
-            cost_category_id = self.get_cost_category_id(accounting_export, expense, dependent_field_setting, job_id)
-            cost_code_id = self.get_cost_code_id(accounting_export, expense, dependent_field_setting, job_id, cost_category_id)
+            cost_category_id = self.get_cost_category_id(accounting_export, expense, dependent_field_setting, job_id, cost_code_id)
+            cost_code_id = self.get_cost_code_id(accounting_export, expense, dependent_field_setting, job_id)
 
         direct_cost_object, _ = DirectCost.objects.update_or_create(
             expense_id=expense.id,
