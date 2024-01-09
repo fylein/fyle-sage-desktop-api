@@ -66,7 +66,7 @@ def test_schedule_projects_creation(
     assert schedule.func == 'apps.mappings.imports.queues.chain_import_fields_to_fyle'
 
     schedule = Schedule.objects.filter(
-        func='apps.mappings.auto_import_and_map_fyle_fields',
+        func='apps.mappings.imports.auto_import_and_map_fyle_fields',
         args='{}'.format(workspace_id),
     ).first()
 
