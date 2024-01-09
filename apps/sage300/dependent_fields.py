@@ -70,6 +70,7 @@ def create_dependent_custom_field_in_fyle(workspace_id: int, fyle_attribute_type
 
 
 def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict) -> List[str]:
+
     projects = CostCategory.objects.filter(**filters).values('job_name').annotate(cost_codes=ArrayAgg('cost_code_name', distinct=True))
     projects_from_categories = [project['job_name'] for project in projects]
 
@@ -93,7 +94,7 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
                     'is_enabled': True
                 })
                 sleep(0.2)
-                platform.expense_fields.bulk_post_dependent_expense_field_values(payload)
+                platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
                 posted_cost_codes.append(cost_code)
 
     return posted_cost_codes
@@ -107,7 +108,7 @@ def post_dependent_cost_type(dependent_field_setting: DependentFieldSetting, pla
             {
                 'parent_expense_field_id': dependent_field_setting.cost_code_field_id,
                 'parent_expense_field_value': category['cost_code_name'],
-                'expense_field_id': dependent_field_setting.cost_type_field_id,
+                'expense_field_id': dependent_field_setting.cost_category_field_id,
                 'expense_field_value': cost_type,
                 'is_enabled': True
             } for cost_type in category['cost_categories']
@@ -115,7 +116,7 @@ def post_dependent_cost_type(dependent_field_setting: DependentFieldSetting, pla
 
         if payload:
             sleep(0.2)
-            platform.expense_fields.bulk_post_dependent_expense_field_values(payload)
+            platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
 
 
 def post_dependent_expense_field_values(workspace_id: int, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector = None):
@@ -130,6 +131,7 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
         filters['updated_at__gte'] = dependent_field_setting.last_successful_import_at
 
     posted_cost_types = post_dependent_cost_code(dependent_field_setting, platform, filters)
+
     if posted_cost_types:
         filters['cost_code_name__in'] = posted_cost_types
         post_dependent_cost_type(dependent_field_setting, platform, filters)

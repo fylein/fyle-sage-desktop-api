@@ -13,7 +13,8 @@ def sync_sage300_attributes(sage300_attribute_type: str, workspace_id: int):
     sync_functions = {
         'JOB': sage300_connection.sync_jobs,
         'COST_CODE': sage300_connection.sync_cost_codes,
-        'CATEGORY': sage300_connection.sync_categories,
+        'COST_CATEGORY': sage300_connection.sync_cost_categories,
+        'ACCOUNT': sage300_connection.sync_accounts,
         'VENDOR': sage300_connection.sync_vendors,
         'COMMITMENT': sage300_connection.sync_commitments,
         'STANDARD_CATEGORY': sage300_connection.sync_standard_categories,

@@ -163,7 +163,7 @@ def test_run_post_mapping_settings_triggers(
     mapping_setting.save()
 
     schedule = Schedule.objects.filter(
-        func='apps.mappings.tasks.auto_import_and_map_fyle_fields',
+        func='apps.mappings.imports.tasks.auto_import_and_map_fyle_fields',
         args='{}'.format(workspace_id),
     ).first()
 
