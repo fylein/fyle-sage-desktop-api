@@ -3,7 +3,7 @@ from typing import Optional
 
 from django.db import models
 from django.db.models import Sum
-from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting, EmployeeMapping
+from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting, EmployeeMapping, DestinationAttribute
 
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.models import DependentFieldSetting, Expense
@@ -58,28 +58,44 @@ class BaseExportModel(models.Model):
         return purpose
 
     def get_vendor_id(accounting_export: AccountingExport):
-
-        # Retrieve import and export settings for the given workspace
+        # Retrieve export settings for the given workspace
         export_settings = ExportSetting.objects.get(workspace_id=accounting_export.workspace_id)
 
-        # Get the first expense from the accounting export
+        # Extract the description from the accounting export
         description = accounting_export.description
 
+        # Initialize vendor_id to None
         vendor_id = None
+
+        # Check if the fund source is 'PERSONAL'
         if accounting_export.fund_source == 'PERSONAL':
-            vendor = EmployeeMapping.objects.get(
+            # Retrieve the vendor using EmployeeMapping
+            vendor = EmployeeMapping.objects.filter(
                 source_employee__value=description.get('employee_email'),
                 workspace_id=accounting_export.workspace_id
-            )
+            ).values_list('destination_vendor__destination_id', flat=True).first()
 
-            if vendor:
-                vendor_id = vendor.destination_vendor.destination_id
+            # Update vendor_id with the retrieved vendor
+            vendor_id = vendor
 
+        # Check if the fund source is 'CCC'
         elif accounting_export.fund_source == 'CCC':
-            vendor_id = export_settings.default_vendor_id
+            # Retrieve the vendor from the first expense
+            expense_vendor = accounting_export.expenses.first().vendor
+
+            # Query DestinationAttribute for the vendor with case-insensitive search
+            vendor = DestinationAttribute.objects.filter(
+                workspace_id=accounting_export.workspace_id,
+                value__icontains=expense_vendor,
+                attribute_type='VENDOR'
+            ).values_list('destination_id', flat=True).first() or export_settings.default_vendor_id
+
+            # Update vendor_id with the retrieved vendor or default to export settings
+            vendor_id = vendor
 
         # Return the determined vendor_id
         return vendor_id
+
 
     def get_total_amount(accounting_export: AccountingExport):
         """
