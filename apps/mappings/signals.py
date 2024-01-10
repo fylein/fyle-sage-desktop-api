@@ -4,7 +4,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from rest_framework.exceptions import ValidationError
-from fyle_accounting_mappings.models import MappingSetting, CategoryMapping
+from fyle_accounting_mappings.models import MappingSetting, CategoryMapping, EmployeeMapping
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle.platform.exceptions import WrongParamsError
 
@@ -122,5 +122,14 @@ def resolve_post_category_mapping_errors(sender, instance: CategoryMapping, **kw
     Resolve errors after mapping is created
     """
     Error.objects.filter(expense_attribute_id=instance.source_category).update(
+        is_resolved=True
+    )
+
+@receiver(post_save, sender=EmployeeMapping)
+def resolve_post_employee_mapping_errors(sender, instance: EmployeeMapping, **kwargs):
+    """
+    Resolve errors after mapping is created
+    """
+    Error.objects.filter(expense_attribute_id=instance.source_employee).update(
         is_resolved=True
     )

@@ -84,11 +84,14 @@ class BaseExportModel(models.Model):
             expense_vendor = accounting_export.expenses.first().vendor
 
             # Query DestinationAttribute for the vendor with case-insensitive search
-            vendor = DestinationAttribute.objects.filter(
-                workspace_id=accounting_export.workspace_id,
-                value__icontains=expense_vendor,
-                attribute_type='VENDOR'
-            ).values_list('destination_id', flat=True).first() or export_settings.default_vendor_id
+            if expense_vendor:
+                vendor = DestinationAttribute.objects.filter(
+                    workspace_id=accounting_export.workspace_id,
+                    value__icontains=expense_vendor,
+                    attribute_type='VENDOR'
+                ).values_list('destination_id', flat=True).first()
+            else:
+                vendor = export_settings.default_vendor_id
 
             # Update vendor_id with the retrieved vendor or default to export settings
             vendor_id = vendor
