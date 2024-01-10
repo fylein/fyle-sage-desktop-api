@@ -9,6 +9,7 @@ from apps.workspaces.models import FyleCredential
 from apps.workspaces.models import Sage300Credential
 from apps.sage300.utils import SageDesktopConnector
 from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
+from apps.sage300.actions import update_accounting_export_summary
 
 
 def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str]):
@@ -41,18 +42,18 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
             accounting_export.status = 'ENQUEUED'
             accounting_export.save()
 
-        """
-        Todo: Add last export details
-        """
+        last_export = False
+        if accounting_exports.count() == index + 1:
+            last_export = True
 
-        chain.append('apps.sage300.exports.direct_cost.tasks.create_direct_cost', accounting_export)
-        chain.append('apps.sage300.exports.direct_cost.queues.create_schedule_for_polling', workspace_id)
+        chain.append('apps.sage300.exports.direct_cost.tasks.create_direct_cost', accounting_export, last_export)
+        chain.append('apps.sage300.exports.direct_cost.queues.create_schedule_for_polling', workspace_id, last_export)
 
     if chain.length() > 1:
         chain.run()
 
 
-def create_schedule_for_polling(workspace_id: int):
+def create_schedule_for_polling(workspace_id: int, last_export: bool):
     """
     Create Schedule for running operation status polling
 
@@ -62,7 +63,7 @@ def create_schedule_for_polling(workspace_id: int):
 
     Schedule.objects.update_or_create(
         func='apps.sage300.exports.direct_cost.queues.poll_operation_status',
-        args='{}'.format(workspace_id),
+        args='{},{}'.format(workspace_id, last_export),
         defaults={
             'schedule_type': Schedule.MINUTES,
             'minutes': 5,
@@ -71,7 +72,7 @@ def create_schedule_for_polling(workspace_id: int):
     )
 
 
-def poll_operation_status(workspace_id: int):
+def poll_operation_status(workspace_id: int, last_export: bool):
     """
     Polls the operation status for queued accounting exports and updates their status accordingly.
 
@@ -138,4 +139,8 @@ def poll_operation_status(workspace_id: int):
         accounting_export.detail = detail
         accounting_export.exported_at = datetime.now()
         accounting_export.save()
+
+        if last_export:
+            update_accounting_export_summary(workspace_id=workspace_id)
+
         resolve_errors_for_exported_accounting_export(accounting_export)

@@ -112,8 +112,8 @@ class PurchaseInvoiceLineitems(BaseExportModel):
             description = self.get_expense_purpose(accounting_export.workspace_id, lineitem, lineitem.category, advance_setting)
 
             if dependent_field_setting:
-                cost_category_id = self.get_cost_category_id(accounting_export, lineitem, dependent_field_setting, job_id)
-                cost_code_id = self.get_cost_code_id(accounting_export, lineitem, dependent_field_setting, job_id, cost_category_id)
+                cost_code_id = self.get_cost_code_id(accounting_export, lineitem, dependent_field_setting, job_id)
+                cost_category_id = self.get_cost_category_id(accounting_export, lineitem, dependent_field_setting, job_id, cost_code_id)
 
             purchase_invoice_lineitem_object, _ = PurchaseInvoiceLineitems.objects.update_or_create(
                 purchase_invoice_id=purchase_invoice.id,

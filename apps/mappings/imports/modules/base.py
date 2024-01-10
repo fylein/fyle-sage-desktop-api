@@ -9,7 +9,8 @@ from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_mappings.models import (
     Mapping,
     DestinationAttribute,
-    ExpenseAttribute
+    ExpenseAttribute,
+    CategoryMapping
 )
 from apps.workspaces.models import FyleCredential
 from apps.mappings.models import ImportLog
@@ -91,6 +92,29 @@ class Base:
                 attribute_values.append(destination_attribute.value.lower())
 
         return unique_attributes
+
+    def __get_mapped_attributes_ids(self, errored_attribute_ids: List[int]):
+        """
+        Get mapped attributes ids
+        :param errored_attribute_ids: list[int]
+        :return: list[int]
+        """
+        mapped_attribute_ids = []
+        if self.source_field == 'CATEGORY':
+            params = {
+                'source_category_id__in': errored_attribute_ids,
+            }
+
+            if self.destination_field == 'EXPENSE_TYPE':
+                params['destination_expense_head_id__isnull'] = False
+            else:
+                params['destination_account_id__isnull'] = False
+
+            mapped_attribute_ids: List[int] = CategoryMapping.objects.filter(
+                **params
+            ).values_list('source_category_id', flat=True)
+
+        return mapped_attribute_ids
 
     def resolve_expense_attribute_errors(self):
         """

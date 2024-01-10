@@ -3,7 +3,7 @@ from typing import Optional
 
 from django.db import models
 from django.db.models import Sum
-from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting
+from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting, EmployeeMapping, DestinationAttribute
 
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.models import DependentFieldSetting, Expense
@@ -57,33 +57,43 @@ class BaseExportModel(models.Model):
 
         return purpose
 
-    def get_vendor_id(accounting_export: AccountingExport, expense: Expense):
+    def get_vendor_id(accounting_export: AccountingExport):
+        # Retrieve export settings for the given workspace
+        export_settings = ExportSetting.objects.get(workspace_id=accounting_export.workspace_id)
 
+        # Extract the description from the accounting export
+        description = accounting_export.description
+
+        # Initialize vendor_id to None
         vendor_id = None
 
-        if expense.vendor:
-            # Retrieve mapping settings for job
-            vendor_setting: MappingSetting = MappingSetting.objects.filter(
+        # Check if the fund source is 'PERSONAL'
+        if accounting_export.fund_source == 'PERSONAL':
+            # Retrieve the vendor using EmployeeMapping
+            vendor = EmployeeMapping.objects.filter(
+                source_employee__value=description.get('employee_email'),
+                workspace_id=accounting_export.workspace_id
+            ).values_list('destination_vendor__destination_id', flat=True).first()
+
+            # Update vendor_id with the retrieved vendor
+            vendor_id = vendor
+
+        # Check if the fund source is 'CCC'
+        elif accounting_export.fund_source == 'CCC':
+            # Retrieve the vendor from the first expense
+            expense_vendor = accounting_export.expenses.first().vendor
+
+            # Query DestinationAttribute for the vendor with case-insensitive search
+            vendor = DestinationAttribute.objects.filter(
                 workspace_id=accounting_export.workspace_id,
-                destination_field='VENDOR',
-                source_field='MERCHANT'
-            ).first()
+                value__icontains=expense_vendor,
+                attribute_type='VENDOR'
+            ).values_list('destination_id', flat=True).first() or export_settings.default_vendor_id
 
-            if vendor_setting:
-                source_value = expense.vendor
-                mapping: Mapping = Mapping.objects.filter(
-                    source_type='MERCHANT',
-                    destination_type='VENDOR',
-                    source__value=source_value,
-                    workspace_id=accounting_export.workspace_id
-                ).first()
+            # Update vendor_id with the retrieved vendor or default to export settings
+            vendor_id = vendor
 
-                if mapping:
-                    vendor_id = mapping.destination.destination_id
-        else:
-            export_settings = ExportSetting.objects.get(workspace_id=accounting_export.workspace_id)
-            vendor_id = export_settings.default_vendor_id
-
+        # Return the determined vendor_id
         return vendor_id
 
     def get_total_amount(accounting_export: AccountingExport):
@@ -222,7 +232,7 @@ class BaseExportModel(models.Model):
         cost_code = CostCategory.objects.filter(
             workspace_id=accounting_export.workspace_id,
             cost_code_name=selected_cost_code,
-            project_id=job_id
+            job_id=job_id
         ).first()
 
         if cost_code:
@@ -234,11 +244,11 @@ class BaseExportModel(models.Model):
         from apps.sage300.models import CostCategory
         cost_category_id = None
 
-        selected_cost_category = lineitem.custom_properties.get(dependent_field_setting.cost_type_field_name, None)
+        selected_cost_category = lineitem.custom_properties.get(dependent_field_setting.cost_category_field_name, None)
         cost_category = CostCategory.objects.filter(
             workspace_id=accounting_export.workspace_id,
             cost_code_id=cost_code_id,
-            project_id=project_id,
+            job_id=project_id,
             name=selected_cost_category
         ).first()
 
