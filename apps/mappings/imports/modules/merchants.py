@@ -67,5 +67,3 @@ class Merchant(Base):
         self.construct_payload_and_import_to_fyle(platform, import_log)
 
         self.sync_expense_attributes(platform)
-
-        self.create_mappings()

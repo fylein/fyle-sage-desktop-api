@@ -100,7 +100,7 @@ class Base:
         :return: list[int]
         """
         mapped_attribute_ids = []
-        if self.source_field == "CATEGORY":
+        if self.source_field == 'CATEGORY':
             params = {
                 'source_category_id__in': errored_attribute_ids,
             }
