@@ -125,6 +125,7 @@ def resolve_post_category_mapping_errors(sender, instance: CategoryMapping, **kw
         is_resolved=True
     )
 
+
 @receiver(post_save, sender=EmployeeMapping)
 def resolve_post_employee_mapping_errors(sender, instance: EmployeeMapping, **kwargs):
     """
