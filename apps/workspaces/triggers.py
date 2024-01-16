@@ -5,6 +5,9 @@ from apps.mappings.imports.schedules import schedule_or_delete_fyle_import_tasks
 from apps.workspaces.models import ImportSetting
 from fyle_accounting_mappings.models import MappingSetting
 
+from apps.workspaces.models import AdvancedSetting
+from apps.workspaces.tasks import schedule_sync
+
 
 class ImportSettingsTrigger:
     """
@@ -46,3 +49,22 @@ class ImportSettingsTrigger:
         import_settings = ImportSetting.objects.filter(workspace_id=self.__workspace_id).first()
 
         schedule_or_delete_fyle_import_tasks(import_settings)
+
+
+class AdvancedSettingsTriggers:
+    """
+    Class containing all triggers for advanced_settings
+    """
+    @staticmethod
+    def run_post_advance_settings_triggers(workspace_id, advance_settings: AdvancedSetting):
+        """
+        Run advance settings triggers
+        """
+
+        schedule_sync(
+            workspace_id=workspace_id,
+            schedule_enabled=advance_settings.schedule_is_enabled,
+            hours=advance_settings.interval_hours,
+            email_added=advance_settings.emails_added,
+            emails_selected=advance_settings.emails_selected
+        )

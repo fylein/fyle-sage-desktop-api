@@ -72,7 +72,7 @@ def run_import_export(workspace_id: int, export_mode = None):
         accounting_summary.export_mode = export_mode or 'MANUAL'
 
         if advance_settings:
-            accounting_summary.next_export_at = last_exported_at + timedelta(hours=24)
+            accounting_summary.next_export_at = last_exported_at + timedelta(hours=advance_settings.interval_hours)
 
         accounting_summary.save()
 
@@ -106,7 +106,7 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
         advance_settings.schedule = schedule
         advance_settings.save()
 
-    elif not schedule_enabled and advance_settings.schedule_is_enabled:
+    elif not schedule_enabled and advance_settings.schedule:
         schedule = advance_settings.schedule
         advance_settings.enabled = schedule_enabled
         advance_settings.schedule = None
@@ -125,6 +125,7 @@ def export_to_sage300(workspace_id: int):
 
     # Update or create an AccountingExportSummary for the workspace
     accounting_summary, _ = AccountingExportSummary.objects.update_or_create(workspace_id=workspace_id)
+    advance_settings = AdvancedSetting.objects.filter(workspace_id=workspace_id).first()
 
     # Set the timestamp for the last export
     last_exported_at = datetime.now()
@@ -166,6 +167,10 @@ def export_to_sage300(workspace_id: int):
 
     # Update the accounting summary if expenses are exported
     if is_expenses_exported:
+
+        if advance_settings.schedule_is_enabled:
+            accounting_summary.next_export_at = last_exported_at + timedelta(hours=advance_settings.interval_hours)
+
         accounting_summary.last_exported_at = last_exported_at
         accounting_summary.export_mode = 'MANUAL'
         accounting_summary.save()
