@@ -32,7 +32,7 @@ from apps.workspaces.models import (
 from apps.accounting_exports.models import AccountingExportSummary
 from apps.users.models import User
 from apps.fyle.helpers import get_cluster_domain
-from apps.workspaces.triggers import ImportSettingsTrigger
+from apps.workspaces.triggers import ImportSettingsTrigger, AdvancedSettingsTriggers
 
 
 class WorkspaceSerializer(serializers.ModelSerializer):
@@ -354,6 +354,7 @@ class AdvancedSettingSerializer(serializers.ModelSerializer):
         # Update workspace onboarding state
         workspace = advanced_setting.workspace
 
+        AdvancedSettingsTriggers.run_post_advance_settings_triggers(workspace_id, advanced_setting)
         if workspace.onboarding_state == 'ADVANCED_SETTINGS':
             workspace.onboarding_state = 'COMPLETE'
             workspace.save()
