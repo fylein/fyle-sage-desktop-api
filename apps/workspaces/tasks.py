@@ -33,7 +33,7 @@ def run_import_export(workspace_id: int, export_mode = None):
         'PURCHASE_INVOICE': ExportPurchaseInvoice(),
         'DIRECT_COST': ExportDirectCost()
     }
-    
+
     # For Reimbursable Expenses
     if export_settings.reimbursable_expenses_export_type:
         queue_import_reimbursable_expenses(workspace_id=workspace_id,  synchronous=True)
@@ -66,7 +66,7 @@ def run_import_export(workspace_id: int, export_mode = None):
                 is_expenses_exported = True
                 export = export_map[export_settings.credit_card_expense_export_type]
                 export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
-    
+
     if is_expenses_exported:
         accounting_summary.last_exported_at = last_exported_at
         accounting_summary.export_mode = export_mode or 'MANUAL'
@@ -105,7 +105,6 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
 
         advance_settings.schedule = schedule
         advance_settings.save()
-
 
     elif not schedule_enabled and advance_settings.schedule:
         schedule = advance_settings.schedule
