@@ -214,7 +214,7 @@ class BaseExportModel(models.Model):
                 elif commitment_setting.source_field == 'COST_CENTER':
                     source_value = expense.cost_center
                 else:
-                    attribute = ExpenseAttribute.objects.filter(attribute_type=expense.source_field).first()
+                    attribute = ExpenseAttribute.objects.filter(commitment_setting=expense.source_field).first()
                     source_value = expense.custom_properties.get(attribute.display_name, None)
             else:
                 source_value = accounting_export.description[accounting_export.source_field.lower()]
