@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from django_q.models import Schedule
 
-from apps.workspaces.models import ExportSetting, AdvancedSetting
+from apps.workspaces.models import ExportSetting, AdvancedSetting, FyleCredential
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
 from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
 from apps.sage300.exports.direct_cost.tasks import ExportDirectCost
@@ -11,6 +11,13 @@ from apps.fyle.queue import queue_import_reimbursable_expenses, queue_import_cre
 
 
 logger = logging.getLogger(__name__)
+
+
+def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
+    fyle_credentials = FyleCredential.objects.filter(workspace__fyle_org_id=fyle_org_id).first()
+    if fyle_credentials:
+        fyle_credentials.refresh_token = refresh_token
+        fyle_credentials.save()
 
 
 def run_import_export(workspace_id: int, export_mode = None):
