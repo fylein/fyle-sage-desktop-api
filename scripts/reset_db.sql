@@ -17,7 +17,7 @@ BEGIN
   FROM last_export_details l
   where l.workspace_id = _workspace_id;
   GET DIAGNOSTICS rcount = ROW_COUNT;
-  RAISE NOTICE 'Deleted % errors', rcount;
+  RAISE NOTICE 'Deleted % last_export_details', rcount;
   
   DELETE
   FROM accounting_export_summary aes
