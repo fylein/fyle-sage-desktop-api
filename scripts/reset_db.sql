@@ -59,7 +59,7 @@ BEGIN
   FROM purchase_invoices pi
   WHERE pi.workspace_id = _workspace_id;
   GET DIAGNOSTICS rcount = ROW_COUNT;
-  RAISE NOTICE 'Deleted % purchace_invoices', rcount;
+  RAISE NOTICE 'Deleted % purchase_invoices', rcount;
 
   DELETE
   FROM expenses e
