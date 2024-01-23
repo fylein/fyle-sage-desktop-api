@@ -1,5 +1,6 @@
 from typing import List
 from django.db import models
+from datetime import datetime
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import Count
@@ -124,10 +125,13 @@ class AccountingExport(BaseForeignWorkspaceModel):
             # Determine the date field based on fund_source
             date_field = getattr(export_setting, f"{fund_source_map.get(fund_source)}_expense_date", None).lower()
             if date_field and date_field not in ['current_date', 'last_spent_at']:
-                accounting_export[date_field] = accounting_export[date_field].strftime('%Y-%m-%d')
+                if accounting_export[date_field]:
+                    accounting_export[date_field] = accounting_export[date_field].strftime('%Y-%m-%d')
+                else:
+                    accounting_export[date_field] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
             # Calculate and assign 'last_spent_at' based on the chosen date field
-            if date_field == 'last_spent_at':
+            if date_field == 'LAST_SPENT_AT':
                 latest_expense = Expense.objects.filter(id__in=accounting_export['expense_ids']).order_by('-spent_at').first()
                 accounting_export['last_spent_at'] = latest_expense.spent_at.strftime('%Y-%m-%d') if latest_expense else None
 
