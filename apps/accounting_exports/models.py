@@ -131,7 +131,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
                     accounting_export[date_field] = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 
             # Calculate and assign 'last_spent_at' based on the chosen date field
-            if date_field == 'LAST_SPENT_AT':
+            if date_field == 'last_spent_at':
                 latest_expense = Expense.objects.filter(id__in=accounting_export['expense_ids']).order_by('-spent_at').first()
                 accounting_export['last_spent_at'] = latest_expense.spent_at.strftime('%Y-%m-%d') if latest_expense else None
 
