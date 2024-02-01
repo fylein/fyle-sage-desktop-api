@@ -50,3 +50,7 @@ class Version(BaseModel):
     cost_code = IntegerNullField(help_text='version for costcode')
     vendor = IntegerNullField(help_text='version for vendor')
     commitment = IntegerNullField(help_text='version for commitment')
+    commitment_item = IntegerNullField(help_text='version for commitment item')
+
+    class Meta:
+        db_table = 'versions'

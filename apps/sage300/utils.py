@@ -77,7 +77,6 @@ class SageDesktopConnector:
         """
 
         destination_attributes = []
-
         for item in data:
             detail = {field: getattr(item, field) for field in field_names}
             destination_attributes.append(self._create_destination_attribute(
@@ -89,9 +88,9 @@ class SageDesktopConnector:
                 detail
             ))
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
+        sdffds = DestinationAttribute.bulk_create_or_update_destination_attributes(
             destination_attributes, attribute_type, workspace_id, True)
-
+        print('destination attributes', sdffds)
         self._update_latest_version(attribute_type)
 
     def sync_accounts(self):
@@ -113,6 +112,7 @@ class SageDesktopConnector:
             'code', 'version', 'default_expense_account', 'default_standard_category',
             'default_standard_costcode', 'type_id', 'created_on_utc'
         ]
+
         self._sync_data(vendors, 'VENDOR', 'vendor', self.workspace_id, field_names)
         return []
 
@@ -160,6 +160,24 @@ class SageDesktopConnector:
         ]
         self._sync_data(commitments, 'COMMITMENT', 'commitment', self.workspace_id, field_names)
         return []
+
+    def sync_commitment_items(self):
+        """
+        Sync commitment items from Sage Desktop SDK to your application
+        """
+        commitments = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type='COMMITMENT'
+        )
+
+        for commitment in commitments:
+            commitment_items = self.connection.commitments.get_commitment_items(commitment.destination_id)
+            field_names = [
+                'code', 'version', 'description', 'cost_code_id',
+                'category_id', 'created_on_utc', 'job_id', 'commitment_id'
+            ]
+            self._sync_data(commitment_items, 'COMMITMENT_ITEM', 'commitment_item', self.workspace_id, field_names)
+
 
     def sync_cost_codes(self):
         """
