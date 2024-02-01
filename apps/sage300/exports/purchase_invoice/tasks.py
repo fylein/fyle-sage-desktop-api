@@ -46,6 +46,8 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                 "CategoryId": lineitem.category_id,
                 "CostCodeId": lineitem.cost_code_id,
                 "Description": lineitem.description[0:30],
+                "CommitmentId": lineitem.commitment_id,
+                "CommitmentItemId": lineitem.commitment_item_id,
                 "ExpenseAccountId": lineitem.accounts_payable_account_id,
                 "JobId": lineitem.job_id,
                 "StandardCategoryId": lineitem.standard_category_id,
