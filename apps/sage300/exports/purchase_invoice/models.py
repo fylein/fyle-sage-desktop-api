@@ -100,8 +100,10 @@ class PurchaseInvoiceLineitems(BaseExportModel):
         purchase_invoice_lineitem_objects = []
 
         for lineitem in expenses:
+            category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(lineitem.category, lineitem.sub_category)
+
             account = CategoryMapping.objects.filter(
-                source_category__value=lineitem.category,
+                source_category__value=category,
                 workspace_id=accounting_export.workspace_id
             ).first()
 
