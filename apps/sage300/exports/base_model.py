@@ -7,7 +7,6 @@ from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSe
 
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.models import DependentFieldSetting, Expense
-from apps.sage300.exports.helpers import get_filtered_mapping
 from apps.workspaces.models import AdvancedSetting, FyleCredential, Workspace, ExportSetting
 
 
@@ -185,47 +184,6 @@ class BaseExportModel(models.Model):
                 job_id = mapping.destination.destination_id
 
         return job_id
-
-    def get_commitment_id(accounting_export: AccountingExport, expense: Expense):
-        """
-        Get the commitment ID based on the provided AccountingExport and Expense.
-
-        Parameters:
-        - accounting_export (AccountingExport): The AccountingExport instance containing workspace information.
-        - expense (Expense): The Expense instance containing information for job ID retrieval.
-
-        Returns:
-        - Optional[str]: The commitment ID as a string if found, otherwise None.
-        """
-
-        commitment_setting: MappingSetting = MappingSetting.objects.filter(
-            workspace_id=accounting_export.workspace_id,
-            destination_field='COMMITMENT'
-        ).first()
-
-        commitment_id = None
-        source_id = None
-
-        if accounting_export and commitment_setting:
-            if expense:
-                if commitment_setting.source_field == 'PROJECT':
-                    source_id = expense.project_id
-                    source_value = expense.project
-                elif commitment_setting.source_field == 'COST_CENTER':
-                    source_value = expense.cost_center
-                else:
-                    attribute = ExpenseAttribute.objects.filter(commitment_setting=expense.source_field).first()
-                    source_value = expense.custom_properties.get(attribute.display_name, None)
-            else:
-                source_value = accounting_export.description[accounting_export.source_field.lower()]
-
-            mapping: Mapping = get_filtered_mapping(
-                commitment_setting.source_field, 'COMMITMENT', accounting_export.workspace_id, source_value, source_id
-            )
-
-            if mapping:
-                commitment_id = mapping.destination.destination_id
-        return commitment_id
 
     def get_cost_code_id(accounting_export: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, job_id: str):
         from apps.sage300.models import CostCategory

@@ -195,6 +195,7 @@ class Base:
             'STANDARD_CATEGORY': sage300_connection.sync_standard_categories,
             'JOB': sage300_connection.sync_jobs,
             'COMMITMENT': sage300_connection.sync_commitments,
+            'COMMITMENT_ITEM': sage300_connection.sync_commitment_items,
             'VENDOR': sage300_connection.sync_vendors,
             'STANDARD_COST_CODE': sage300_connection.sync_standard_cost_codes,
             'ACCOUNT': sage300_connection.sync_accounts,

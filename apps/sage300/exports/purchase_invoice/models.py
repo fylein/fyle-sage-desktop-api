@@ -1,6 +1,6 @@
 from django.db import models
 
-from fyle_accounting_mappings.models import CategoryMapping
+from fyle_accounting_mappings.models import CategoryMapping, DestinationAttribute
 
 from apps.sage300.exports.base_model import BaseExportModel
 from apps.accounting_exports.models import AccountingExport
@@ -71,6 +71,7 @@ class PurchaseInvoiceLineitems(BaseExportModel):
     amount = FloatNullField(help_text='Amount of the invoice')
     category_id = StringNullField(help_text='destination id of category')
     commitment_id = StringNullField(help_text='destination id of commitment')
+    commitment_item_id = StringNullField(help_text='destination id of commitment item')
     cost_code_id = StringNullField(help_text='destination id of cost code')
     description = TextNotNullField(help_text='description for the invoice')
     job_id = StringNullField(help_text='destination id of job')
@@ -108,7 +109,6 @@ class PurchaseInvoiceLineitems(BaseExportModel):
             ).first()
 
             job_id = self.get_job_id(accounting_export, lineitem)
-            commitment_id = self.get_commitment_id(accounting_export, lineitem)
             standard_category_id = self.get_standard_category_id(accounting_export, lineitem)
             standard_cost_code_id = self.get_standard_cost_code_id(accounting_export, lineitem)
             description = self.get_expense_purpose(accounting_export.workspace_id, lineitem, lineitem.category, advance_setting)
@@ -116,6 +116,16 @@ class PurchaseInvoiceLineitems(BaseExportModel):
             if dependent_field_setting:
                 cost_code_id = self.get_cost_code_id(accounting_export, lineitem, dependent_field_setting, job_id)
                 cost_category_id = self.get_cost_category_id(accounting_export, lineitem, dependent_field_setting, job_id, cost_code_id)
+
+                if cost_code_id and cost_category_id:
+                    commitment_item = DestinationAttribute.objects.filter(
+                        attribute_type='COMMITMENT_ITEM',
+                        workspace_id=accounting_export.workspace_id,
+                        detail__contains={'cost_code_id': cost_code_id, 'category_id': cost_category_id}
+                    ).first()
+
+                    commitment_item_id = commitment_item.destination_id if commitment_item else None
+                    commitment_id = commitment_item.detail['commitment_id'] if commitment_item else None
 
             purchase_invoice_lineitem_object, _ = PurchaseInvoiceLineitems.objects.update_or_create(
                 purchase_invoice_id=purchase_invoice.id,
@@ -125,6 +135,7 @@ class PurchaseInvoiceLineitems(BaseExportModel):
                     'accounts_payable_account_id': account.destination_account.destination_id,
                     'job_id': job_id,
                     'commitment_id': commitment_id,
+                    'commitment_item_id': commitment_item_id,
                     'standard_category_id': standard_category_id,
                     'standard_cost_code_id': standard_cost_code_id,
                     'category_id': cost_category_id,
