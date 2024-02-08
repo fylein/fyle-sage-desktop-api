@@ -265,7 +265,8 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
                 workspace_id=instance.id,
                 defaults={
                     'import_categories': import_settings.get('import_categories'),
-                    'import_vendors_as_merchants': import_settings.get('import_vendors_as_merchants')
+                    'import_vendors_as_merchants': import_settings.get('import_vendors_as_merchants'),
+                    'add_commitment_details': import_settings.get('add_commitment_details')
                 }
             )
 

@@ -97,6 +97,8 @@ class PurchaseInvoiceLineitems(BaseExportModel):
 
         cost_category_id = None
         cost_code_id = None
+        commitment_id = None
+        commitment_item_id = None
 
         purchase_invoice_lineitem_objects = []
 
