@@ -7,7 +7,6 @@ from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSe
 
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.models import DependentFieldSetting, Expense
-from apps.sage300.exports.helpers import get_filtered_mapping
 from apps.workspaces.models import AdvancedSetting, FyleCredential, Workspace, ExportSetting
 
 

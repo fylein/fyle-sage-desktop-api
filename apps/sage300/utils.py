@@ -178,7 +178,6 @@ class SageDesktopConnector:
             ]
             self._sync_data(commitment_items, 'COMMITMENT_ITEM', 'commitment_item', self.workspace_id, field_names)
 
-
     def sync_cost_codes(self):
         """
         Synchronize cost codes from Sage Desktop SDK to your application
