@@ -3,13 +3,13 @@
 Sage Desktop Commitments
 """
 from sage_desktop_sdk.core.client import Client
-from sage_desktop_sdk.core.schema.read_only import Commitment
+from sage_desktop_sdk.core.schema.read_only import Commitment, CommitmentItem
 
 
 class Commitments(Client):
     """Class for Documents APIs."""
 
-    GET_COMMITMENT_ITEMS = '/JobCosting/Api/V1/Commitment.svc/commitments/items/synchronize?commitment={}'
+    GET_COMMITMENT_ITEMS = '/JobCosting/Api/V1/Commitment.svc/commitments/items?commitment={}'
     GET_COMMITMENTS = '/JobCosting/Api/V1/Commitment.svc/commitments'
 
     def get_all(self, version: int = None):
@@ -55,4 +55,7 @@ class Commitments(Client):
         else:
             endpoint = Commitments.GET_COMMITMENT_ITEMS.format(commitment_id)
 
-        return self._query_get_by_id(endpoint)
+        commitment_items = self._query_get_by_id(endpoint)
+
+        for commitment_item in commitment_items:
+            yield CommitmentItem.from_dict(commitment_item)

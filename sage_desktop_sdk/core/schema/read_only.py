@@ -8,7 +8,7 @@ class Account:
     version: int
     is_active: bool
     is_archived: bool
-    name: int
+    name: str
 
     @classmethod
     def from_dict(cls, account_dict):
@@ -415,4 +415,65 @@ class Category:
             standard_category_accumulation_name=data_dict['StandardCategoryAccumulationName'],
             standard_category_description=data_dict['StandardCategoryDescription'],
             standard_category_name=data_dict['StandardCategoryName']
+        )
+
+
+@dataclass
+class CommitmentItem:
+    id: str
+    version: int
+    amount: float
+    amount_approved: float
+    amount_invoiced: float
+    amount_paid: float
+    amount_original: float
+    amount_pending: float
+    amount_retained: float
+    category_id: str
+    code: str
+    commitment_id: str
+    cost_code_id: str
+    created_on_utc: str
+    description: str
+    has_external_id: bool
+    is_active: bool
+    is_archived: bool
+    job_id: str
+    name: str
+    standard_category_id: str
+    tax: float
+    tax_group_id: str
+    tax_group_code: str
+    unit_cost: float
+    units: float
+
+    @classmethod
+    def from_dict(cls, item_dict):
+        return cls(
+            id=item_dict['Id'],
+            version=item_dict['Version'],
+            amount=item_dict['Amount'],
+            amount_approved=item_dict['AmountApproved'],
+            amount_invoiced=item_dict['AmountInvoiced'],
+            amount_paid=item_dict['AmountPaid'],
+            amount_original=item_dict['AmountOriginal'],
+            amount_pending=item_dict['AmountPending'],
+            amount_retained=item_dict['AmountRetained'],
+            category_id=item_dict['CategoryId'],
+            code=item_dict['Code'],
+            commitment_id=item_dict['CommitmentId'],
+            cost_code_id=item_dict['CostCodeId'],
+            created_on_utc=item_dict['CreatedOnUtc'],
+            description=item_dict['Description'],
+            has_external_id=item_dict['HasExternalId'],
+            is_active=item_dict['IsActive'],
+            is_archived=item_dict['IsArchived'],
+            job_id=item_dict['JobId'],
+            name=item_dict['Name'],
+            standard_category_id=item_dict['StandardCategoryId'],
+            tax=item_dict['Tax'],
+            tax_group_id=item_dict['TaxGroupId'],
+            tax_group_code=item_dict['TaxGroupCode'],
+            unit_cost=item_dict['UnitCost'],
+            units=item_dict['Units']
         )

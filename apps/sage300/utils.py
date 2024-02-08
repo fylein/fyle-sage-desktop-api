@@ -88,9 +88,9 @@ class SageDesktopConnector:
                 detail
             ))
 
-        sdffds = DestinationAttribute.bulk_create_or_update_destination_attributes(
+        DestinationAttribute.bulk_create_or_update_destination_attributes(
             destination_attributes, attribute_type, workspace_id, True)
-        print('destination attributes', sdffds)
+
         self._update_latest_version(attribute_type)
 
     def sync_accounts(self):

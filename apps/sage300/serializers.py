@@ -79,19 +79,21 @@ class Sage300FieldSerializer(serializers.Serializer):
 
     def format_sage300_fields(self, workspace_id):
         attribute_types = [
-            "VENDOR",
-            "ACCOUNT",
-            "JOB",
-            "CATEGORY",
-            "COST_CODE",
-            "PAYMENT",
+            'VENDOR',
+            'ACCOUNT',
+            'JOB',
+            'CATEGORY',
+            'COST_CODE',
+            'PAYMENT',
+            'COMMITMENT',
+            'COMMITMENT_ITEM'
         ]
         attributes = (
             DestinationAttribute.objects.filter(
                 ~Q(attribute_type__in=attribute_types),
                 workspace_id=workspace_id,
             )
-            .values("attribute_type", "display_name")
+            .values('attribute_type', 'display_name')
             .distinct()
         )
 
@@ -99,6 +101,6 @@ class Sage300FieldSerializer(serializers.Serializer):
 
         # Adding "Job" by default since it can be supported even if it doesn't exist
         attributes_list = list(serialized_attributes)
-        attributes_list.append({"attribute_type": "JOB", "display_name": "Job"})
+        attributes_list.append({'attribute_type': 'JOB', 'display_name': 'Job'})
 
         return attributes_list
