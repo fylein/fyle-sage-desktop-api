@@ -237,6 +237,7 @@ fixtures = {
         "import_settings": {
             "import_categories": True,
             "import_vendors_as_merchants": True,
+            "add_commitment_details": False,
         },
         "mapping_settings": [
             {
@@ -253,6 +254,7 @@ fixtures = {
         "import_settings": {
             "import_categories": True,
             "import_vendors_as_merchants": True,
+            "add_commitment_details": False
         },
         "mapping_settings": [
             {
@@ -269,6 +271,7 @@ fixtures = {
         "import_settings": {
             "import_categories": True,
             "import_vendors_as_merchants": True,
+            "add_commitment_details": True
         },
         "mapping_settings": [
             {
@@ -306,6 +309,7 @@ fixtures = {
         "import_settings": {
             "import_categories": True,
             "import_vendors_as_merchants": True,
+            "add_commitment_details": False
         },
         "mapping_settings": [
             {
@@ -322,6 +326,7 @@ fixtures = {
         "import_settings": {
             "import_categories": True,
             "import_vendors_as_merchants": True,
+            "add_commitment_details": True
         },
         "mapping_settings": None,
         "dependent_field_settings": None,
