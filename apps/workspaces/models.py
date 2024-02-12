@@ -199,6 +199,7 @@ class ImportSetting(BaseModel):
     id = models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)
     import_categories = BooleanFalseField(help_text='toggle for import of chart of accounts from sage300')
     import_vendors_as_merchants = BooleanFalseField(help_text='toggle for import of vendors as merchant from sage300')
+    add_commitment_details = BooleanFalseField(help_text='Add commitment details')
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model', related_name="import_settings")
 
     class Meta:
@@ -220,7 +221,6 @@ class AdvancedSetting(BaseModel):
     emails_added = CustomJsonField(help_text='Emails Selected For Email Notification')
     schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
     auto_create_vendor = BooleanFalseField(help_text='Auto create vendor')
-    add_commitment_details = BooleanFalseField(help_text='Add commitment details')
     sync_sage_300_to_fyle_payments = BooleanFalseField(help_text='Sync sage 300 to fyle payments')
 
     class Meta:

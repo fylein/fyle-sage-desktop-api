@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from apps.sage300.exports.accounting_export import AccountingDataExporter
 from apps.accounting_exports.models import AccountingExport
-from apps.workspaces.models import Sage300Credential
+from apps.workspaces.models import Sage300Credential, ImportSetting
 from apps.sage300.utils import SageDesktopConnector
 from apps.sage300.exports.purchase_invoice.queues import check_accounting_export_and_start_import
 from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
@@ -37,6 +37,8 @@ class ExportPurchaseInvoice(AccountingDataExporter):
         :param expense_report_lineitems: ExpenseReportLineitem objects extracted from database
         :return: constructed expense_report
         """
+        
+        import_settings = ImportSetting.objects.filter(workspace_id=body.workspace_id).first()
 
         purchase_invoice_lineitem_payload = []
         for lineitem in lineitems:
@@ -46,13 +48,15 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                 "CategoryId": lineitem.category_id,
                 "CostCodeId": lineitem.cost_code_id,
                 "Description": lineitem.description[0:30],
-                "CommitmentId": lineitem.commitment_id,
-                "CommitmentItemId": lineitem.commitment_item_id,
                 "ExpenseAccountId": lineitem.accounts_payable_account_id,
                 "JobId": lineitem.job_id,
                 "StandardCategoryId": lineitem.standard_category_id,
                 "StandardCostCodeId": lineitem.standard_cost_code_id
             }
+            
+            if import_settings.add_commitment_details:
+                expense['CommitmentId'] = lineitem.commitment_id
+                expense['CommitmentItemId'] = lineitem.commitment_item_id
 
             purchase_invoice_lineitem_payload.append(expense)
 
