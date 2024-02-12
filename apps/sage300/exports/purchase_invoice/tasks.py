@@ -37,7 +37,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
         :param expense_report_lineitems: ExpenseReportLineitem objects extracted from database
         :return: constructed expense_report
         """
-        
+
         import_settings = ImportSetting.objects.filter(workspace_id=body.workspace_id).first()
 
         purchase_invoice_lineitem_payload = []
@@ -53,7 +53,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                 "StandardCategoryId": lineitem.standard_category_id,
                 "StandardCostCodeId": lineitem.standard_cost_code_id
             }
-            
+
             if import_settings.add_commitment_details:
                 expense['CommitmentId'] = lineitem.commitment_id
                 expense['CommitmentItemId'] = lineitem.commitment_item_id

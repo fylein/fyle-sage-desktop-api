@@ -208,6 +208,7 @@ class ImportSettingFilterSerializer(serializers.ModelSerializer):
         fields = [
             'import_categories',
             'import_vendors_as_merchants',
+            'add_commitment_details'
         ]
 
 
