@@ -207,6 +207,7 @@ fixtures = {
         "import_settings": {
             "import_categories": True,
             "import_vendors_as_merchants": True,
+            "add_commitment_details": False
         },
         "mapping_settings": [
             {
