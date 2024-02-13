@@ -101,6 +101,7 @@ class PurchaseInvoiceLineitems(BaseExportModel):
         commitment_item_id = None
 
         purchase_invoice_lineitem_objects = []
+        vendor_id = self.get_vendor_id(accounting_export=accounting_export)
 
         for lineitem in expenses:
             category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(lineitem.category, lineitem.sub_category)
@@ -119,15 +120,24 @@ class PurchaseInvoiceLineitems(BaseExportModel):
                 cost_code_id = self.get_cost_code_id(accounting_export, lineitem, dependent_field_setting, job_id)
                 cost_category_id = self.get_cost_category_id(accounting_export, lineitem, dependent_field_setting, job_id, cost_code_id)
 
-                if cost_code_id and cost_category_id:
+                if cost_code_id and cost_category_id and vendor_id:
                     commitment_item = DestinationAttribute.objects.filter(
                         attribute_type='COMMITMENT_ITEM',
                         workspace_id=accounting_export.workspace_id,
                         detail__contains={'cost_code_id': cost_code_id, 'category_id': cost_category_id}
                     ).first()
 
-                    commitment_item_id = commitment_item.destination_id if commitment_item else None
-                    commitment_id = commitment_item.detail['commitment_id'] if commitment_item else None
+                    if commitment_item:
+                        commitment = DestinationAttribute.objects.filter(
+                            attribute_type='COMMITMENT',
+                            destination_id=commitment_item.detail.get('commitment_id'),
+                            workspace_id=accounting_export.workspace_id,
+                            detail__contains={'vendor_id': vendor_id}
+                        ).first()
+
+                        if commitment:
+                            commitment_item_id = commitment_item.destination_id
+                            commitment_id = commitment_item.detail.get('commitment_id')
 
             purchase_invoice_lineitem_object, _ = PurchaseInvoiceLineitems.objects.update_or_create(
                 purchase_invoice_id=purchase_invoice.id,
