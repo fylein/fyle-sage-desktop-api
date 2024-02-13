@@ -101,6 +101,7 @@ class PurchaseInvoiceLineitems(BaseExportModel):
         commitment_item_id = None
 
         purchase_invoice_lineitem_objects = []
+        vendor_id = self.get_vendor_id(accounting_export=accounting_export)
 
         for lineitem in expenses:
             category = lineitem.category if (lineitem.category == lineitem.sub_category or lineitem.sub_category == None) else '{0} / {1}'.format(lineitem.category, lineitem.sub_category)
@@ -114,7 +115,6 @@ class PurchaseInvoiceLineitems(BaseExportModel):
             standard_category_id = self.get_standard_category_id(accounting_export, lineitem)
             standard_cost_code_id = self.get_standard_cost_code_id(accounting_export, lineitem)
             description = self.get_expense_purpose(accounting_export.workspace_id, lineitem, lineitem.category, advance_setting)
-            vendor_id = self.get_vendor_id(accounting_export=accounting_export)
 
             if dependent_field_setting:
                 cost_code_id = self.get_cost_code_id(accounting_export, lineitem, dependent_field_setting, job_id)
