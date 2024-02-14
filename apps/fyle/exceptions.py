@@ -2,7 +2,7 @@ import logging
 import traceback
 from functools import wraps
 
-from fyle.platform.exceptions import NoPrivilegeError
+from fyle.platform.exceptions import NoPrivilegeError, RetryException
 
 from apps.workspaces.models import FyleCredential
 
@@ -25,6 +25,12 @@ def handle_exceptions(func):
             logger.info('Invalid Fyle Credentials / Admin is disabled')
             args[1].detail = {'message': 'Invalid Fyle Credentials / Admin is disabled'}
             args[1].status = 'FAILED'
+            args[1].save()
+
+        except RetryException:
+            logger.info('Fyle Retry Exception occured')
+            args[1].detail = {'message': 'Fyle Retry Exception occured'}
+            args[1].status = 'FATAL'
             args[1].save()
 
         except Exception:

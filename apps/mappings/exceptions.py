@@ -5,7 +5,8 @@ from sage_desktop_sdk.exceptions import InvalidUserCredentials
 from fyle.platform.exceptions import (
     WrongParamsError,
     InvalidTokenError as FyleInvalidTokenError,
-    InternalServerError
+    InternalServerError,
+    RetryException
 )
 from apps.mappings.models import ImportLog
 from apps.workspaces.models import Sage300Credential
@@ -43,6 +44,10 @@ def handle_import_exceptions(func):
             error['message'] = 'Invalid Token for fyle'
             error['alert'] = False
             import_log.status = 'FAILED'
+
+        except RetryException:
+            error['message'] = 'Fyle Retry Exception occured'
+            import_log.status = 'FATAL'
 
         except InternalServerError:
             error['message'] = 'Internal server error while importing to Fyle'
