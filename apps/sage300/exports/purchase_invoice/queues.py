@@ -117,31 +117,34 @@ def poll_operation_status(workspace_id: int, last_export: bool):
         operation_status = sage300_connection.connection.operation_status.get(export_id=export_id)
 
         # Check if the operation is disabled
-        if operation_status.get('DisabledOn'):
-
+        if operation_status['CompletedOn']:
             # Retrieve Sage 300 errors for the current export
-            sage300_errors = sage300_connection.connection.event_failures.get(accounting_export.export_id)
 
-            # Update the accounting export object with Sage 300 errors and status
-            accounting_export.sage300_errors = sage300_errors
-            accounting_export.status = 'FAILED'
+            document = sage300_connection.connection.documents.get(accounting_export.export_id)
+            if document['CurrentState'] != '9':
+                sage300_errors = sage300_connection.connection.event_failures.get(accounting_export.export_id)
+                # Update the accounting export object with Sage 300 errors and status
+                accounting_export.sage300_errors = sage300_errors
+                accounting_export.status = 'FAILED'
 
-            Error.objects.update_or_create(
-                workspace_id=accounting_export.workspace_id,
-                accounting_export=accounting_export,
-                defaults={
-                    'error_title': 'Failed to create purchase invoice',
-                    'type': 'SAGE300_ERROR',
-                    'error_detail': sage300_errors,
-                    'is_resolved': False
-                }
-            )
+                # Save the updated accounting export
+                accounting_export.save()
+                Error.objects.update_or_create(
+                    workspace_id=accounting_export.workspace_id,
+                    accounting_export=accounting_export,
+                    defaults={
+                        'error_title': 'Failed to create purchase invoice',
+                        'type': 'SAGE300_ERROR',
+                        'error_detail': sage300_errors,
+                        'is_resolved': False
+                    }
+                )
 
-            # Save the updated accounting export
-            accounting_export.save()
+                # Save the updated accounting export
+                accounting_export.save()
 
-            # Continue to the next iteration
-            continue
+                # Continue to the next iteration
+                continue
 
         accounting_export.status = 'COMPLETE'
         accounting_export.sage300_errors = None
