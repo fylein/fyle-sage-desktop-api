@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from apps.workspaces.tasks import (
     async_update_fyle_credentials,
     run_import_export,
@@ -176,6 +177,19 @@ def test_sync_schedule_2(
     )
 
     assert schedules.count() == 0
+
+    sch, _ = Schedule.objects.update_or_create(
+        func='apps.workspaces.tasks.run_import_export',
+        args='{}'.format(workspace_id),
+        defaults={
+            'schedule_type': Schedule.MINUTES,
+            'minutes': 5 * 60,
+            'next_run': datetime.now() + timedelta(hours=5)
+        }
+    )
+
+    advance_settings.schedule = sch
+    advance_settings.save()
 
     advanced_settings = schedule_sync(
         workspace_id=workspace_id,

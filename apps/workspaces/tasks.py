@@ -88,8 +88,6 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
 
     advance_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
 
-    advance_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
-
     if schedule_enabled:
         advance_settings.schedule_is_enabled = schedule_enabled
         advance_settings.start_datetime = datetime.now()
