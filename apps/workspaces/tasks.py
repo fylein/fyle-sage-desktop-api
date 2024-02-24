@@ -88,7 +88,9 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
 
     advance_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
 
-    if advance_settings.schedule_is_enabled:
+    advance_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
+
+    if schedule_enabled:
         advance_settings.schedule_is_enabled = schedule_enabled
         advance_settings.start_datetime = datetime.now()
         advance_settings.interval_hours = hours
@@ -113,12 +115,14 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
         advance_settings.schedule = schedule
         advance_settings.save()
 
-    elif not schedule_enabled and advance_settings.schedule:
-        schedule = advance_settings.schedule
-        advance_settings.enabled = schedule_enabled
-        advance_settings.schedule = None
-        advance_settings.save()
-        schedule.delete()
+    else:
+        advance_settings.schedule_is_enabled = schedule_enabled
+
+        if hasattr(advance_settings, 'schedule') and advance_settings.schedule:
+            schedule = advance_settings.schedule
+            advance_settings.schedule = None
+            advance_settings.save()
+            schedule.delete()
 
     return advance_settings
 

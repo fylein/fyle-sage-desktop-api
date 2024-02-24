@@ -2,8 +2,7 @@
 Fixture configuration for import tests
 """
 import pytest
-
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 
 
 @pytest.fixture()
@@ -91,6 +90,81 @@ def add_merchant_mappings():
             display_name='Platform APIs',
             value='Platform APIs',
             destination_id='10081',
+            detail='Merchant - Platform APIs, Id - 10081',
+            active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_project_expense_attributes():
+    """
+    Pytest fixture to add project expense attributes to a workspace
+    """
+    for i in range(1, 110):
+        ExpenseAttribute.objects.create(
+            workspace_id=1,
+            attribute_type='PROJECT',
+            display_name='Project',
+            value='Platform APIs {0}'.format(i),
+            source_id='1008{0}'.format(i),
+            detail='Merchant - Platform APIs, Id - 1008{0}'.format(i),
+            active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_expense_destination_attributes():
+    """
+    Pytest fixture to add expense & destination attributes to a workspace
+    """
+    ExpenseAttribute.objects.create(
+        workspace_id=1,
+        attribute_type='CATEGORY',
+        display_name='Category',
+        value='Test Sage',
+        source_id='1008',
+        detail='Merchant - Platform APIs, Id - 1008',
+        active=True
+    )
+    DestinationAttribute.objects.create(
+        workspace_id=1,
+        attribute_type='ACCOUNT',
+        display_name='Account',
+        value='Test Dynamics',
+        destination_id='10081',
+        detail='Merchant - Platform APIs, Id - 10081',
+        active=True
+    )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_expense_destination_attributes_1():
+    """
+    Pytest fixture to add expense & destination attributes to a workspace
+    """
+    values = ['Internet','Meals']
+    count = 0
+
+    for value in values:
+        count += 1
+        ExpenseAttribute.objects.create(
+            workspace_id=1,
+            attribute_type='CATEGORY',
+            display_name='Category',
+            value= value,
+            source_id='1009{0}'.format(count),
+            detail='Merchant - Platform APIs, Id - 1008',
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=1,
+            attribute_type='ACCOUNT',
+            display_name='Account',
+            value= value,
+            destination_id=value,
             detail='Merchant - Platform APIs, Id - 10081',
             active=True
         )

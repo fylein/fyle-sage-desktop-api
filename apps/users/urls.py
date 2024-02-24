@@ -18,6 +18,6 @@ from django.urls import path
 from .views import UserProfileView, FyleOrgsView
 
 urlpatterns = [
-    path('profile/', UserProfileView.as_view()),
-    path('orgs/', FyleOrgsView.as_view())
+    path('profile/', UserProfileView.as_view(), name='user_profile'),
+    path('orgs/', FyleOrgsView.as_view(), name='fyle_orgs')
 ]

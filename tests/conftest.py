@@ -9,7 +9,13 @@ import pytest
 from rest_framework.test import APIClient
 from fyle.platform.platform import Platform
 from fyle_rest_auth.models import User, AuthToken
-from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
+from fyle_accounting_mappings.models import (
+    ExpenseAttribute,
+    DestinationAttribute,
+    MappingSetting,
+    EmployeeMapping,
+    CategoryMapping
+)
 
 from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
@@ -17,7 +23,8 @@ from apps.workspaces.models import (
     FyleCredential,
     Sage300Credential,
     ExportSetting,
-    ImportSetting
+    ImportSetting,
+    AdvancedSetting
 )
 from apps.fyle.models import ExpenseFilter
 from apps.accounting_exports.models import AccountingExport, Error, AccountingExportSummary
@@ -424,3 +431,100 @@ def create_project_mapping_settings():
             destination_field='PROJECT',
             import_to_fyle=True
         )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_advanced_settings():
+    advanced_settings_data = fyle_fixtures['advanced_setting']
+    AdvancedSetting.objects.create(**advanced_settings_data)
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_expense_attribute():
+    expense_attribute_data = fyle_fixtures['employee_expense_attributes']
+    expense_attribute_data['workspace'] = Workspace.objects.get(id=1)
+    expense_attribute = ExpenseAttribute.objects.create(**expense_attribute_data)
+
+    return expense_attribute
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_destination_attribute():
+    destination_emp_data = fyle_fixtures['employee_destination_attributes']
+    destination_emp_data['workspace'] = Workspace.objects.get(id=1)
+    DestinationAttribute.objects.create(**destination_emp_data)
+
+    destination_vendor_data = fyle_fixtures['vendor_destination_attributes']
+    destination_vendor_data['workspace'] = Workspace.objects.get(id=1)
+    DestinationAttribute.objects.create(**destination_vendor_data)
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_employee_mapping_with_employee(create_expense_attribute, create_destination_attribute):
+    source_field_id = ExpenseAttribute.objects.get(source_id='source123')
+    destination_field_id = DestinationAttribute.objects.get(destination_id='destination123')
+    workspace = Workspace.objects.get(id=1)
+
+    employee_employee_mapping = {
+        'source_employee': source_field_id,
+        'destination_employee': destination_field_id,
+        'workspace': workspace,
+    }
+
+    EmployeeMapping.objects.create(**employee_employee_mapping)
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_employee_mapping_with_vendor(create_expense_attribute, create_destination_attribute):
+    source_field_id = ExpenseAttribute.objects.get(source_id='source123')
+    destination_field_id = DestinationAttribute.objects.get(destination_id='dest_vendor123')
+    workspace = Workspace.objects.get(id=1)
+
+    employee_vendor_mapping = {
+        'source_employee': source_field_id,
+        'destination_vendor': destination_field_id,
+        'workspace': workspace,
+    }
+
+    EmployeeMapping.objects.create(**employee_vendor_mapping)
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_source_category_attribute():
+    source_category_attribute_data = fyle_fixtures['category_expense_attributes']
+    source_category_attribute_data['workspace'] = Workspace.objects.get(id=1)
+    source_category_attribute = ExpenseAttribute.objects.create(**source_category_attribute_data)
+
+    return source_category_attribute
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_destination_category_attribute():
+    destination_category_attribute_data = fyle_fixtures['category_destination_attributes']
+    destination_category_attribute_data['workspace'] = Workspace.objects.get(id=1)
+    destination_category_attribute = DestinationAttribute.objects.create(**destination_category_attribute_data)
+
+    return destination_category_attribute
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_category_mapping(create_source_category_attribute, create_destination_category_attribute):
+    source_category = ExpenseAttribute.objects.get(source_id='src_category123')
+    destination_category = DestinationAttribute.objects.get(destination_id='dest_category123')
+    workspace = Workspace.objects.get(id=1)
+
+    category_mapping = CategoryMapping.create_or_update_category_mapping(
+        source_category_id=source_category.id,
+        destination_account_id=destination_category.id,
+        workspace=workspace
+    )
+
+    return category_mapping
