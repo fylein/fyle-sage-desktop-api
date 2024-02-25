@@ -45,6 +45,25 @@ def add_cost_center_mappings():
         1, 2, 3
     ]
     for workspace_id in workspace_ids:
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CENTER',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            source_id='10064',
+            detail='Cost Center - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CENTER',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            source_id='10081',
+            detail='Cost Center - Platform APIs, Id - 10081',
+            active=True
+        )
+
         DestinationAttribute.objects.create(
             workspace_id=workspace_id,
             attribute_type='COST_CENTER',

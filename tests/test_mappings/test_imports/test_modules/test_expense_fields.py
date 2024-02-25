@@ -152,3 +152,53 @@ def test_import_destination_attribute_to_fyle(
 
     expense_custom_fields.import_destination_attribute_to_fyle(import_log)
     assert True
+
+
+def test_post_to_fyle_and_sync(
+    db,
+    mocker,
+    create_temp_workspace
+):
+    expense_custom_fields = ExpenseCustomField(
+        workspace_id=1,
+        source_field="CUSTOM",
+        destination_field="CUSTOM",
+        sync_after="2024-01-01T00:00:00Z"
+    )
+
+    platform = mocker.patch('apps.mappings.imports.modules.expense_custom_fields.PlatformConnector')
+    mocker.patch.object(
+        platform.return_value,
+        'post'
+    )
+    mocker.patch.object(
+        platform.return_value,
+        'bulk_post'
+    )
+
+    import_log = ImportLog(
+        workspace_id=1,
+        attribute_type='CUSTOM',
+        status='IN_PROGRESS',
+        error_log={},
+        last_successful_run_at="2024-01-01T00:00:00Z",
+    )
+
+    expense_custom_fields.post_to_fyle_and_sync(
+        fyle_payload=[{
+            'field_name': 'Custom',
+            'type': 'SELECT',
+            'is_enabled': True
+        }],
+        resource_class=platform.return_value,
+        is_last_batch=True,
+        import_log=import_log
+    )
+
+    platform.return_value.post.assert_called_once_with(
+        [{
+            'field_name': 'Custom',
+            'type': 'SELECT',
+            'is_enabled': True
+        }]
+    )
