@@ -40,3 +40,20 @@ def test_construct_fyle_payload(api_client, test_connection, mocker, create_temp
     )
 
     assert fyle_payload == data['create_fyle_project_payload_create_disable_case']
+
+    paginated_destination_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='PROJECT')
+    paginated_destination_attributes.update(active=False)
+
+    paginated_destination_attribute_values = [attribute.value for attribute in paginated_destination_attributes]
+
+    existing_fyle_attributes_map = project.get_existing_fyle_attributes(paginated_destination_attribute_values)
+    existing_fyle_attributes_map['platform apis'] = '10081'
+    existing_fyle_attributes_map['direct mail campaign'] = '10064'
+
+    fyle_payload = project.construct_fyle_payload(
+        paginated_destination_attributes,
+        existing_fyle_attributes_map,
+        True
+    )
+
+    assert fyle_payload == data['create_fyle_project_payload_create_disable_case2']
