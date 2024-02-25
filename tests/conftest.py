@@ -26,9 +26,10 @@ from apps.workspaces.models import (
     ImportSetting,
     AdvancedSetting
 )
-from apps.fyle.models import ExpenseFilter
+from apps.fyle.models import ExpenseFilter, DependentFieldSetting
 from apps.accounting_exports.models import AccountingExport, Error, AccountingExportSummary
 from sage_desktop_api.tests import settings
+from apps.sage300.models import CostCategory
 
 from .test_fyle.fixtures import fixtures as fyle_fixtures
 
@@ -335,6 +336,24 @@ def add_project_mappings():
             detail='Sage 300 Project - Platform APIs, Id - 10081',
             active=True
         )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            source_id='10064',
+            detail='Sage 300 Project - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            source_id='10081',
+            detail='Sage 300 Project - Platform APIs, Id - 10081',
+            active=True
+        )
 
 
 @pytest.fixture()
@@ -359,6 +378,36 @@ def add_cost_center_mappings():
         DestinationAttribute.objects.create(
             workspace_id=workspace_id,
             attribute_type='COST_CENTER',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            destination_id='10081',
+            detail='Cost Center - Platform APIs, Id - 10081',
+            active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_cost_code_mappings():
+    """
+    Pytest fixtue to add cost center mappings to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CODE',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            destination_id='10064',
+            detail='Cost Center - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CODE',
             display_name='Platform APIs',
             value='Platform APIs',
             destination_id='10081',
@@ -528,3 +577,58 @@ def create_category_mapping(create_source_category_attribute, create_destination
     )
 
     return category_mapping
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_cost_category(create_temp_workspace):
+    """
+    Pytest fixture to add cost category to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        CostCategory.objects.create(
+            job_id='job_id',
+            job_name='Platform APIs',
+            cost_code_id='cost_code_id',
+            cost_code_name='Platform APIs',
+            name='API',
+            cost_category_id='cost_category_id',
+            status=True,
+            workspace = Workspace.objects.get(id=workspace_id)
+        )
+        CostCategory.objects.create(
+            job_id='job_id',
+            job_name='Direct Mail Campaign',
+            cost_code_id='cost_code_id',
+            cost_code_name='Direct Mail Campaign',
+            name='Mail',
+            cost_category_id='cost_category_id',
+            status=True,
+            workspace = Workspace.objects.get(id=workspace_id)
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_dependent_field_setting(create_temp_workspace):
+    """
+    Pytest fixture to add dependent fields to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        DependentFieldSetting.objects.create(
+            is_import_enabled=True,
+            project_field_id=1,
+            cost_code_field_name='Cost Code',
+            cost_code_field_id='cost_code',
+            cost_code_placeholder='Select Cost Code',
+            cost_category_field_name='Cost Category',
+            cost_category_field_id='cost_category',
+            cost_category_placeholder='Select Cost Category',
+            workspace=Workspace.objects.get(id=workspace_id)
+        )
