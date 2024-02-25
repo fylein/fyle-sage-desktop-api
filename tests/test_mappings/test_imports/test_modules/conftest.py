@@ -168,3 +168,38 @@ def add_expense_destination_attributes_1():
             detail='Merchant - Platform APIs, Id - 10081',
             active=True
         )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_expense_destination_attributes_2():
+    """
+    Pytest fixture to add expense & destination attributes to a workspace
+    """
+    values = ['Entertainment','Food']
+    count = 0
+
+    for value in values:
+        count += 1
+        ExpenseAttribute.objects.create(
+            workspace_id=1,
+            attribute_type='CUSTOM',
+            display_name='Custom',
+            value= value,
+            source_id='1009{0}'.format(count),
+            detail={
+                'custom_field_id': '1008{0}'.format(count)
+            },
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=1,
+            attribute_type='CUSTOM',
+            display_name='Custom',
+            value= value,
+            destination_id=value,
+            detail={
+                'custom_field_id': '1008{0}'.format(count)
+            },
+            active=True
+        )
