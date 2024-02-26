@@ -1,6 +1,7 @@
-from rest_framework import serializers
 from fyle_accounting_mappings.serializers import ExpenseAttributeSerializer
-from .models import AccountingExport, Error, AccountingExportSummary, Expense
+from rest_framework import serializers
+
+from apps.accounting_exports.models import AccountingExport, AccountingExportSummary, Error, Expense
 
 
 class ExpenseSerializer(serializers.ModelSerializer):
@@ -18,6 +19,7 @@ class AccountingExportSerializer(serializers.ModelSerializer):
     Accounting Export serializer
     """
 
+    id = serializers.IntegerField()
     expenses = ExpenseSerializer(many=True)
 
     class Meta:
@@ -40,6 +42,7 @@ class ErrorSerializer(serializers.ModelSerializer):
     Serializer for the Errors
     """
 
+    accounting_export = AccountingExportSerializer()
     expense_attribute = ExpenseAttributeSerializer()
 
     class Meta:
