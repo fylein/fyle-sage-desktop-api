@@ -1,0 +1,68 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  production_deploy:
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - uses: actions/checkout@v2
+      - name: push to dockerhub
+        uses: fylein/docker-release-action@master
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+          IMAGE_NAME: fyle_sage-desktop-api
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Clone another repository
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ secrets.PROD_DEPLOY_REPO }}
+          ref: master
+          path: ${{ secrets.PROD_DEPLOY_REPO }}
+          persist-credentials: false
+          token: ${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}
+
+      - name: Update Image Tag
+        run: |
+          NEW_TAG="v$(git rev-parse --short HEAD)"
+          cd ${{ secrets.PROD_DEPLOY_REPO }}/${{ secrets.US_EKS_CLUSTER_NAME }}/integrations
+          kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_sage-desktop-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_sage-desktop-api:$NEW_TAG
+
+      - name: Commit and push changes
+        run: |
+          cd ${{ secrets.PROD_DEPLOY_REPO }}/
+          git config --global user.email "integrations@fylehq.com"
+          git config --global user.name "GitHub Actions"
+          git add .
+          git commit -m "Update sage-desktop-api image tag"
+          git remote set-url origin https://x-access-token:${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}@github.com/${{ secrets.PROD_DEPLOY_REPO }}
+          git push origin master
+          git push origin master
+
+      - name: Create new Sentry release
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: fyle-technologies-private-limi
+          SENTRY_PROJECT: sage-desktop-api
+          SENTRY_DEPLOY_ENVIRONMENT: production
+        run: |
+          # Install Sentry CLI
+          curl -sL https://sentry.io/get-cli/ | bash
+
+          # Create new Sentry release
+          export SENTRY_RELEASE=$(sentry-cli releases propose-version)
+          sentry-cli releases new -p $SENTRY_PROJECT $SENTRY_RELEASE
+          sentry-cli releases set-commits --auto $SENTRY_RELEASE
+          sentry-cli releases finalize $SENTRY_RELEASE
+
+          # Create new deploy for this Sentry release
+          sentry-cli releases deploys $SENTRY_RELEASE new -e $SENTRY_DEPLOY_ENVIRONMENT
