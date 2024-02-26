@@ -116,7 +116,7 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
     else:
         advance_settings.schedule_is_enabled = schedule_enabled
 
-        if hasattr(advance_settings, 'schedule') and advance_settings.schedule:
+        if advance_settings.schedule:
             schedule = advance_settings.schedule
             advance_settings.schedule = None
             advance_settings.save()

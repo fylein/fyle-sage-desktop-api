@@ -14,7 +14,8 @@ from fyle_accounting_mappings.models import (
     DestinationAttribute,
     MappingSetting,
     EmployeeMapping,
-    CategoryMapping
+    CategoryMapping,
+    Mapping
 )
 
 from apps.fyle.helpers import get_access_token
@@ -26,7 +27,7 @@ from apps.workspaces.models import (
     ImportSetting,
     AdvancedSetting
 )
-from apps.fyle.models import ExpenseFilter, DependentFieldSetting
+from apps.fyle.models import ExpenseFilter, DependentFieldSetting, Expense
 from apps.accounting_exports.models import AccountingExport, Error, AccountingExportSummary
 from sage_desktop_api.tests import settings
 from apps.sage300.models import CostCategory
@@ -632,3 +633,36 @@ def add_dependent_field_setting(create_temp_workspace):
             cost_category_placeholder='Select Cost Category',
             workspace=Workspace.objects.get(id=workspace_id)
         )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_mapping_object(
+    create_temp_workspace,
+    create_expense_attribute,
+    create_destination_attribute
+):
+    workspace_id = 1
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id).first()
+    destination_attribute = DestinationAttribute.objects.filter(workspace_id=workspace_id).first()
+    workspace = Workspace.objects.get(id=workspace_id)
+
+    mapping_object = Mapping.objects.create(
+        source_type=expense_attribute.attribute_type,
+        destination_type=destination_attribute.attribute_type,
+        source=expense_attribute,
+        destination=destination_attribute,
+        workspace=workspace
+    )
+
+    return mapping_object
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_expense_objects():
+    workspace_id = 1
+    expenses = fyle_fixtures['expenses']
+    expense_objects = Expense.create_expense_objects(expenses=expenses, workspace_id=workspace_id)
+
+    return expense_objects

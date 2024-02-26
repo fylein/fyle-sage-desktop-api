@@ -2,6 +2,7 @@ from apps.sage300.utils import SageDesktopConnector, Sage300Credential
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.mappings.models import Version
 from apps.workspaces.models import Workspace
+from sage_desktop_sdk.core.schema.read_only import Category
 
 
 def test_sage_desktop_connector(
@@ -429,11 +430,12 @@ def test_sync_commitment_items(
     sage_connector.sync_commitment_items()
 
 
-def sync_cost_categories(
+def test_sync_cost_categories(
     db,
     mocker,
     create_temp_workspace,
-    add_sage300_creds
+    add_sage300_creds,
+    add_project_mappings
 ):
     workspace_id = 1
     sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
@@ -445,16 +447,23 @@ def sync_cost_categories(
         workspace_id=workspace_id
     )
 
-    mock_cost_categories = mocker.MagicMock()
-    mock_cost_categories.job_id = 'test_job_id'
-    mock_cost_categories.job_name = 'test_job_name'
-    mock_cost_categories.cost_code_id = 'test_cost_code_id'
-    mock_cost_categories.cost_code_name = 'test_cost_code_name'
-    mock_cost_categories.name = 'test_cost_category'
-    mock_cost_categories.cost_category_id = 'test_cost_category_id'
-    mock_cost_categories.status = False
+    mock_category = mocker.Mock(spec=Category)
+    mock_category.id = 1
+    mock_category.job_id = '10064'
+    mock_category.cost_code_id = '10064'
+    mock_category.name = 'Test Category 1'
+    mock_category.is_active = True
 
-    sage_connector.connection.categories.get_all_categories.return_value = [mock_cost_categories]
+    mock_category2 = mocker.Mock(spec=Category)
+    mock_category2.id = 2
+    mock_category2.job_id = '10081'
+    mock_category2.cost_code_id = '10064'
+    mock_category2.name = 'Test Category 2'
+    mock_category2.is_active = False
+
+    categories_generator = [mock_category, mock_category2]
+
+    sage_connector.connection.categories.get_all_categories.return_value = categories_generator
 
     sage_connector.sync_cost_categories()
 
