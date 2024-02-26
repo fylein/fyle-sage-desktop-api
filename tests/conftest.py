@@ -31,6 +31,8 @@ from apps.fyle.models import ExpenseFilter, DependentFieldSetting, Expense
 from apps.accounting_exports.models import AccountingExport, Error, AccountingExportSummary
 from sage_desktop_api.tests import settings
 from apps.sage300.models import CostCategory
+from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
+from apps.sage300.exports.direct_cost.models import DirectCost
 
 from .test_fyle.fixtures import fixtures as fyle_fixtures
 
@@ -442,7 +444,8 @@ def add_export_settings():
             default_ccc_credit_card_account_name='Visa',
             default_ccc_credit_card_account_id='12',
             credit_card_expense_grouped_by='EXPENSE' if workspace_id == 3 else 'REPORT',
-            credit_card_expense_date='SPENT_AT'
+            credit_card_expense_date='SPENT_AT',
+            default_vendor_id='1',
         )
 
 
@@ -666,3 +669,86 @@ def create_expense_objects():
     expense_objects = Expense.create_expense_objects(expenses=expenses, workspace_id=workspace_id)
 
     return expense_objects
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_purchase_invoice_objects(
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_accounting_export_expenses,
+    add_advanced_settings,
+    add_export_settings,
+):
+    accounting_export = AccountingExport.objects.get(workspace_id=1, type='PURCHASE_INVOICE')
+    accounting_export.description = {'fund_source': 'PERSONAL', 'employee_email': 'jhonsnow@fyle.in'}
+    accounting_export.save()
+
+    PurchaseInvoice.create_or_update_object(
+        accounting_export=accounting_export,
+        advance_settings=AdvancedSetting.objects.get(workspace_id=1)
+    )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_purchase_invoice_lineitem_objects(
+    add_purchase_invoice_objects,
+    create_expense_objects,
+    add_cost_category,
+    create_category_mapping,
+    add_dependent_field_setting
+):
+    workspace_id = 1
+
+    account = CategoryMapping.objects.filter(
+        workspace_id=workspace_id
+    ).first()
+
+    account.source_category.value = 'Accounts Payable'
+    account.source_category.save()
+    account.save()
+
+    accounting_export = AccountingExport.objects.get(workspace_id=workspace_id, type='PURCHASE_INVOICE')
+    expense = Expense.objects.get(workspace_id=workspace_id)
+    accounting_export.expenses.set([expense])
+    accounting_export.save()
+
+    PurchaseInvoiceLineitems.create_or_update_object(
+        accounting_export=accounting_export,
+        advance_setting=AdvancedSetting.objects.get(workspace_id=1)
+    )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_direct_cost_objects(
+    mocker,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_accounting_export_expenses,
+    add_advanced_settings,
+    add_export_settings,
+    add_cost_category,
+    create_expense_objects,
+    create_category_mapping,
+    add_dependent_field_setting
+):
+    workspace_id = 1
+
+    accounting_export = AccountingExport.objects.get(workspace_id=workspace_id, type='DIRECT_COST')
+    accounting_export.expenses.set(Expense.objects.filter(workspace_id=workspace_id))
+    accounting_export.description = {'fund_source': 'PERSONAL', 'employee_email': 'jhonsnow@fyle.in'}
+    accounting_export.save()
+
+    account = CategoryMapping.objects.filter(
+        workspace_id=accounting_export.workspace_id
+    ).first()
+    account.source_category.value = 'Accounts Payable'
+    account.source_category.save()
+    account.save()
+
+    DirectCost.create_or_update_object(
+        accounting_export=accounting_export,
+        advance_setting=AdvancedSetting.objects.get(workspace_id=1)
+    )

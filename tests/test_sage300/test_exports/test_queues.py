@@ -1,9 +1,18 @@
 from apps.accounting_exports.models import AccountingExport
-from apps.sage300.exports.purchase_invoice.queues import poll_operation_status
-from apps.sage300.exports.direct_cost.queues import poll_operation_status as poll_operation_status_direct_cost
+from apps.sage300.exports.purchase_invoice.queues import (
+    poll_operation_status,
+    check_accounting_export_and_start_import,
+    create_schedule_for_polling
+)
+from apps.sage300.exports.direct_cost.queues import (
+    poll_operation_status as poll_operation_status_direct_cost,
+    create_schedule_for_polling as create_schedule_for_polling_direct_cost,
+    check_accounting_export_and_start_import as check_accounting_export_and_start_import_direct_cost
+)
+from django_q.models import Schedule
 
 
-def test_poll_operation_status(
+def test_poll_operation_status_purchase_invoice(
     db,
     mocker,
     create_temp_workspace,
@@ -123,3 +132,141 @@ def test_direct_cost_poll_operation_status(
 
     assert accounting_export.count() == 1
     assert accounting_export.first().status == 'FAILED'
+
+
+def test_check_accounting_export_and_start_import_purchase_invoice(
+    db,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_accounting_export_expenses,
+    mocker
+):
+    """
+    Test check_accounting_export_and_start_import for purchase invoice
+    """
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id, type='PURCHASE_INVOICE').first()
+    accounting_export.status = 'ENQUEUED'
+    accounting_export.exported_at = None
+    accounting_export.save()
+
+    mocker.patch('apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice')
+    mocker.patch('apps.fyle.helpers.sync_dimensions')
+    mocker.patch('django_q.tasks.Chain.run')
+
+    check_accounting_export_and_start_import(
+        accounting_export.workspace_id,
+        [accounting_export.id]
+    )
+
+    accounting_export.refresh_from_db()
+
+    assert accounting_export.status == 'ENQUEUED'
+    assert accounting_export.type == 'PURCHASE_INVOICE'
+
+    accounting_export.status = 'COMPLETE'
+    accounting_export.save()
+
+    check_accounting_export_and_start_import(
+        accounting_export.workspace_id,
+        [accounting_export.id]
+    )
+
+    accounting_export.refresh_from_db()
+
+    assert accounting_export.status == 'COMPLETE'
+    assert accounting_export.type == 'PURCHASE_INVOICE'
+
+
+def test_create_schedule_for_polling_purchase_invoice(
+    db,
+):
+    """
+    Test create_schedule_for_polling
+    """
+    create_schedule_for_polling(workspace_id=1, last_export=False)
+    create_schedule_for_polling(workspace_id=1, last_export=True)
+
+    schedule = Schedule.objects.filter(
+        func='apps.sage300.exports.purchase_invoice.queues.poll_operation_status',
+        args='1,False'
+    ).first()
+
+    assert schedule is not None
+
+    schedule = Schedule.objects.filter(
+        func='apps.sage300.exports.purchase_invoice.queues.poll_operation_status',
+        args='1,True'
+    ).first()
+
+    assert schedule is not None
+
+
+def test_check_accounting_export_and_start_import_direct_cost(
+    db,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_accounting_export_expenses,
+    mocker
+):
+    """
+    Test check_accounting_export_and_start_import for purchase invoice
+    """
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id, type='DIRECT_COST').first()
+    accounting_export.status = 'ENQUEUED'
+    accounting_export.exported_at = None
+    accounting_export.save()
+
+    mocker.patch('apps.sage300.exports.direct_cost.tasks.create_direct_cost')
+    mocker.patch('apps.fyle.helpers.sync_dimensions')
+    mocker.patch('django_q.tasks.Chain.run')
+
+    check_accounting_export_and_start_import_direct_cost(
+        accounting_export.workspace_id,
+        [accounting_export.id]
+    )
+
+    accounting_export.refresh_from_db()
+
+    assert accounting_export.status == 'ENQUEUED'
+    assert accounting_export.type == 'DIRECT_COST'
+
+    accounting_export.status = 'COMPLETE'
+    accounting_export.save()
+
+    check_accounting_export_and_start_import_direct_cost(
+        accounting_export.workspace_id,
+        [accounting_export.id]
+    )
+
+    accounting_export.refresh_from_db()
+
+    assert accounting_export.status == 'COMPLETE'
+    assert accounting_export.type == 'DIRECT_COST'
+
+
+def test_create_schedule_for_polling_direct_cost(
+    db,
+):
+    """
+    Test create_schedule_for_polling
+    """
+    create_schedule_for_polling_direct_cost(workspace_id=1, last_export=False)
+    create_schedule_for_polling_direct_cost(workspace_id=1, last_export=True)
+
+    schedule = Schedule.objects.filter(
+        func='apps.sage300.exports.direct_cost.queues.poll_operation_status',
+        args='1,False'
+    ).first()
+
+    assert schedule is not None
+
+    schedule = Schedule.objects.filter(
+        func='apps.sage300.exports.direct_cost.queues.poll_operation_status',
+        args='1,True'
+    ).first()
+
+    assert schedule is not None

@@ -367,7 +367,7 @@ fixtures = {
             'reimbursable': True,
             'billable': False,
             'state': 'PAID',
-            'vendor': None,
+            'vendor': 'Ashwin',
             'cost_center': None,
             'corporate_card_id': None,
             'purpose': None,
@@ -383,6 +383,8 @@ fixtures = {
             'custom_properties': {
                   'Vehicle Type': '',
                   'Fyle Categories': '',
+                  'Cost Code': 'Direct Mail Campaign',
+                  'Cost Category': 'API',
             },
         },
     ],
@@ -669,7 +671,7 @@ fixtures = {
         "destination_id": "destination123",
     },
     "vendor_destination_attributes": {
-        "attribute_type": "Vendor",
+        "attribute_type": "VENDOR",
         "value": "Ashwin",
         "display_name": "Ashwin",
         "active": True,

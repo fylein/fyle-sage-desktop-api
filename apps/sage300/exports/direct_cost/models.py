@@ -58,7 +58,8 @@ class DirectCost(BaseExportModel):
         ).first()
 
         job_id = self.get_job_id(accounting_export, expense)
-        commitment_id = self.get_commitment_id(accounting_export, expense)
+        # TO DO: Add get_commitment_id method
+        # commitment_id = self.get_commitment_id(accounting_export, expense)
         standard_category_id = self.get_standard_category_id(accounting_export, expense)
         standard_cost_code_id = self.get_standard_cost_code_id(accounting_export, expense)
         description = self.get_expense_purpose(accounting_export.workspace_id, expense, expense.category, advance_setting)
@@ -74,7 +75,7 @@ class DirectCost(BaseExportModel):
                 'amount': expense.amount,
                 'credit_card_account_id': account.destination_account.destination_id,
                 'job_id': job_id,
-                'commitment_id': commitment_id,
+                # 'commitment_id': commitment_id,
                 'standard_category_id': standard_category_id,
                 'standard_cost_code_id': standard_cost_code_id,
                 'category_id': cost_category_id,
