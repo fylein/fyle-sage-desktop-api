@@ -2,8 +2,7 @@
 Fixture configuration for import tests
 """
 import pytest
-
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 
 
 @pytest.fixture()
@@ -46,6 +45,25 @@ def add_cost_center_mappings():
         1, 2, 3
     ]
     for workspace_id in workspace_ids:
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CENTER',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            source_id='10064',
+            detail='Cost Center - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CENTER',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            source_id='10081',
+            detail='Cost Center - Platform APIs, Id - 10081',
+            active=True
+        )
+
         DestinationAttribute.objects.create(
             workspace_id=workspace_id,
             attribute_type='COST_CENTER',
@@ -92,5 +110,115 @@ def add_merchant_mappings():
             value='Platform APIs',
             destination_id='10081',
             detail='Merchant - Platform APIs, Id - 10081',
+            active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_project_expense_attributes():
+    """
+    Pytest fixture to add project expense attributes to a workspace
+    """
+    for i in range(1, 110):
+        ExpenseAttribute.objects.create(
+            workspace_id=1,
+            attribute_type='PROJECT',
+            display_name='Project',
+            value='Platform APIs {0}'.format(i),
+            source_id='1008{0}'.format(i),
+            detail='Merchant - Platform APIs, Id - 1008{0}'.format(i),
+            active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_expense_destination_attributes():
+    """
+    Pytest fixture to add expense & destination attributes to a workspace
+    """
+    ExpenseAttribute.objects.create(
+        workspace_id=1,
+        attribute_type='CATEGORY',
+        display_name='Category',
+        value='Test Sage',
+        source_id='1008',
+        detail='Merchant - Platform APIs, Id - 1008',
+        active=True
+    )
+    DestinationAttribute.objects.create(
+        workspace_id=1,
+        attribute_type='ACCOUNT',
+        display_name='Account',
+        value='Test Dynamics',
+        destination_id='10081',
+        detail='Merchant - Platform APIs, Id - 10081',
+        active=True
+    )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_expense_destination_attributes_1():
+    """
+    Pytest fixture to add expense & destination attributes to a workspace
+    """
+    values = ['Internet','Meals']
+    count = 0
+
+    for value in values:
+        count += 1
+        ExpenseAttribute.objects.create(
+            workspace_id=1,
+            attribute_type='CATEGORY',
+            display_name='Category',
+            value= value,
+            source_id='1009{0}'.format(count),
+            detail='Merchant - Platform APIs, Id - 1008',
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=1,
+            attribute_type='ACCOUNT',
+            display_name='Account',
+            value= value,
+            destination_id=value,
+            detail='Merchant - Platform APIs, Id - 10081',
+            active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_expense_destination_attributes_2():
+    """
+    Pytest fixture to add expense & destination attributes to a workspace
+    """
+    values = ['Entertainment','Food']
+    count = 0
+
+    for value in values:
+        count += 1
+        ExpenseAttribute.objects.create(
+            workspace_id=1,
+            attribute_type='CUSTOM',
+            display_name='Custom',
+            value= value,
+            source_id='1009{0}'.format(count),
+            detail={
+                'custom_field_id': '1008{0}'.format(count)
+            },
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=1,
+            attribute_type='CUSTOM',
+            display_name='Custom',
+            value= value,
+            destination_id=value,
+            detail={
+                'custom_field_id': '1008{0}'.format(count)
+            },
             active=True
         )

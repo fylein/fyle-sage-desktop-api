@@ -48,6 +48,7 @@ def handle_import_exceptions(func):
         except RetryException:
             error['message'] = 'Fyle Retry Exception occured'
             import_log.status = 'FATAL'
+            error['alert'] = False
 
         except InternalServerError:
             error['message'] = 'Internal server error while importing to Fyle'

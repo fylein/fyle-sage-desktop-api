@@ -9,7 +9,14 @@ import pytest
 from rest_framework.test import APIClient
 from fyle.platform.platform import Platform
 from fyle_rest_auth.models import User, AuthToken
-from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
+from fyle_accounting_mappings.models import (
+    ExpenseAttribute,
+    DestinationAttribute,
+    MappingSetting,
+    EmployeeMapping,
+    CategoryMapping,
+    Mapping
+)
 
 from apps.fyle.helpers import get_access_token
 from apps.workspaces.models import (
@@ -17,11 +24,13 @@ from apps.workspaces.models import (
     FyleCredential,
     Sage300Credential,
     ExportSetting,
-    ImportSetting
+    ImportSetting,
+    AdvancedSetting
 )
-from apps.fyle.models import ExpenseFilter
+from apps.fyle.models import ExpenseFilter, DependentFieldSetting, Expense
 from apps.accounting_exports.models import AccountingExport, Error, AccountingExportSummary
 from sage_desktop_api.tests import settings
+from apps.sage300.models import CostCategory
 
 from .test_fyle.fixtures import fixtures as fyle_fixtures
 
@@ -328,6 +337,24 @@ def add_project_mappings():
             detail='Sage 300 Project - Platform APIs, Id - 10081',
             active=True
         )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            source_id='10064',
+            detail='Sage 300 Project - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            source_id='10081',
+            detail='Sage 300 Project - Platform APIs, Id - 10081',
+            active=True
+        )
 
 
 @pytest.fixture()
@@ -352,6 +379,36 @@ def add_cost_center_mappings():
         DestinationAttribute.objects.create(
             workspace_id=workspace_id,
             attribute_type='COST_CENTER',
+            display_name='Platform APIs',
+            value='Platform APIs',
+            destination_id='10081',
+            detail='Cost Center - Platform APIs, Id - 10081',
+            active=True
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_cost_code_mappings():
+    """
+    Pytest fixtue to add cost center mappings to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CODE',
+            display_name='Direct Mail Campaign',
+            value='Direct Mail Campaign',
+            destination_id='10064',
+            detail='Cost Center - Direct Mail Campaign, Id - 10064',
+            active=True
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CODE',
             display_name='Platform APIs',
             value='Platform APIs',
             destination_id='10081',
@@ -424,3 +481,188 @@ def create_project_mapping_settings():
             destination_field='PROJECT',
             import_to_fyle=True
         )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_advanced_settings():
+    advanced_settings_data = fyle_fixtures['advanced_setting']
+    AdvancedSetting.objects.create(**advanced_settings_data)
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_expense_attribute():
+    expense_attribute_data = fyle_fixtures['employee_expense_attributes']
+    expense_attribute_data['workspace'] = Workspace.objects.get(id=1)
+    expense_attribute = ExpenseAttribute.objects.create(**expense_attribute_data)
+
+    return expense_attribute
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_destination_attribute():
+    destination_emp_data = fyle_fixtures['employee_destination_attributes']
+    destination_emp_data['workspace'] = Workspace.objects.get(id=1)
+    DestinationAttribute.objects.create(**destination_emp_data)
+
+    destination_vendor_data = fyle_fixtures['vendor_destination_attributes']
+    destination_vendor_data['workspace'] = Workspace.objects.get(id=1)
+    DestinationAttribute.objects.create(**destination_vendor_data)
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_employee_mapping_with_employee(create_expense_attribute, create_destination_attribute):
+    source_field_id = ExpenseAttribute.objects.get(source_id='source123')
+    destination_field_id = DestinationAttribute.objects.get(destination_id='destination123')
+    workspace = Workspace.objects.get(id=1)
+
+    employee_employee_mapping = {
+        'source_employee': source_field_id,
+        'destination_employee': destination_field_id,
+        'workspace': workspace,
+    }
+
+    EmployeeMapping.objects.create(**employee_employee_mapping)
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_employee_mapping_with_vendor(create_expense_attribute, create_destination_attribute):
+    source_field_id = ExpenseAttribute.objects.get(source_id='source123')
+    destination_field_id = DestinationAttribute.objects.get(destination_id='dest_vendor123')
+    workspace = Workspace.objects.get(id=1)
+
+    employee_vendor_mapping = {
+        'source_employee': source_field_id,
+        'destination_vendor': destination_field_id,
+        'workspace': workspace,
+    }
+
+    EmployeeMapping.objects.create(**employee_vendor_mapping)
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_source_category_attribute():
+    source_category_attribute_data = fyle_fixtures['category_expense_attributes']
+    source_category_attribute_data['workspace'] = Workspace.objects.get(id=1)
+    source_category_attribute = ExpenseAttribute.objects.create(**source_category_attribute_data)
+
+    return source_category_attribute
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_destination_category_attribute():
+    destination_category_attribute_data = fyle_fixtures['category_destination_attributes']
+    destination_category_attribute_data['workspace'] = Workspace.objects.get(id=1)
+    destination_category_attribute = DestinationAttribute.objects.create(**destination_category_attribute_data)
+
+    return destination_category_attribute
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_category_mapping(create_source_category_attribute, create_destination_category_attribute):
+    source_category = ExpenseAttribute.objects.get(source_id='src_category123')
+    destination_category = DestinationAttribute.objects.get(destination_id='dest_category123')
+    workspace = Workspace.objects.get(id=1)
+
+    category_mapping = CategoryMapping.create_or_update_category_mapping(
+        source_category_id=source_category.id,
+        destination_account_id=destination_category.id,
+        workspace=workspace
+    )
+
+    return category_mapping
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_cost_category(create_temp_workspace):
+    """
+    Pytest fixture to add cost category to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        CostCategory.objects.create(
+            job_id='job_id',
+            job_name='Platform APIs',
+            cost_code_id='cost_code_id',
+            cost_code_name='Platform APIs',
+            name='API',
+            cost_category_id='cost_category_id',
+            status=True,
+            workspace = Workspace.objects.get(id=workspace_id)
+        )
+        CostCategory.objects.create(
+            job_id='job_id',
+            job_name='Direct Mail Campaign',
+            cost_code_id='cost_code_id',
+            cost_code_name='Direct Mail Campaign',
+            name='Mail',
+            cost_category_id='cost_category_id',
+            status=True,
+            workspace = Workspace.objects.get(id=workspace_id)
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_dependent_field_setting(create_temp_workspace):
+    """
+    Pytest fixture to add dependent fields to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        DependentFieldSetting.objects.create(
+            is_import_enabled=True,
+            project_field_id=1,
+            cost_code_field_name='Cost Code',
+            cost_code_field_id='cost_code',
+            cost_code_placeholder='Select Cost Code',
+            cost_category_field_name='Cost Category',
+            cost_category_field_id='cost_category',
+            cost_category_placeholder='Select Cost Category',
+            workspace=Workspace.objects.get(id=workspace_id)
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_mapping_object(
+    create_temp_workspace,
+    create_expense_attribute,
+    create_destination_attribute
+):
+    workspace_id = 1
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id).first()
+    destination_attribute = DestinationAttribute.objects.filter(workspace_id=workspace_id).first()
+    workspace = Workspace.objects.get(id=workspace_id)
+
+    mapping_object = Mapping.objects.create(
+        source_type=expense_attribute.attribute_type,
+        destination_type=destination_attribute.attribute_type,
+        source=expense_attribute,
+        destination=destination_attribute,
+        workspace=workspace
+    )
+
+    return mapping_object
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def create_expense_objects():
+    workspace_id = 1
+    expenses = fyle_fixtures['expenses']
+    expense_objects = Expense.create_expense_objects(expenses=expenses, workspace_id=workspace_id)
+
+    return expense_objects

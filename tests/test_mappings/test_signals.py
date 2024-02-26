@@ -170,6 +170,7 @@ def test_run_post_mapping_settings_triggers(
     assert schedule == None
 
 
+@pytest.mark.django_db(transaction=True)
 def test_run_pre_mapping_settings_triggers(
     db,
     mocker,
