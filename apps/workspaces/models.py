@@ -222,7 +222,6 @@ class AdvancedSetting(BaseModel):
     schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
     auto_create_vendor = BooleanFalseField(help_text='Auto create vendor')
     sync_sage_300_to_fyle_payments = BooleanFalseField(help_text='Sync sage 300 to fyle payments')
-    schedule = models.OneToOneField(Schedule, on_delete=models.PROTECT, null=True)
 
     class Meta:
         db_table = 'advanced_settings'
