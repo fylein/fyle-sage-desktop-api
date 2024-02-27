@@ -8,6 +8,7 @@ from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSe
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.models import DependentFieldSetting, Expense
 from apps.workspaces.models import AdvancedSetting, FyleCredential, Workspace, ExportSetting
+from apps.sage300.models import CostCategory
 
 
 class BaseExportModel(models.Model):
@@ -186,7 +187,6 @@ class BaseExportModel(models.Model):
         return job_id
 
     def get_cost_code_id(accounting_export: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, job_id: str):
-        from apps.sage300.models import CostCategory
         cost_code_id = None
 
         selected_cost_code = lineitem.custom_properties.get(dependent_field_setting.cost_code_field_name, None)
@@ -202,7 +202,6 @@ class BaseExportModel(models.Model):
         return cost_code_id
 
     def get_cost_category_id(accounting_export: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, project_id: str, cost_code_id: str):
-        from apps.sage300.models import CostCategory
         cost_category_id = None
 
         selected_cost_category = lineitem.custom_properties.get(dependent_field_setting.cost_category_field_name, None)
