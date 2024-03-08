@@ -60,7 +60,6 @@ jobs:
           SENTRY_ORG: fyle-technologies-private-limi
           SENTRY_PROJECT: sage-desktop-api
           SENTRY_DEPLOY_ENVIRONMENT: staging
-          SENTRY_LOG_LEVEL: debug
         run: |
           # Install Sentry CLI
           curl -sL https://sentry.io/get-cli/ | bash
