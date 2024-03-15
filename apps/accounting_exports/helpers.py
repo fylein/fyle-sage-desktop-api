@@ -14,15 +14,14 @@ class AdvanceSearchFilter(django_filters.FilterSet):
             if value:
                 if field_name == 'is_skipped':
                     value = True if str(value) == 'true' else False
-                
-                if field_name in ('status__in', 'type__in', 'id'):
+
+                if field_name in ('status__in', 'type__in', 'id__in'):
                     value_lt = value.split(',')
                     filter_instance = self.filters[field_name]
                     queryset = filter_instance.filter(queryset, value_lt)
                 else:
                     filter_instance = self.filters[field_name]
                     queryset = filter_instance.filter(queryset, value)
-                print(queryset)
 
         for field_name in or_filter_fields:
             value = self.data.get(field_name)
