@@ -17,7 +17,7 @@ from apps.accounting_exports.serializers import ExpenseSerializer
 
 from apps.accounting_exports.helpers import ExpenseSearchFilter
 
-from apps.workspaces.models import ExportSetting, Workspace
+from apps.workspaces.models import ExportSetting
 from apps.fyle.models import ExpenseFilter, DependentFieldSetting, Expense
 from apps.fyle.helpers import get_exportable_accounting_exports_ids
 from apps.fyle.queue import queue_import_reimbursable_expenses, queue_import_credit_card_expenses
