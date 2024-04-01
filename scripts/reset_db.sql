@@ -44,10 +44,10 @@ BEGIN
   RAISE NOTICE 'Deleted % import_logs', rcount;
 
   DELETE 
-  FROM mappings_version mv
+  FROM versions mv
   WHERE mv.workspace_id = _workspace_id;
   GET DIAGNOSTICS rcount = ROW_COUNT;
-  RAISE NOTICE 'Deleted % mappings_version', rcount;
+  RAISE NOTICE 'Deleted % versions', rcount;
 
   DELETE
   FROM purchase_invoice_lineitems pil

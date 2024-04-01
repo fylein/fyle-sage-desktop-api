@@ -129,11 +129,10 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
         'workspace_id': workspace_id
     }
 
-    # if dependent_field_setting.last_successful_import_at:
-    #     filters['updated_at__gte'] = dependent_field_setting.last_successful_import_at
+    if dependent_field_setting.last_successful_import_at:
+        filters['updated_at__gte'] = dependent_field_setting.last_successful_import_at
 
     posted_cost_types = post_dependent_cost_code(dependent_field_setting, platform, filters)
-    print('postted cost tyoes', posted_cost_types)
     if posted_cost_types:
         filters['cost_code_name__in'] = posted_cost_types
         post_dependent_cost_type(dependent_field_setting, platform, filters)
