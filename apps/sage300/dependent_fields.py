@@ -84,6 +84,8 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
 
     for project in projects:
         payload = []
+        cost_code_names = []
+
         for cost_code in project['cost_codes']:
             if project['job_name'] in existing_projects_in_fyle:
                 payload.append({
@@ -93,11 +95,12 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
                     'expense_field_value': cost_code,
                     'is_enabled': True
                 })
+                cost_code_names.append(cost_code)
 
         if payload:
             sleep(0.2)
             platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
-            posted_cost_codes.append(cost_code)
+            posted_cost_codes.append(cost_code_names)
 
     return posted_cost_codes
 
