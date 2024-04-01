@@ -79,14 +79,15 @@ class SageDesktopConnector:
         destination_attributes = []
         for item in data:
             detail = {field: getattr(item, field) for field in field_names}
-            destination_attributes.append(self._create_destination_attribute(
-                attribute_type,
-                display_name,
-                item.name,
-                item.id,
-                item.is_active,
-                detail
-            ))
+            if item.name:
+                destination_attributes.append(self._create_destination_attribute(
+                    attribute_type,
+                    display_name,
+                    item.name,
+                    item.id,
+                    item.is_active,
+                    detail
+                ))
 
         DestinationAttribute.bulk_create_or_update_destination_attributes(
             destination_attributes, attribute_type, workspace_id, True)
