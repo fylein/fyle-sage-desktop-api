@@ -13,12 +13,12 @@ class Account:
     @classmethod
     def from_dict(cls, account_dict):
         return cls(
-            id=account_dict['Id'],
-            code=account_dict['Code'],
-            version=account_dict['Version'],
-            is_active=account_dict['IsActive'],
-            is_archived=account_dict['IsArchived'],
-            name=account_dict['Name'],
+            id=account_dict.get('Id'),
+            code=account_dict.get('Code'),
+            version=account_dict.get('Version'),
+            is_active=account_dict.get('IsActive'),
+            is_archived=account_dict.get('IsArchived'),
+            name=account_dict.get('Name'),
         )
 
 
@@ -41,19 +41,19 @@ class Vendor:
     @classmethod
     def from_dict(cls, vendor_dict):
         return cls(
-            id=vendor_dict['Id'],
-            version=vendor_dict['Version'],
-            code=vendor_dict['Code'],
-            created_on_utc=vendor_dict['CreatedOnUtc'],
-            default_expense_account=vendor_dict['DefaultExpenseAccount'],
-            default_standard_costcode=vendor_dict['DefaultStandardCostCode'],
-            default_standard_category=vendor_dict['DefaultStandardCategory'],
-            has_external_id=vendor_dict['HasExternalId'],
-            invoice_tax_type=vendor_dict['InvoiceTaxType'],
-            is_active=vendor_dict['IsActive'],
-            is_archived=vendor_dict['IsArchived'],
-            name=vendor_dict['Name'],
-            type_id=vendor_dict['TypeId']
+            id=vendor_dict.get('Id'),
+            version=vendor_dict.get('Version'),
+            code=vendor_dict.get('Code'),
+            created_on_utc=vendor_dict.get('CreatedOnUtc'),
+            default_expense_account=vendor_dict.get('DefaultExpenseAccount'),
+            default_standard_costcode=vendor_dict.get('DefaultStandardCostCode'),
+            default_standard_category=vendor_dict.get('DefaultStandardCategory'),
+            has_external_id=vendor_dict.get('HasExternalId'),
+            invoice_tax_type=vendor_dict.get('InvoiceTaxType'),
+            is_active=vendor_dict.get('IsActive'),
+            is_archived=vendor_dict.get('IsArchived'),
+            name=vendor_dict.get('Name'),
+            type_id=vendor_dict.get('TypeId')
         )
 
 
@@ -66,9 +66,9 @@ class VendorType:
     @classmethod
     def from_dict(cls, vendor_type):
         return cls(
-            id=vendor_type['Id'],
-            version=vendor_type['Version'],
-            name=vendor_type['Name']
+            id=vendor_type.get('Id'),
+            version=vendor_type.get('Version'),
+            name=vendor_type.get('Name')
         )
 
 
@@ -109,39 +109,38 @@ class Commitment:
     @classmethod
     def from_dict(cls, commitment):
         return cls(
-            id=commitment['Id'],
-            version=commitment['Version'],
-            amount=commitment['Amount'],
-            amount_approved=commitment['AmountApproved'],
-            amount_retained=commitment['AmountRetained'],
-            amount_invoiced=commitment['AmountInvoiced'],
-            amount_original=commitment['AmountOriginal'],
-            amount_paid=commitment['AmountPaid'],
-            amount_pending=commitment['AmountPending'],
-            code=commitment['Code'],
-            created_on_utc=commitment['CreatedOnUtc'],
-            date=commitment['Date'],
-            description=commitment['Description'],
-            has_external_id=commitment['HasExternalId'],
-            is_active=commitment['IsActive'],
-            is_archived=commitment['IsArchived'],
-            is_closed=commitment['IsClosed'],
-            is_commited=commitment['IsCommited'],
-            job_id=commitment['JobId'],
-            retainage_percent=commitment['RetainagePercent'],
-            name=commitment['Name'],
-            ship_to_address1=commitment['ShipToAddress1'],
-            ship_to_address2=commitment['ShipToAddress2'],
-            ship_to_city=commitment['ShipToCity'],
-            ship_to_postal_code=commitment['ShipToPostalCode'],
-            ship_to_state=commitment['ShipToState'],
-            tax=commitment['Tax'],
-            type=commitment['Type'],
-            vendor_id=commitment['VendorId'],
-            was_printed=commitment['WasPrinted'],
-            tax_group_id=commitment['TaxGroupId']
+            id=commitment.get('Id'),
+            version=commitment.get('Version'),
+            amount=commitment.get('Amount'),
+            amount_approved=commitment.get('AmountApproved'),
+            amount_retained=commitment.get('AmountRetained'),
+            amount_invoiced=commitment.get('AmountInvoiced'),
+            amount_original=commitment.get('AmountOriginal'),
+            amount_paid=commitment.get('AmountPaid'),
+            amount_pending=commitment.get('AmountPending'),
+            code=commitment.get('Code'),
+            created_on_utc=commitment.get('CreatedOnUtc'),
+            date=commitment.get('Date'),
+            description=commitment.get('Description'),
+            has_external_id=commitment.get('HasExternalId'),
+            is_active=commitment.get('IsActive'),
+            is_archived=commitment.get('IsArchived'),
+            is_closed=commitment.get('IsClosed'),
+            is_commited=commitment.get('IsCommited'),
+            job_id=commitment.get('JobId'),
+            retainage_percent=commitment.get('RetainagePercent'),
+            name=commitment.get('Name'),
+            ship_to_address1=commitment.get('ShipToAddress1'),
+            ship_to_address2=commitment.get('ShipToAddress2'),
+            ship_to_city=commitment.get('ShipToCity'),
+            ship_to_postal_code=commitment.get('ShipToPostalCode'),
+            ship_to_state=commitment.get('ShipToState'),
+            tax=commitment.get('Tax'),
+            type=commitment.get('Type'),
+            vendor_id=commitment.get('VendorId'),
+            was_printed=commitment.get('WasPrinted'),
+            tax_group_id=commitment.get('TaxGroupId')
         )
-
 
 @dataclass
 class Job:
@@ -184,41 +183,41 @@ class Job:
     @classmethod
     def from_dict(cls, job_dict):
         return cls(
-            id=job_dict['Id'],
-            version=job_dict['Version'],
-            account_prefix_id=job_dict['AccountPrefixId'],
-            address1=job_dict['Address1'],
-            address2=job_dict['Address2'],
-            billing_level=job_dict['BillingLevel'],
-            billing_method=job_dict['BillingMethod'],
-            city=job_dict['City'],
-            code=job_dict['Code'],
-            created_on_utc=job_dict['CreatedOnUtc'],
-            has_external_id=job_dict['HasExternalId'],
-            is_active=job_dict['IsActive'],
-            is_archived=job_dict['IsArchived'],
-            job_to_date_cost_amount=job_dict['JobToDateCostAmount'],
-            job_to_date_cost_payment_amount=job_dict['JobToDateCostPaymentAmount'],
-            job_to_date_revenue_payment_amount=job_dict['JobToDateRevenuePaymentAmount'],
-            job_to_date_revenue_retainage_held_amount=job_dict['JobToDateRevenueRetainageHeldAmount'],
-            job_to_date_work_billed_amount=job_dict['JobToDateWorkBilledAmount'],
-            last_month_cost_amount=job_dict['LastMonthCostAmount'],
-            last_month_cost_payment_amount=job_dict['LastMonthCostPaymentAmount'],
-            last_month_revenue_payment_amount=job_dict['LastMonthRevenuePaymentAmount'],
-            last_month_revenue_retainage_held_amount=job_dict['LastMonthReveueRetainageHeldAmount'],
-            last_month_work_billed_amount=job_dict['LastMonthWorkBilledAmount'],
-            misc1_amount=job_dict['Misc1Amount'],
-            misc2_amount=job_dict['Misc2Amount'],
-            misc3_amount=job_dict['Misc3Amount'],
-            month_to_date_cost_amount=job_dict['MonthToDateCostAmount'],
-            month_to_date_cost_payment_amount=job_dict['MonthToDateCostPaymentAmount'],
-            month_to_date_revenue_payment_amount=job_dict['MonthToDateRevenuePaymentAmount'],
-            month_to_date_revenue_retainage_held_amount=job_dict['MonthToDateRevenueRetainageHeldAmount'],
-            month_to_date_work_billed_amount=job_dict['MonthToDateWorkBilledAmount'],
-            name=job_dict['Name'],
-            postal_code=job_dict['PostalCode'],
-            should_use_project_management=job_dict['ShouldUseProjectManagement'],
-            status=job_dict['Status']
+            id=job_dict.get('Id'),
+            version=job_dict.get('Version'),
+            account_prefix_id=job_dict.get('AccountPrefixId'),
+            address1=job_dict.get('Address1'),
+            address2=job_dict.get('Address2'),
+            billing_level=job_dict.get('BillingLevel'),
+            billing_method=job_dict.get('BillingMethod'),
+            city=job_dict.get('City'),
+            code=job_dict.get('Code'),
+            created_on_utc=job_dict.get('CreatedOnUtc'),
+            has_external_id=job_dict.get('HasExternalId'),
+            is_active=job_dict.get('IsActive'),
+            is_archived=job_dict.get('IsArchived'),
+            job_to_date_cost_amount=job_dict.get('JobToDateCostAmount'),
+            job_to_date_cost_payment_amount=job_dict.get('JobToDateCostPaymentAmount'),
+            job_to_date_revenue_payment_amount=job_dict.get('JobToDateRevenuePaymentAmount'),
+            job_to_date_revenue_retainage_held_amount=job_dict.get('JobToDateRevenueRetainageHeldAmount'),
+            job_to_date_work_billed_amount=job_dict.get('JobToDateWorkBilledAmount'),
+            last_month_cost_amount=job_dict.get('LastMonthCostAmount'),
+            last_month_cost_payment_amount=job_dict.get('LastMonthCostPaymentAmount'),
+            last_month_revenue_payment_amount=job_dict.get('LastMonthRevenuePaymentAmount'),
+            last_month_revenue_retainage_held_amount=job_dict.get('LastMonthRevenueRetainageHeldAmount'),
+            last_month_work_billed_amount=job_dict.get('LastMonthWorkBilledAmount'),
+            misc1_amount=job_dict.get('Misc1Amount'),
+            misc2_amount=job_dict.get('Misc2Amount'),
+            misc3_amount=job_dict.get('Misc3Amount'),
+            month_to_date_cost_amount=job_dict.get('MonthToDateCostAmount'),
+            month_to_date_cost_payment_amount=job_dict.get('MonthToDateCostPaymentAmount'),
+            month_to_date_revenue_payment_amount=job_dict.get('MonthToDateRevenuePaymentAmount'),
+            month_to_date_revenue_retainage_held_amount=job_dict.get('MonthToDateRevenueRetainageHeldAmount'),
+            month_to_date_work_billed_amount=job_dict.get('MonthToDateWorkBilledAmount'),
+            name=job_dict.get('Name'),
+            postal_code=job_dict.get('PostalCode'),
+            should_use_project_management=job_dict.get('ShouldUseProjectManagement'),
+            status=job_dict.get('Status')
         )
 
 
@@ -236,14 +235,14 @@ class StandardCostCode:
     @classmethod
     def from_dict(cls, costcode_dict):
         return cls(
-            id=costcode_dict['Id'],
-            version=costcode_dict['Version'],
-            code=costcode_dict['Code'],
-            description=costcode_dict['Description'],
-            is_active=costcode_dict['IsActive'],
-            is_archived=costcode_dict['IsArchived'],
-            is_standard=costcode_dict['IsStandard'],
-            name=costcode_dict['Name']
+            id=costcode_dict.get('Id'),
+            version=costcode_dict.get('Version'),
+            code=costcode_dict.get('Code'),
+            description=costcode_dict.get('Description'),
+            is_active=costcode_dict.get('IsActive'),
+            is_archived=costcode_dict.get('IsArchived'),
+            is_standard=costcode_dict.get('IsStandard'),
+            name=costcode_dict.get('Name')
         )
 
 
@@ -261,14 +260,14 @@ class StandardCategory:
     @classmethod
     def from_dict(cls, category_dict):
         return cls(
-            id=category_dict['Id'],
-            version=category_dict['Version'],
-            accumulation_name=category_dict['AccumulationName'],
-            code=category_dict['Code'],
-            description=category_dict['Description'],
-            is_active=category_dict['IsActive'],
-            is_archived=category_dict['IsArchived'],
-            name=category_dict['Name']
+            id=category_dict.get('Id'),
+            version=category_dict.get('Version'),
+            accumulation_name=category_dict.get('AccumulationName'),
+            code=category_dict.get('Code'),
+            description=category_dict.get('Description'),
+            is_active=category_dict.get('IsActive'),
+            is_archived=category_dict.get('IsArchived'),
+            name=category_dict.get('Name')
         )
 
 
@@ -315,34 +314,35 @@ class CostCode:
     @classmethod
     def from_dict(cls, data_dict):
         return cls(
-            code=data_dict['Code'],
-            cost_code_status=data_dict['CostCodeStatus'],
-            created_on_utc=data_dict['CreatedOnUtc'],
-            estimate=data_dict['Estimate'],
-            estimate_units=data_dict['EstimateUnits'],
-            has_external_id=data_dict['HasExternalId'],
-            id=data_dict['Id'],
-            is_active=data_dict['IsActive'],
-            is_archived=data_dict['IsArchived'],
-            is_group_code=data_dict['IsGroupCode'],
-            job_id=data_dict['JobId'],
-            labor_estimate_units=data_dict['LaborEstimateUnits'],
-            misc1_amount=data_dict['Misc1Amount'],
-            misc2_amount=data_dict['Misc2Amount'],
-            misc3_amount=data_dict['Misc3Amount'],
-            misc4_amount=data_dict['Misc4Amount'],
-            misc5_amount=data_dict['Misc5Amount'],
-            misc6_amount=data_dict['Misc6Amount'],
-            name=data_dict['Name'],
-            original_production_units_estimate=data_dict['OriginalProductionUnitsEstimate'],
-            percent_complete=data_dict['PercentComplete'],
-            previous_percent_complete=data_dict['PreviousPercentComplete'],
-            production_estimate_units=data_dict['ProductionEstimateUnits'],
-            production_unit_of_measure=data_dict['ProductionUnitOfMeasure'],
-            production_units_in_place=data_dict['ProductionUnitsInPlace'],
-            standard_cost_code_id=data_dict['StandardCostCodeId'],
-            version=data_dict['Version']
+            code=data_dict.get('Code'),
+            cost_code_status=data_dict.get('CostCodeStatus'),
+            created_on_utc=data_dict.get('CreatedOnUtc'),
+            estimate=data_dict.get('Estimate'),
+            estimate_units=data_dict.get('EstimateUnits'),
+            has_external_id=data_dict.get('HasExternalId'),
+            id=data_dict.get('Id'),
+            is_active=data_dict.get('IsActive'),
+            is_archived=data_dict.get('IsArchived'),
+            is_group_code=data_dict.get('IsGroupCode'),
+            job_id=data_dict.get('JobId'),
+            labor_estimate_units=data_dict.get('LaborEstimateUnits'),
+            misc1_amount=data_dict.get('Misc1Amount'),
+            misc2_amount=data_dict.get('Misc2Amount'),
+            misc3_amount=data_dict.get('Misc3Amount'),
+            misc4_amount=data_dict.get('Misc4Amount'),
+            misc5_amount=data_dict.get('Misc5Amount'),
+            misc6_amount=data_dict.get('Misc6Amount'),
+            name=data_dict.get('Name'),
+            original_production_units_estimate=data_dict.get('OriginalProductionUnitsEstimate'),
+            percent_complete=data_dict.get('PercentComplete'),
+            previous_percent_complete=data_dict.get('PreviousPercentComplete'),
+            production_estimate_units=data_dict.get('ProductionEstimateUnits'),
+            production_unit_of_measure=data_dict.get('ProductionUnitOfMeasure'),
+            production_units_in_place=data_dict.get('ProductionUnitsInPlace'),
+            standard_cost_code_id=data_dict.get('StandardCostCodeId'),
+            version=data_dict.get('Version')
         )
+
 
 
 @dataclass
@@ -383,38 +383,38 @@ class Category:
     @classmethod
     def from_dict(cls, data_dict):
         return cls(
-            id=data_dict['Id'],
-            version=data_dict['Version'],
-            approved_commitment_changes=data_dict['ApprovedCommitmentChanges'],
-            approved_estimate_changes=data_dict['ApprovedEstimateChanges'],
-            approved_estimate_unit_changes=data_dict['ApprovedEstimateUnitChanges'],
-            code=data_dict['Code'],
-            commitment_invoiced=data_dict['CommitmentInvoiced'],
-            cost_code_id=data_dict['CostCodeId'],
-            created_on_utc=data_dict['CreatedOnUtc'],
-            estimate=data_dict['Estimate'],
-            estimate_unit_of_measure=data_dict['EstimateUnitOfMeasure'],
-            estimate_units=data_dict['EstimateUnits'],
-            has_external_id=data_dict['HasExternalId'],
-            is_active=data_dict['IsActive'],
-            is_archived=data_dict['IsArchived'],
-            job_id=data_dict['JobId'],
-            job_to_date_cost=data_dict['JobToDateCost'],
-            job_to_date_dollars_paid=data_dict['JobToDateDollarsPaid'],
-            job_to_date_units=data_dict['JobToDateUnits'],
-            month_to_date_cost=data_dict['MonthToDateCost'],
-            month_to_date_dollars_paid=data_dict['MonthToDateDollarsPaid'],
-            month_to_date_units=data_dict['MonthToDateUnits'],
-            name=data_dict['Name'],
-            original_commitment=data_dict['OriginalCommitment'],
-            original_estimate=data_dict['OriginalEstimate'],
-            original_estimate_units=data_dict['OriginalEstimateUnits'],
-            percent_complete=data_dict['PercentComplete'],
-            revised_commitment=data_dict['RevisedCommitment'],
-            standard_category_id=data_dict['StandardCategoryId'],
-            standard_category_accumulation_name=data_dict['StandardCategoryAccumulationName'],
-            standard_category_description=data_dict['StandardCategoryDescription'],
-            standard_category_name=data_dict['StandardCategoryName']
+            id=data_dict.get('Id'),
+            version=data_dict.get('Version'),
+            approved_commitment_changes=data_dict.get('ApprovedCommitmentChanges'),
+            approved_estimate_changes=data_dict.get('ApprovedEstimateChanges'),
+            approved_estimate_unit_changes=data_dict.get('ApprovedEstimateUnitChanges'),
+            code=data_dict.get('Code'),
+            commitment_invoiced=data_dict.get('CommitmentInvoiced'),
+            cost_code_id=data_dict.get('CostCodeId'),
+            created_on_utc=data_dict.get('CreatedOnUtc'),
+            estimate=data_dict.get('Estimate'),
+            estimate_unit_of_measure=data_dict.get('EstimateUnitOfMeasure'),
+            estimate_units=data_dict.get('EstimateUnits'),
+            has_external_id=data_dict.get('HasExternalId'),
+            is_active=data_dict.get('IsActive'),
+            is_archived=data_dict.get('IsArchived'),
+            job_id=data_dict.get('JobId'),
+            job_to_date_cost=data_dict.get('JobToDateCost'),
+            job_to_date_dollars_paid=data_dict.get('JobToDateDollarsPaid'),
+            job_to_date_units=data_dict.get('JobToDateUnits'),
+            month_to_date_cost=data_dict.get('MonthToDateCost'),
+            month_to_date_dollars_paid=data_dict.get('MonthToDateDollarsPaid'),
+            month_to_date_units=data_dict.get('MonthToDateUnits'),
+            name=data_dict.get('Name'),
+            original_commitment=data_dict.get('OriginalCommitment'),
+            original_estimate=data_dict.get('OriginalEstimate'),
+            original_estimate_units=data_dict.get('OriginalEstimateUnits'),
+            percent_complete=data_dict.get('PercentComplete'),
+            revised_commitment=data_dict.get('RevisedCommitment'),
+            standard_category_id=data_dict.get('StandardCategoryId'),
+            standard_category_accumulation_name=data_dict.get('StandardCategoryAccumulationName'),
+            standard_category_description=data_dict.get('StandardCategoryDescription'),
+            standard_category_name=data_dict.get('StandardCategoryName')
         )
 
 
@@ -450,30 +450,30 @@ class CommitmentItem:
     @classmethod
     def from_dict(cls, item_dict):
         return cls(
-            id=item_dict['Id'],
-            version=item_dict['Version'],
-            amount=item_dict['Amount'],
-            amount_approved=item_dict['AmountApproved'],
-            amount_invoiced=item_dict['AmountInvoiced'],
-            amount_paid=item_dict['AmountPaid'],
-            amount_original=item_dict['AmountOriginal'],
-            amount_pending=item_dict['AmountPending'],
-            amount_retained=item_dict['AmountRetained'],
-            category_id=item_dict['CategoryId'],
-            code=item_dict['Code'],
-            commitment_id=item_dict['CommitmentId'],
-            cost_code_id=item_dict['CostCodeId'],
-            created_on_utc=item_dict['CreatedOnUtc'],
-            description=item_dict['Description'],
-            has_external_id=item_dict['HasExternalId'],
-            is_active=item_dict['IsActive'],
-            is_archived=item_dict['IsArchived'],
-            job_id=item_dict['JobId'],
-            name=item_dict['Name'],
-            standard_category_id=item_dict['StandardCategoryId'],
-            tax=item_dict['Tax'],
-            tax_group_id=item_dict['TaxGroupId'],
-            tax_group_code=item_dict['TaxGroupCode'],
-            unit_cost=item_dict['UnitCost'],
-            units=item_dict['Units']
+            id=item_dict.get('Id'),
+            version=item_dict.get('Version'),
+            amount=item_dict.get('Amount'),
+            amount_approved=item_dict.get('AmountApproved'),
+            amount_invoiced=item_dict.get('AmountInvoiced'),
+            amount_paid=item_dict.get('AmountPaid'),
+            amount_original=item_dict.get('AmountOriginal'),
+            amount_pending=item_dict.get('AmountPending'),
+            amount_retained=item_dict.get('AmountRetained'),
+            category_id=item_dict.get('CategoryId'),
+            code=item_dict.get('Code'),
+            commitment_id=item_dict.get('CommitmentId'),
+            cost_code_id=item_dict.get('CostCodeId'),
+            created_on_utc=item_dict.get('CreatedOnUtc'),
+            description=item_dict.get('Description'),
+            has_external_id=item_dict.get('HasExternalId'),
+            is_active=item_dict.get('IsActive'),
+            is_archived=item_dict.get('IsArchived'),
+            job_id=item_dict.get('JobId'),
+            name=item_dict.get('Name'),
+            standard_category_id=item_dict.get('StandardCategoryId'),
+            tax=item_dict.get('Tax'),
+            tax_group_id=item_dict.get('TaxGroupId'),
+            tax_group_code=item_dict.get('TaxGroupCode'),
+            unit_cost=item_dict.get('UnitCost'),
+            units=item_dict.get('Units')
         )
