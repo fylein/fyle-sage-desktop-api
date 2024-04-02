@@ -73,7 +73,6 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
 
     projects = CostCategory.objects.filter(**filters).values('job_name').annotate(cost_codes=ArrayAgg('cost_code_name', distinct=True))
     projects_from_categories = [project['job_name'] for project in projects]
-
     posted_cost_codes = []
 
     existing_projects_in_fyle = ExpenseAttribute.objects.filter(
@@ -100,7 +99,7 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
         if payload:
             sleep(0.2)
             platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
-            posted_cost_codes.append(cost_code_names)
+            posted_cost_codes.extend(cost_code_names)
 
     return posted_cost_codes
 
