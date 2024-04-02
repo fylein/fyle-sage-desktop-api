@@ -86,7 +86,9 @@ class Sage300FieldSerializer(serializers.Serializer):
             'COST_CODE',
             'PAYMENT',
             'COMMITMENT',
-            'COMMITMENT_ITEM'
+            'COMMITMENT_ITEM',
+            'STANDARD_COST_CODE',
+            'STANDARD_CATEGORY'
         ]
         attributes = (
             DestinationAttribute.objects.filter(
