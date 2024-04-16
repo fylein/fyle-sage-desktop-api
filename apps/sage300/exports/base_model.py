@@ -90,6 +90,8 @@ class BaseExportModel(models.Model):
                     value__icontains=expense_vendor,
                     attribute_type='VENDOR'
                 ).values_list('destination_id', flat=True).first()
+                if not vendor:
+                    vendor = export_settings.default_vendor_id
             else:
                 vendor = export_settings.default_vendor_id
 
