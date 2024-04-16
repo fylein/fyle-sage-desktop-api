@@ -1,4 +1,5 @@
 from typing import Dict, List
+import logging
 
 from apps.sage300.exports.accounting_export import AccountingDataExporter
 from apps.accounting_exports.models import AccountingExport
@@ -9,6 +10,8 @@ from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, Purcha
 from apps.sage300.exceptions import handle_sage300_exceptions
 from apps.sage300.actions import update_accounting_export_summary
 
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 DOCUMENT_TYPE_ID = '76744AB9-4697-430A-ADB5-701E633472A9'
 
@@ -87,6 +90,8 @@ class ExportPurchaseInvoice(AccountingDataExporter):
         sage300_connection = SageDesktopConnector(sage300_credentials, accounting_export.workspace_id)
 
         # Post the purchase invoice to Sage 300
+        logger.info('purchase invoice payload %s', purchase_invoice_payload)
+
         created_purchase_invoice_id = sage300_connection.connection.documents.post_document(purchase_invoice_payload)
         accounting_export.export_id = created_purchase_invoice_id
         accounting_export.save()
