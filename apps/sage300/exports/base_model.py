@@ -130,16 +130,17 @@ class BaseExportModel(models.Model):
         - str: The invoice date as a string in the format '%Y-%m-%dT%H:%M:%S'.
         """
         # Check for specific keys in the 'description' field and return the corresponding value
+         # Check for specific keys in the 'description' field and return the corresponding value
         if 'spent_at' in accounting_export.description and accounting_export.description['spent_at']:
-            return accounting_export.description['spent_at']
+            return  datetime.strptime(accounting_export.description['spent_at'], "%Y-%m-%d")
         elif 'approved_at' in accounting_export.description and accounting_export.description['approved_at']:
-            return accounting_export.description['approved_at']
+           return datetime.strptime(accounting_export.description['approved_at'], "%Y-%m-%d")
         elif 'verified_at' in accounting_export.description and accounting_export.description['verified_at']:
-            return accounting_export.description['verified_at']
+            return datetime.strptime(accounting_export.description['verified_at'], "%Y-%m-%d")
         elif 'last_spent_at' in accounting_export.description and accounting_export.description['last_spent_at']:
-            return accounting_export.description['last_spent_at']
+            return datetime.strptime(accounting_export.description['last_spent_at'], "%Y-%m-%d")
         elif 'posted_at' in accounting_export.description and accounting_export.description['posted_at']:
-            return accounting_export.description['posted_at']
+            return datetime.strptime(accounting_export.description['posted_at'], "%Y-%m-%dT%H:%M:%S").strftime("%Y-%m-%d")
 
         # If none of the expected keys are present or if the values are empty, return the current date and time
         return datetime.now().strftime("%Y-%m-%d")
