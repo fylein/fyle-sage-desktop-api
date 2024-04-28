@@ -6,6 +6,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_integrations_platform_connector import PlatformConnector
+from fyle.platform.exceptions import InvalidTokenError as FyleInvalidTokenError
 
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.models import CostCategory
@@ -149,5 +150,7 @@ def import_dependent_fields_to_fyle(workspace_id: str):
         platform = connect_to_platform(workspace_id)
         sync_sage300_attributes('JOB', workspace_id)
         post_dependent_expense_field_values(workspace_id, dependent_field, platform)
+    except FyleInvalidTokenError:
+        logger.info('Invalid Token or Fyle credentials does not exist - %s', workspace_id)
     except Exception as exception:
         logger.error('Exception while importing dependent fields to fyle - %s', exception)
