@@ -82,7 +82,7 @@ class CostCategory(BaseForeignWorkspaceModel):
                 job_name=job_name,
                 cost_code_id=category.cost_code_id,
                 cost_code_name=" ".join(cost_code_name.split()),
-                name=category.name,
+                name=" ".join(category.name.split()),
                 status=category.is_active,
                 cost_category_id=category.id,
                 workspace_id=workspace_id
