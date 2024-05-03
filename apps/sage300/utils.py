@@ -83,7 +83,7 @@ class SageDesktopConnector:
                 destination_attributes.append(self._create_destination_attribute(
                     attribute_type,
                     display_name,
-                    item.name,
+                    " ".join(item.name.split()),
                     item.id,
                     item.is_active,
                     detail
