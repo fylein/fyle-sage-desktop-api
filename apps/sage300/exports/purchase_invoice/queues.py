@@ -17,6 +17,7 @@ from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
+
 def import_fyle_dimensions(fyle_credentials: FyleCredential):
 
     platform = PlatformConnector(fyle_credentials)
