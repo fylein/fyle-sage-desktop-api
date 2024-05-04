@@ -10,6 +10,7 @@ from sage_desktop_api.models.fields import (
     StringNotNullField,
     BooleanFalseField
 )
+from sage_desktop_sdk.core.schema.read_only import Category
 
 
 class CostCategory(BaseForeignWorkspaceModel):
@@ -30,14 +31,17 @@ class CostCategory(BaseForeignWorkspaceModel):
         db_table = 'cost_category'
 
     @staticmethod
-    def bulk_create_or_update(categories_generator: List[Dict], workspace_id: int):
+    def bulk_create_or_update(categories_generator, workspace_id: int):
         """
         Bulk create or update cost types
         """
 
         list_of_categories = []
         for categories in categories_generator:
-            list_of_categories.append(categories)
+            for category in categories:
+                for data in category:
+                    print(Category.from_dict(data))
+                    list_of_categories.append(Category.from_dict(data))
 
         record_number_list = [category.id for category in list_of_categories]
 

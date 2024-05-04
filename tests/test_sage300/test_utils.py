@@ -129,11 +129,12 @@ def test__sync_data(
     field_names = ['code', 'version']
 
     sage_connector._sync_data(
-        data=data,
+        data_gen=data,
         attribute_type=attribute_type,
         display_name=display_name,
         workspace_id=workspace_id,
-        field_names=field_names
+        field_names=field_names,
+        is_gen=False
     )
 
     assert DestinationAttribute.objects.filter(
@@ -170,14 +171,15 @@ def test_sync_accounts(
         }
     )
 
-    mock_data = mocker.MagicMock()
-    mock_data.name = 'test'
-    mock_data.id = 1
-    mock_data.is_active = True
-    mock_data.code = 'test'
-    mock_data.version = 1
+    mock_data = {
+        'Code': 'test',
+        'Version': 1,
+        'Name': 'test',
+        'Id': 1,
+        'IsActive': True
+    }
 
-    sage_connector.connection.accounts.get_all.return_value = [mock_data]
+    sage_connector.connection.accounts.get_all.return_value = [[[mock_data]]]
 
     result = sage_connector.sync_accounts()
     assert result == []
@@ -207,19 +209,20 @@ def test_sync_vendors(
         }
     )
 
-    mock_data = mocker.MagicMock()
-    mock_data.code = 'test_vendor'
-    mock_data.version = 1
-    mock_data.default_expense_account = 'test_expense_account'
-    mock_data.default_standard_category = 'test_category'
-    mock_data.default_standard_costcode = 'test_costcode'
-    mock_data.type_id = 'test_type'
-    mock_data.created_on_utc = '2024-02-25'
-    mock_data.name = 'test_vendor'
-    mock_data.id = 1
-    mock_data.is_active = True
+    mock_data = {
+        'Code': 'test',
+        'Version': 1,
+        'Name': 'test',
+        'Id': 1,
+        'IsActive': True,
+        'DefaultExpenseAccount': 'test',
+        'DefaultStandardCategory': 'test',
+        'DefaultStandardCostCode': 'test',
+        'TypeId': 'test',
+        'CreatedOnUtc': '2024-02-25'
+    }
 
-    sage_connector.connection.vendors.get_all.return_value = [mock_data]
+    sage_connector.connection.vendors.get_all.return_value = [[[mock_data]]]
 
     result = sage_connector.sync_vendors()
     assert result == []
@@ -249,17 +252,18 @@ def test_sync_jobs(
         }
     )
 
-    mock_data = mocker.MagicMock()
-    mock_data.code = 'test_job'
-    mock_data.status = 'test_status'
-    mock_data.version = 1
-    mock_data.account_prefix_id = 'test_account_prefix_id'
-    mock_data.created_on_utc = '2024-02-25'
-    mock_data.name = 'test_job'
-    mock_data.id = 1
-    mock_data.is_active = True
+    mock_data = {
+        'Code': 'test_job',
+        'Status': 'test_status',
+        'Version': 1,
+        'AccountPrefixId': 'test_account_prefix_id',
+        'CreatedOnUtc': '2024-02-25',
+        'Id': 1,
+        'IsActive': True,
+        'Name': 'test_job'
+    }
 
-    sage_connector.connection.jobs.get_all_jobs.return_value = [mock_data]
+    sage_connector.connection.jobs.get_all_jobs.return_value = [[[mock_data]]]
 
     result = sage_connector.sync_jobs()
     assert result == []
@@ -289,16 +293,17 @@ def test_sync_standard_cost_codes(
         }
     )
 
-    mock_data = mocker.MagicMock()
-    mock_data.code = 'test_cost_code'
-    mock_data.version = 1
-    mock_data.is_standard = True
-    mock_data.description = 'test_description'
-    mock_data.name = 'test_cost_code'
-    mock_data.id = 1
-    mock_data.is_active = True
+    mock_data = {
+        'Code': 'test_cost_code',
+        'Version': 1,
+        'IsStandard': True,
+        'Description': 'test_description',
+        'Name': 'test_cost_code',
+        'Id': 1,
+        'IsActive': True
+    }
 
-    sage_connector.connection.jobs.get_standard_costcodes.return_value = [mock_data]
+    sage_connector.connection.jobs.get_standard_costcodes.return_value = [[[mock_data]]]
 
     result = sage_connector.sync_standard_cost_codes()
     assert result == []
@@ -328,16 +333,17 @@ def test_sync_standard_categories(
         }
     )
 
-    mock_data = mocker.MagicMock()
-    mock_data.code = 'test_category'
-    mock_data.version = 1
-    mock_data.description = 'test_description'
-    mock_data.accumulation_name = 'test_accumulation_name'
-    mock_data.name = 'test_category'
-    mock_data.id = 1
-    mock_data.is_active = True
+    mock_data = {
+        'Code': 'test_category',
+        'Version': 1,
+        'Description': 'test_description',
+        'AccumulationName': 'test_accumulation_name',
+        'Name': 'test_category',
+        'Id': 1,
+        'IsActive': True
+    }
 
-    sage_connector.connection.jobs.get_standard_categories.return_value = [mock_data]
+    sage_connector.connection.jobs.get_standard_categories.return_value = [[[mock_data]]]
 
     result = sage_connector.sync_standard_categories()
     assert result == []
@@ -367,21 +373,22 @@ def test_sync_commitments(
         }
     )
 
-    mock_data = mocker.MagicMock()
-    mock_data.code = 'test_commitment'
-    mock_data.is_closed = False
-    mock_data.version = 1
-    mock_data.description = 'test_description'
-    mock_data.is_commited = True
-    mock_data.created_on_utc = '2024-02-25'
-    mock_data.date = '2024-02-25'
-    mock_data.vendor_id = 'test_vendor_id'
-    mock_data.job_id = 'test_job_id'
-    mock_data.id = 1
-    mock_data.is_active = True
-    mock_data.name = 'test_commitment'
+    mock_data = {
+        'Code': 'test_commitment',
+        'IsClosed': False,
+        'Version': 1,
+        'Description': 'test_description',
+        'IsCommited': True,
+        'CreatedOnUtc': '2024-02-25',
+        'Date': '2024-02-25',
+        'VendorId': 'test_vendor_id',
+        'JobId': 'test_job_id',
+        'Id': 1,
+        'IsActive': True,
+        'Name': 'test_commitment'
+    }
 
-    sage_connector.connection.commitments.get_all.return_value = [mock_data]
+    sage_connector.connection.commitments.get_all.return_value = [[[mock_data]]]
 
     result = sage_connector.sync_commitments()
     assert result == []
@@ -447,21 +454,21 @@ def test_sync_cost_categories(
         workspace_id=workspace_id
     )
 
-    mock_category = mocker.Mock(spec=Category)
-    mock_category.id = 1
-    mock_category.job_id = '10064'
-    mock_category.cost_code_id = '10064'
-    mock_category.name = 'Test Category 1'
-    mock_category.is_active = True
+    mock_category = [{
+        "Id": 1,
+        "JobId": "10064",
+        "CostCodeId": "10064",
+        "Name": "Test Category 1",
+        "IsActive": True
+    },{
+        "Id": 2,
+        "JobId": "10081",
+        "CostCodeId": "10064",
+        "Name": "Test Category 2",
+        "IsActive": False
+    }]
 
-    mock_category2 = mocker.Mock(spec=Category)
-    mock_category2.id = 2
-    mock_category2.job_id = '10081'
-    mock_category2.cost_code_id = '10064'
-    mock_category2.name = 'Test Category 2'
-    mock_category2.is_active = False
-
-    categories_generator = [mock_category, mock_category2]
+    categories_generator = [[mock_category]]
 
     sage_connector.connection.categories.get_all_categories.return_value = categories_generator
 
@@ -492,15 +499,16 @@ def test_sync_cost_codes(
         }
     )
 
-    mock_data = mocker.MagicMock()
-    mock_data.code = 'test_cost_code'
-    mock_data.version = 1
-    mock_data.job_id = 'test_job_id'
-    mock_data.id = 1
-    mock_data.is_active = True
-    mock_data.name = 'test_cost_code'
+    mock_data = {
+        'Code': 'test_cost_code',
+        'Version': 1,
+        'JobId': 'test_job_id',
+        'Id': 1,
+        'IsActive': True,
+        'Name': 'test_cost_code'
+    }
 
-    sage_connector.connection.cost_codes.get_all_costcodes.return_value = [mock_data]
+    sage_connector.connection.cost_codes.get_all_costcodes.return_value = [[[mock_data]]]
 
     result = sage_connector.sync_cost_codes()
     assert result == []

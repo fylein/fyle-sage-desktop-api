@@ -2,7 +2,6 @@
 Sage Desktop Cost Codes
 """
 from sage_desktop_sdk.core.client import Client
-from sage_desktop_sdk.core.schema.read_only import CostCode
 
 
 class CostCodes(Client):
@@ -20,16 +19,12 @@ class CostCodes(Client):
         :return: A generator yielding cost codes in the Cost Code Schema
         :rtype: generator of CostCode objects
         """
+        endpoint = CostCodes.GET_COST_CODE + '?page={0}'
         if version:
             # Append the version query parameter if provided
-            query_params = '?version={0}'.format(version)
-            endpoint = CostCodes.GET_COST_CODE + query_params
-        else:
-            endpoint = CostCodes.GET_COST_CODE
+            query_params = f'&version={version}'
+            endpoint += query_params
 
         # Query the API to get all cost codes
-        cost_codes = self._query_get_all(endpoint)
-
-        for cost_code in cost_codes:
-            # Convert each cost code dictionary to a CostCode object and yield it
-            yield CostCode.from_dict(cost_code)
+        cost_codes = self._query_get_all_generator(endpoint, is_paginated=True)
+        yield cost_codes

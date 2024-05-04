@@ -2,7 +2,6 @@
 Sage Desktop Jobs
 """
 from sage_desktop_sdk.core.client import Client
-from sage_desktop_sdk.core.schema.read_only import Job, StandardCategory, StandardCostCode
 
 
 class Jobs(Client):
@@ -22,19 +21,15 @@ class Jobs(Client):
         :return: A generator yielding jobs in the Jobs Schema
         :rtype: generator of Job objects
         """
+        endpoint = Jobs.GET_JOBS + '?page={0}'
         if version:
             # Append the version query parameter if provided
-            query_params = '?version={0}'.format(version)
-            endpoint = Jobs.GET_JOBS + query_params
-        else:
-            endpoint = Jobs.GET_JOBS
+            query_params = f'&version={version}'
+            endpoint += query_params
 
         # Query the API to get all jobs
-        jobs = self._query_get_all(endpoint)
-
-        for job in jobs:
-            # Convert each job dictionary to a Job object and yield it
-            yield Job.from_dict(job)
+        jobs = self._query_get_all_generator(endpoint, is_paginated=True)
+        yield jobs
 
     def get_standard_costcodes(self, version: int = None):
         """
@@ -46,19 +41,15 @@ class Jobs(Client):
         :return: A generator yielding standard cost codes in the Cost Code Schema
         :rtype: generator of StandardCostCode objects
         """
+        endpoint = Jobs.GET_COST_CODES + '?page={0}'
         if version:
             # Append the version query parameter if provided
-            query_params = '?version={0}'.format(version)
-            endpoint = Jobs.GET_COST_CODES + query_params
-        else:
-            endpoint = Jobs.GET_COST_CODES
+            query_params = f'&version={version}'
+            endpoint += query_params
 
-        # Query the API to get all standard cost codes
-        costcodes = self._query_get_all(endpoint)
-
-        for costcode in costcodes:
-            # Convert each cost code dictionary to a StandardCostCode object and yield it
-            yield StandardCostCode.from_dict(costcode)
+        # Query the API to get all jobs
+        cost_codes = self._query_get_all_generator(endpoint, is_paginated=True)
+        yield cost_codes
 
     def get_standard_categories(self, version: int = None):
         """
@@ -70,16 +61,12 @@ class Jobs(Client):
         :return: A generator yielding standard categories in the Categories Schema
         :rtype: generator of StandardCategory objects
         """
+        endpoint = Jobs.GET_CATEGORIES + '?page={0}'
         if version:
             # Append the version query parameter if provided
-            query_params = '?version={0}'.format(version)
-            endpoint = Jobs.GET_CATEGORIES + query_params
-        else:
-            endpoint = Jobs.GET_CATEGORIES
+            query_params = f'&version={version}'
+            endpoint += query_params
 
-        # Query the API to get all standard categories
-        categories = self._query_get_all(endpoint)
-
-        for category in categories:
-            # Convert each category dictionary to a StandardCategory object and yield it
-            yield StandardCategory.from_dict(category)
+        # Query the API to get all jobs
+        categories = self._query_get_all_generator(endpoint, is_paginated=True)
+        yield categories
