@@ -1,4 +1,3 @@
-from typing import Dict, List
 from django.db import models
 
 from fyle_accounting_mappings.models import (

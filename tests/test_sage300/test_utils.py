@@ -2,7 +2,6 @@ from apps.sage300.utils import SageDesktopConnector, Sage300Credential
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.mappings.models import Version
 from apps.workspaces.models import Workspace
-from sage_desktop_sdk.core.schema.read_only import Category
 
 
 def test_sage_desktop_connector(
