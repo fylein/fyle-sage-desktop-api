@@ -39,7 +39,6 @@ class CostCategory(BaseForeignWorkspaceModel):
         for categories in categories_generator:
             for category in categories:
                 for data in category:
-                    print(Category.from_dict(data))
                     list_of_categories.append(Category.from_dict(data))
 
         record_number_list = [category.id for category in list_of_categories]
