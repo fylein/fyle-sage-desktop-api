@@ -99,7 +99,7 @@ class SageDesktopConnector:
 
         return ATTRIBUTE_CLASS_MAP[attribute_type]
 
-    def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_gen: bool = True):
+    def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_generator: bool = True):
         """
         Synchronize data from Sage Desktop SDK to your application
         :param data: Data to synchronize
@@ -109,7 +109,7 @@ class SageDesktopConnector:
         :param field_names: Names of fields to include in detail
         """
 
-        if is_gen:
+        if is_generator:
             for data in data_gen:
                 for items in data:
                     destination_attributes = []
