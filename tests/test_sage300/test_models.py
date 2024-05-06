@@ -23,7 +23,7 @@ def test_bulk_create_or_update(
         "IsActive": False
     }]
 
-    categories_generator = [[categories_gen_data]]
+    categories_generator = categories_gen_data
 
     CostCategory.bulk_create_or_update(categories_generator, workspace_id)
 

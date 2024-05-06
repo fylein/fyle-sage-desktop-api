@@ -1,3 +1,4 @@
+from typing import List, Dict
 from django.db import models
 
 from fyle_accounting_mappings.models import (
@@ -30,16 +31,14 @@ class CostCategory(BaseForeignWorkspaceModel):
         db_table = 'cost_category'
 
     @staticmethod
-    def bulk_create_or_update(categories_generator, workspace_id: int):
+    def bulk_create_or_update(categories: List[Dict], workspace_id: int):
         """
         Bulk create or update cost types
         """
 
         list_of_categories = []
-        for categories in categories_generator:
-            for category in categories:
-                for data in category:
-                    list_of_categories.append(Category.from_dict(data))
+        for data in categories:
+            list_of_categories.append(Category.from_dict(data))
 
         record_number_list = [category.id for category in list_of_categories]
 

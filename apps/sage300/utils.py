@@ -228,6 +228,8 @@ class SageDesktopConnector:
         """
          Synchronize categories from Sage Desktop SDK to your application
         """
-        cost_categories = self.connection.categories.get_all_categories()
+        cost_categories_generator = self.connection.categories.get_all_categories()
 
-        CostCategory.bulk_create_or_update(cost_categories, self.workspace_id)
+        for cost_categories in cost_categories_generator:
+            for categories in cost_categories:
+                CostCategory.bulk_create_or_update(categories, self.workspace_id)
