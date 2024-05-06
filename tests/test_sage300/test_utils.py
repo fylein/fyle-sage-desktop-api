@@ -133,7 +133,7 @@ def test__sync_data(
         display_name=display_name,
         workspace_id=workspace_id,
         field_names=field_names,
-        is_gen=False
+        is_generator=False
     )
 
     assert DestinationAttribute.objects.filter(
