@@ -22,10 +22,10 @@ class Commitments(Client):
         :return: A generator yielding commitments in the Commitments Schema
         :rtype: generator of Commitment objects
         """
-        endpoint = Commitments.GET_COMMITMENTS + '?page={0}'
+        endpoint = Commitments.GET_COMMITMENTS
         if version:
             # Append the version query parameter if provided
-            query_params = f'&version={version}'
+            query_params = f'?version={version}'
             endpoint += query_params
 
         # Query the API to get all commitments

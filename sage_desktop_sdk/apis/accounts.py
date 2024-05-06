@@ -17,12 +17,12 @@ class Accounts(Client):
         :return: A generator yielding accounts in the Attachable Schema
         :rtype: generator of Account objects
         """
-        endpoint = Accounts.GET_ACCOUNTS + '?page={0}'
+        endpoint = Accounts.GET_ACCOUNTS
         if version:
             # Append the version query parameter if provided
-            query_params = f'&version={version}'
+            query_params = f'?version={version}'
             endpoint += query_params
 
         # Query the API to get all accounts
-        accounts = self._query_get_all_generator(endpoint, is_paginated=True)
+        accounts = self._query_get_all_generator(endpoint)
         yield accounts
