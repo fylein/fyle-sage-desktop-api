@@ -104,7 +104,6 @@ class Client:
 
         while True:
             try:
-                print(request_url.format(page_number))
                 if is_paginated:
                     response = requests.get(url=request_url.format(page_number), headers=api_headers)
                 else:
