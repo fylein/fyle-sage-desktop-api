@@ -68,20 +68,17 @@ class SageDesktopConnector:
         return []
 
     def _add_to_destination_attributes(self, item, attribute_type, display_name, field_names):
-        destination_attributes = []
 
         detail = {field: getattr(item, field) for field in field_names}
         if item.name:
-            destination_attributes.append(self._create_destination_attribute(
+            return self._create_destination_attribute(
                 attribute_type,
                 display_name,
                 " ".join(item.name.split()),
                 item.id,
                 item.is_active,
                 detail
-            ))
-
-        return destination_attributes
+            )
 
     def _get_attribute_class(self, attribute_type: str):
         """
@@ -112,20 +109,28 @@ class SageDesktopConnector:
         :param field_names: Names of fields to include in detail
         """
 
-        destination_attributes = []
         if is_gen:
             for data in data_gen:
                 for items in data:
+                    destination_attributes = []
                     for _item in items:
                         attribute_class = self._get_attribute_class(attribute_type)
                         item = import_string(f'sage_desktop_sdk.core.schema.read_only.{attribute_class}').from_dict(_item)
-                        destination_attributes = self._add_to_destination_attributes(item, attribute_type, display_name, field_names)
-        else:
-            for item in data_gen:
-                destination_attributes = self._add_to_destination_attributes(item, attribute_type, display_name, field_names)
+                        destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names)
+                        if destination_attr:
+                            destination_attributes.append(destination_attr)
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            destination_attributes, attribute_type, workspace_id, True)
+                    DestinationAttribute.bulk_create_or_update_destination_attributes(
+                        destination_attributes, attribute_type, workspace_id, True)
+        else:
+            destination_attributes = []
+            for item in data_gen:
+                destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names)
+                if destination_attr:
+                    destination_attributes.append(destination_attr)
+
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                destination_attributes, attribute_type, workspace_id, True)
 
         self._update_latest_version(attribute_type)
 
