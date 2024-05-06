@@ -1,3 +1,4 @@
+from django.utils.module_loading import import_string
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.workspaces.models import Sage300Credential
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
@@ -66,7 +67,39 @@ class SageDesktopConnector:
 
         return []
 
-    def _sync_data(self, data, attribute_type, display_name, workspace_id, field_names):
+    def _add_to_destination_attributes(self, item, attribute_type, display_name, field_names):
+
+        detail = {field: getattr(item, field) for field in field_names}
+        if item.name:
+            return self._create_destination_attribute(
+                attribute_type,
+                display_name,
+                " ".join(item.name.split()),
+                item.id,
+                item.is_active,
+                detail
+            )
+
+    def _get_attribute_class(self, attribute_type: str):
+        """
+        Get the attribute class for the attribute type
+        :param attribute_type: Type of the attribute
+        :return: Attribute class
+        """
+        ATTRIBUTE_CLASS_MAP = {
+            'ACCOUNT': 'Account',
+            'VENDOR': 'Vendor',
+            'JOB': 'Job',
+            'STANDARD_COST_CODE': 'StandardCostCode',
+            'STANDARD_CATEGORY': 'StandardCategory',
+            'COMMITMENT': 'Commitment',
+            'COMMITMENT_ITEM': 'CommitmentItem',
+            'COST_CODE': 'CostCode'
+        }
+
+        return ATTRIBUTE_CLASS_MAP[attribute_type]
+
+    def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_generator: bool = True):
         """
         Synchronize data from Sage Desktop SDK to your application
         :param data: Data to synchronize
@@ -76,21 +109,28 @@ class SageDesktopConnector:
         :param field_names: Names of fields to include in detail
         """
 
-        destination_attributes = []
-        for item in data:
-            detail = {field: getattr(item, field) for field in field_names}
-            if item.name:
-                destination_attributes.append(self._create_destination_attribute(
-                    attribute_type,
-                    display_name,
-                    " ".join(item.name.split()),
-                    item.id,
-                    item.is_active,
-                    detail
-                ))
+        if is_generator:
+            for data in data_gen:
+                for items in data:
+                    destination_attributes = []
+                    for _item in items:
+                        attribute_class = self._get_attribute_class(attribute_type)
+                        item = import_string(f'sage_desktop_sdk.core.schema.read_only.{attribute_class}').from_dict(_item)
+                        destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names)
+                        if destination_attr:
+                            destination_attributes.append(destination_attr)
 
-        DestinationAttribute.bulk_create_or_update_destination_attributes(
-            destination_attributes, attribute_type, workspace_id, True)
+                    DestinationAttribute.bulk_create_or_update_destination_attributes(
+                        destination_attributes, attribute_type, workspace_id, True)
+        else:
+            destination_attributes = []
+            for item in data_gen:
+                destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names)
+                if destination_attr:
+                    destination_attributes.append(destination_attr)
+
+            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                destination_attributes, attribute_type, workspace_id, True)
 
         self._update_latest_version(attribute_type)
 
@@ -177,7 +217,7 @@ class SageDesktopConnector:
                 'code', 'version', 'description', 'cost_code_id',
                 'category_id', 'created_on_utc', 'job_id', 'commitment_id'
             ]
-            self._sync_data(commitment_items, 'COMMITMENT_ITEM', 'commitment_item', self.workspace_id, field_names)
+            self._sync_data(commitment_items, 'COMMITMENT_ITEM', 'commitment_item', self.workspace_id, field_names, False)
 
     def sync_cost_codes(self):
         """
@@ -193,6 +233,8 @@ class SageDesktopConnector:
         """
          Synchronize categories from Sage Desktop SDK to your application
         """
-        cost_categories = self.connection.categories.get_all_categories()
+        cost_categories_generator = self.connection.categories.get_all_categories()
 
-        CostCategory.bulk_create_or_update(cost_categories, self.workspace_id)
+        for cost_categories in cost_categories_generator:
+            for categories in cost_categories:
+                CostCategory.bulk_create_or_update(categories, self.workspace_id)

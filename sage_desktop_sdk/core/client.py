@@ -1,7 +1,7 @@
 
 import requests
 import json
-from typing import List, Dict
+from typing import List, Dict, Generator
 from sage_desktop_sdk.exceptions import (
     InvalidUserCredentials,
     InvalidWebApiClientCredentials,
@@ -85,6 +85,56 @@ class Client:
 
         if response['Result'] == 4:
             raise WebApiClientLocked('Web API client Locked')
+
+    def _query_get_all_generator(self, url: str, is_paginated: bool = False) -> Generator[Dict, None, None]:
+        """
+        Gets all the objects of a particular type for query type GET calls
+        :param url: GET URL of object
+        :param object_type: type of object
+        :param is_paginated: is paginated
+        :return: Generator of objects
+        """
+        page_number = 0
+
+        request_url = '{0}{1}'.format(self.__api_url, url)
+        api_headers = {
+            'Cookie': self.__cookie,
+            'Accept': 'application/json'
+        }
+
+        while True:
+            try:
+                if is_paginated:
+                    response = requests.get(url=request_url.format(page_number), headers=api_headers)
+                else:
+                    response = requests.get(url=request_url, headers=api_headers)
+
+                data = json.loads(response.text)
+
+                if not data:
+                    break
+
+                yield data
+
+                if is_paginated:
+                    page_number += 1
+                else:
+                    break
+
+            except requests.exceptions.HTTPError as err:
+                if err.response.status_code == 400:
+                    raise WrongParamsError('Some of the parameters are wrong', response.text)
+
+                if err.response.status_code == 406:
+                    raise NotAcceptableClientError('Forbidden, the user has insufficient privilege', response.text)
+
+                if err.response.status_code == 404:
+                    raise NotFoundItemError('Not found item with ID', response.text)
+
+                if err.response.status_code == 500:
+                    raise InternalServerError('Internal server error', response.text)
+
+                raise SageDesktopSDKError('Error: {0}'.format(err.response.status_code), response.text)
 
     def _query_get_all(self, url: str) -> List[Dict]:
         """
