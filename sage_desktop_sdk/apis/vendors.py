@@ -2,7 +2,6 @@
 Sage Desktop Vendors
 """
 from sage_desktop_sdk.core.client import Client
-from sage_desktop_sdk.core.schema.read_only import Vendor, VendorType
 
 
 class Vendors(Client):
@@ -21,19 +20,15 @@ class Vendors(Client):
         :return: A generator yielding vendors in the Vendors Schema
         :rtype: generator of Vendor objects
         """
+        endpoint = Vendors.GET_VENDORS
         if version:
             # Append the version query parameter if provided
             query_params = '?version={0}'.format(version)
-            endpoint = Vendors.GET_VENDORS + query_params
-        else:
-            endpoint = Vendors.GET_VENDORS
+            endpoint += query_params
 
         # Query the API to get all vendors
-        vendors = self._query_get_all(endpoint)
-
-        for vendor in vendors:
-            # Convert each vendor dictionary to a Vendor object and yield it
-            yield Vendor.from_dict(vendor)
+        vendors = self._query_get_all_generator(endpoint)
+        yield vendors
 
     def get_vendor_types(self, version: int = None):
         """
@@ -45,16 +40,12 @@ class Vendors(Client):
         :return: A generator yielding vendor types in the Vendor Types Schema
         :rtype: generator of VendorType objects
         """
+        endpoint = Vendors.GET_VENDOR_TYPES
         if version:
             # Append the version query parameter if provided
             query_params = '?version={0}'.format(version)
-            endpoint = Vendors.GET_VENDOR_TYPES + query_params
-        else:
-            endpoint = Vendors.GET_VENDOR_TYPES
+            endpoint += query_params
 
         # Query the API to get all vendor types
-        vendor_types = self._query_get_all(endpoint)
-
-        for vendor_type in vendor_types:
-            # Convert each vendor type dictionary to a VendorType object and yield it
-            yield VendorType.from_dict(vendor_type)
+        vendor_types = self._query_get_all_generator(endpoint)
+        yield vendor_types

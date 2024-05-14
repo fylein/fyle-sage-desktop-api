@@ -3,7 +3,7 @@
 Sage Desktop Commitments
 """
 from sage_desktop_sdk.core.client import Client
-from sage_desktop_sdk.core.schema.read_only import Commitment, CommitmentItem
+from sage_desktop_sdk.core.schema.read_only import CommitmentItem
 
 
 class Commitments(Client):
@@ -22,19 +22,15 @@ class Commitments(Client):
         :return: A generator yielding commitments in the Commitments Schema
         :rtype: generator of Commitment objects
         """
+        endpoint = Commitments.GET_COMMITMENTS
         if version:
             # Append the version query parameter if provided
-            query_params = '?version={0}'.format(version)
-            endpoint = Commitments.GET_COMMITMENTS + query_params
-        else:
-            endpoint = Commitments.GET_COMMITMENTS
+            query_params = f'?version={version}'
+            endpoint += query_params
 
         # Query the API to get all commitments
-        commitments = self._query_get_all(endpoint)
-
-        for commitment in commitments:
-            # Convert each commitment dictionary to a Commitment object and yield it
-            yield Commitment.from_dict(commitment)
+        commitments = self._query_get_all_generator(endpoint)
+        yield commitments
 
     def get_commitment_items(self, commitment_id: str, version: int = None):
         """

@@ -1,4 +1,5 @@
 from typing import List
+import logging
 from datetime import datetime
 from django.db.models import Q
 from django_q.tasks import Chain
@@ -12,6 +13,9 @@ from apps.workspaces.models import Sage300Credential
 from apps.sage300.utils import SageDesktopConnector
 from apps.sage300.actions import update_accounting_export_summary
 from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def import_fyle_dimensions(fyle_credentials: FyleCredential):
@@ -115,14 +119,17 @@ def poll_operation_status(workspace_id: int, last_export: bool):
 
         # Get the operation status for the current export_id from Sage 300
         operation_status = sage300_connection.connection.operation_status.get(export_id=export_id)
+        logger.info('operation status for export id %s: %s', export_id, operation_status)
 
         # Check if the operation is disabled
         if operation_status['CompletedOn']:
             # Retrieve Sage 300 errors for the current export
-
             document = sage300_connection.connection.documents.get(accounting_export.export_id)
+            logger.info('expense for export id %s: %s', export_id, document)
+
             if document['CurrentState'] != '9':
                 sage300_errors = sage300_connection.connection.event_failures.get(accounting_export.export_id)
+                logger.info('export failed with errors: %s', sage300_errors)
                 # Update the accounting export object with Sage 300 errors and status
                 accounting_export.sage300_errors = sage300_errors
                 accounting_export.status = 'FAILED'
