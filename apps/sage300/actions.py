@@ -10,6 +10,7 @@ def update_accounting_export_summary(workspace_id):
     successful_exports = AccountingExport.objects.filter(
         ~Q(type__in=['FETCHING_REIMBURSABLE_EXPENSES', 'FETCHING_CREDIT_CARD_EXPENSES']),
         workspace_id=workspace_id, status='COMPLETE',
+        updated_at__gte=accounting_export_summary.last_exported_at
     ).count()
 
     accounting_export_summary.failed_accounting_export_count = failed_exports
