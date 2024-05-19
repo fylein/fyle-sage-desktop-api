@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Optional
-from datetime import datetime
 
 from django.db import models
 from django.db.models import Sum
