@@ -129,19 +129,22 @@ class BaseExportModel(models.Model):
         Returns:
         - str: The invoice date as a string in the format '%Y-%m-%dT%H:%M:%S'.
         """
+        invoice_date = None
         # Check for specific keys in the 'description' field and return the corresponding value
         if 'spent_at' in accounting_export.description and accounting_export.description['spent_at']:
-            return accounting_export.description['spent_at']
+            invoice_date = accounting_export.description['spent_at']
         elif 'approved_at' in accounting_export.description and accounting_export.description['approved_at']:
-            return accounting_export.description['approved_at']
+            invoice_date = accounting_export.description['approved_at']
         elif 'verified_at' in accounting_export.description and accounting_export.description['verified_at']:
-            return accounting_export.description['verified_at']
+            invoice_date = accounting_export.description['verified_at']
         elif 'last_spent_at' in accounting_export.description and accounting_export.description['last_spent_at']:
-            return accounting_export.description['last_spent_at']
+            invoice_date = accounting_export.description['last_spent_at']
         elif 'posted_at' in accounting_export.description and accounting_export.description['posted_at']:
-            return accounting_export.description['posted_at']
+            invoice_date = accounting_export.description['posted_at']
 
         # If none of the expected keys are present or if the values are empty, return the current date and time
+        if invoice_date:
+            return datetime.strptime(invoice_date, '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
         return datetime.now().strftime("%Y-%m-%d")
 
     def get_job_id(accounting_export: AccountingExport, expense: Expense):

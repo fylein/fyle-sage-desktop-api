@@ -22,25 +22,25 @@ def test_base_model_get_invoice_date(
 
     accounting_export.description = {"spent_at": "2023-04-01T00:00:00"}
     return_value = base_model.get_invoice_date(accounting_export)
-    assert return_value == "2023-04-01T00:00:00"
+    assert return_value == "2023-04-01"
 
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
     accounting_export.description = {"approved_at": "2023-04-01T00:00:00"}
     accounting_export.save()
     return_value = base_model.get_invoice_date(accounting_export=accounting_export)
-    assert return_value == "2023-04-01T00:00:00"
+    assert return_value == "2023-04-01"
 
     accounting_export.description = {"verified_at": "2023-04-01T00:00:00"}
     return_value = base_model.get_invoice_date(accounting_export=accounting_export)
-    assert return_value == "2023-04-01T00:00:00"
+    assert return_value == "2023-04-01"
 
     accounting_export.description = {"last_spent_at": "2023-04-01T00:00:00"}
     return_value = base_model.get_invoice_date(accounting_export=accounting_export)
-    assert return_value == "2023-04-01T00:00:00"
+    assert return_value == "2023-04-01"
 
     accounting_export.description = {"posted_at": "2023-04-01T00:00:00"}
     return_value = base_model.get_invoice_date(accounting_export=accounting_export)
-    assert return_value == "2023-04-01T00:00:00"
+    assert return_value == "2023-04-01"
 
 
 def test_get_expense_purpose(
