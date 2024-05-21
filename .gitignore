@@ -163,3 +163,5 @@ docker-compose.yml
 cache.db
 fyle_integrations_platform_connector/
 fyle_accounting_mappings/
+
+customer_dry_run.py

@@ -11,8 +11,6 @@ from fyle.platform.exceptions import InvalidTokenError as FyleInvalidTokenError
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.models import CostCategory
 from apps.fyle.helpers import connect_to_platform
-from apps.mappings.tasks import sync_sage300_attributes
-
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -145,10 +143,8 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
 
 def import_dependent_fields_to_fyle(workspace_id: str):
     dependent_field = DependentFieldSetting.objects.get(workspace_id=workspace_id)
-
     try:
         platform = connect_to_platform(workspace_id)
-        sync_sage300_attributes('JOB', workspace_id)
         post_dependent_expense_field_values(workspace_id, dependent_field, platform)
     except FyleInvalidTokenError:
         logger.info('Invalid Token or Fyle credentials does not exist - %s', workspace_id)
