@@ -13,6 +13,8 @@ from apps.workspaces.models import Sage300Credential
 from apps.sage300.utils import SageDesktopConnector
 from apps.sage300.actions import update_accounting_export_summary
 from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
+from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
+
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -127,7 +129,7 @@ def poll_operation_status(workspace_id: int, last_export: bool):
             document = sage300_connection.connection.documents.get(accounting_export.export_id)
             logger.info('expense for export id %s: %s', export_id, document)
 
-            if document['CurrentState'] != '9':
+            if str(document['CurrentState']) != '9':
                 sage300_errors = sage300_connection.connection.event_failures.get(accounting_export.export_id)
                 logger.info('export failed with errors: %s', sage300_errors)
                 # Update the accounting export object with Sage 300 errors and status
@@ -149,6 +151,13 @@ def poll_operation_status(workspace_id: int, last_export: bool):
 
                 # Save the updated accounting export
                 accounting_export.save()
+
+                # delete purchase invoice from db
+                purchase_invoice_instance = PurchaseInvoice.objects.filter(workspace_id=workspace_id, accounting_export_id=accounting_export.id)
+                purchase_invoice_lineitems_instance = PurchaseInvoiceLineitems.objects.filter(workspace_id=workspace_id, purchase_invoice_id__in=purchase_invoice_instance.values_list('id', flat=True))
+
+                purchase_invoice_lineitems_instance.delete()
+                purchase_invoice_instance.delete()
 
                 # Continue to the next iteration
                 continue
