@@ -9,7 +9,6 @@ from apps.mappings.imports.modules.cost_centers import CostCenter
 from apps.mappings.imports.modules.merchants import Merchant
 from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
 from apps.fyle.models import DependentFieldSetting
-from apps.mappings.tasks import sync_sage300_attributes
 
 SOURCE_FIELD_CLASS_MAP = {
     'CATEGORY': Category,
