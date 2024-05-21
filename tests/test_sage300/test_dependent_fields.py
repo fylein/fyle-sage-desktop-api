@@ -6,7 +6,6 @@ from apps.sage300.dependent_fields import (
     import_dependent_fields_to_fyle
 )
 from apps.fyle.models import DependentFieldSetting
-from fyle.platform.exceptions import InvalidTokenError as FyleInvalidTokenError
 
 
 def test_construct_custom_field_placeholder():
