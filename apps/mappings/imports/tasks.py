@@ -10,7 +10,6 @@ from apps.mappings.imports.modules.merchants import Merchant
 from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
 from apps.fyle.models import DependentFieldSetting
 
-
 SOURCE_FIELD_CLASS_MAP = {
     'CATEGORY': Category,
     'PROJECT': Project,
@@ -52,6 +51,9 @@ def auto_import_and_map_fyle_fields(workspace_id):
     chain = Chain()
 
     if project_mapping and dependent_fields:
+        chain.append('apps.mappings.tasks.sync_sage300_attributes', 'JOB', workspace_id)
+        chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CODE', workspace_id)
+        chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CATEGORY', workspace_id)
         chain.append('apps.sage300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
 
     if chain.length() > 0:

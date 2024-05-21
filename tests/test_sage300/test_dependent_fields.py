@@ -6,7 +6,6 @@ from apps.sage300.dependent_fields import (
     import_dependent_fields_to_fyle
 )
 from apps.fyle.models import DependentFieldSetting
-from fyle.platform.exceptions import InvalidTokenError as FyleInvalidTokenError
 
 
 def test_construct_custom_field_placeholder():
@@ -151,29 +150,7 @@ def test_import_dependent_fields_to_fyle(
         'dependent_fields.bulk_post_dependent_expense_field_values'
     )
 
-    sync_sage300_attributes = mocker.patch('apps.sage300.dependent_fields.sync_sage300_attributes')
     import_dependent_fields_to_fyle(workspace_id)
 
     assert platform.return_value.dependent_fields.bulk_post_dependent_expense_field_values.call_count == 4
     assert DependentFieldSetting.objects.get(workspace_id=workspace_id).last_successful_import_at is not None
-    assert sync_sage300_attributes.call_count == 1
-
-    sync_sage300_attributes.side_effect = Exception('Error')
-    try:
-        import_dependent_fields_to_fyle(workspace_id)
-
-        assert platform.return_value.dependent_fields.bulk_post_dependent_expense_field_values.call_count == 4
-        assert DependentFieldSetting.objects.get(workspace_id=workspace_id).last_successful_import_at is not None
-        assert sync_sage300_attributes.call_count == 2
-    except Exception as e:
-        assert str(e) == 'Error'
-
-    sync_sage300_attributes.side_effect = FyleInvalidTokenError('Token Not Found')
-    try:
-        import_dependent_fields_to_fyle(workspace_id)
-
-        assert platform.return_value.dependent_fields.bulk_post_dependent_expense_field_values.call_count == 4
-        assert DependentFieldSetting.objects.get(workspace_id=workspace_id).last_successful_import_at is not None
-        assert sync_sage300_attributes.call_count == 3
-    except Exception as e:
-        assert str(e) == 'Token Error'
