@@ -144,7 +144,8 @@ class BaseExportModel(models.Model):
 
         # If none of the expected keys are present or if the values are empty, return the current date and time
         if invoice_date:
-            return datetime.strptime(invoice_date, '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
+            return invoice_date
+
         return datetime.now().strftime("%Y-%m-%d")
 
     def get_job_id(accounting_export: AccountingExport, expense: Expense):
