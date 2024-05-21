@@ -9,6 +9,7 @@ from apps.accounting_exports.models import AccountingExport
 from apps.fyle.models import DependentFieldSetting, Expense
 from apps.workspaces.models import AdvancedSetting, FyleCredential, Workspace, ExportSetting
 from apps.sage300.models import CostCategory
+from apps.sage300.exports.helpers import get_valid_date_format
 
 
 class BaseExportModel(models.Model):
@@ -144,7 +145,8 @@ class BaseExportModel(models.Model):
 
         # If none of the expected keys are present or if the values are empty, return the current date and time
         if invoice_date:
-            return datetime.strptime(invoice_date, '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
+            return get_valid_date_format(invoice_date)
+
         return datetime.now().strftime("%Y-%m-%d")
 
     def get_job_id(accounting_export: AccountingExport, expense: Expense):

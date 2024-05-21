@@ -4,7 +4,8 @@ from apps.sage300.exports.helpers import (
     __validate_category_mapping,
     __validate_employee_mapping,
     validate_accounting_export,
-    resolve_errors_for_exported_accounting_export
+    resolve_errors_for_exported_accounting_export,
+    get_valid_date_format
 )
 from fyle_accounting_mappings.models import (
     CategoryMapping,
@@ -275,3 +276,11 @@ def test_validate_accounting_export(
         )
     except BulkError as e:
         assert str(e) == "'Mappings are missing'"
+
+
+def test_get_valid_date_format():
+    valid_date_format = get_valid_date_format('2024-05-21')
+    assert valid_date_format == '2024-05-21'
+
+    valid_date_format = get_valid_date_format('2024-05-21T17:11:00')
+    assert valid_date_format == '2024-05-21'

@@ -1,4 +1,5 @@
 import itertools
+from datetime import datetime
 
 from fyle_accounting_mappings.models import CategoryMapping, ExpenseAttribute, Mapping, EmployeeMapping
 from apps.accounting_exports.models import AccountingExport, Error
@@ -145,3 +146,15 @@ def resolve_errors_for_exported_accounting_export(accounting_export: AccountingE
     :param accounting_export: Accounting Export
     """
     Error.objects.filter(workspace_id=accounting_export.workspace_id, accounting_export=accounting_export, is_resolved=False).update(is_resolved=True)
+
+
+def get_valid_date_format(invoice_date: str):
+    """
+    Get valid date format
+    :param invoice_date: Invoice date
+    :return: Formatted date string in '%Y-%m-%d' format if input matches the expected format, else return the original string
+    """
+    try:
+        return datetime.strptime(invoice_date, '%Y-%m-%d').strftime('%Y-%m-%d')
+    except ValueError:
+        return datetime.strptime(invoice_date, '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%d')
