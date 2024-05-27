@@ -179,7 +179,6 @@ class SageDesktopConnector:
         vendor_types = DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='VENDOR_TYPE').values('destination_id', 'value').distinct()
         vendor_type_mapping = {vendor_type['destination_id']: vendor_type['value'] for vendor_type in vendor_types}
 
-        print(f'Vendor Type Mapping: {vendor_type_mapping}')
         self._sync_data(vendors, 'VENDOR', 'vendor', self.workspace_id, field_names, vendor_type_mapping=vendor_type_mapping)
         return []
 
