@@ -1,3 +1,4 @@
+import logging
 from typing import List, Dict
 from django.db import models
 
@@ -11,6 +12,9 @@ from sage_desktop_api.models.fields import (
     BooleanFalseField
 )
 from sage_desktop_sdk.core.schema.read_only import Category
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 class CostCategory(BaseForeignWorkspaceModel):
@@ -78,16 +82,19 @@ class CostCategory(BaseForeignWorkspaceModel):
         for category in list_of_categories:
             job_name = job_name_mapping.get(category.job_id)
             cost_code_name = cost_code_name_mapping.get(category.cost_code_id)
-            category_object = CostCategory(
-                job_id=category.job_id,
-                job_name=job_name,
-                cost_code_id=category.cost_code_id,
-                cost_code_name=" ".join(cost_code_name.split()),
-                name=" ".join(category.name.split()),
-                status=category.is_active,
-                cost_category_id=category.id,
-                workspace_id=workspace_id
-            )
+            if job_name and cost_code_name:
+                category_object = CostCategory(
+                    job_id=category.job_id,
+                    job_name=job_name,
+                    cost_code_id=category.cost_code_id,
+                    cost_code_name=" ".join(cost_code_name.split()),
+                    name=" ".join(category.name.split()),
+                    status=category.is_active,
+                    cost_category_id=category.id,
+                    workspace_id=workspace_id
+                )
+            else:
+                logger.error(f"Job name with job_id {category.job_id} or cost code name with cost_code_id {category.cost_code_id} not found in workspace {workspace_id}")
 
             if category.id not in existing_cost_type_record_numbers:
                 cost_category_to_be_created.append(category_object)

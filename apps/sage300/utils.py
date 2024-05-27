@@ -116,7 +116,7 @@ class SageDesktopConnector:
             detail__type='Credit Card'
         )
         vendor_count = credit_card_vendor.count()
-        logger.info(f'Deleting {vendor_count} credit card vendors')
+        logger.info(f'Deleting {vendor_count} credit card vendors from workspace_id {self.workspace_id}')
         credit_card_vendor.delete()
 
     def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_generator: bool = True, vendor_type_mapping = None):
