@@ -62,13 +62,15 @@ class VendorType:
     id: str
     version: int
     name: str
+    is_active: bool
 
     @classmethod
     def from_dict(cls, vendor_type):
         return cls(
             id=vendor_type.get('Id'),
             version=vendor_type.get('Version'),
-            name=vendor_type.get('Name')
+            name=vendor_type.get('Name'),
+            is_active=True
         )
 
 
