@@ -142,7 +142,7 @@ def poll_operation_status(workspace_id: int, last_export: bool):
         accounting_export.exported_at = datetime.now()
         accounting_export.save()
 
-        if last_export:
-            update_accounting_export_summary(workspace_id=workspace_id)
-
         resolve_errors_for_exported_accounting_export(accounting_export)
+
+    if last_export:
+        update_accounting_export_summary(workspace_id=workspace_id)
