@@ -93,17 +93,18 @@ class CostCategory(BaseForeignWorkspaceModel):
                     cost_category_id=category.id,
                     workspace_id=workspace_id
                 )
+
+                if category.id not in existing_cost_type_record_numbers:
+                    cost_category_to_be_created.append(category_object)
+
+                elif category.id in primary_key_map.keys() and (
+                    category.name != primary_key_map[category.id]['name'] or category.is_active != primary_key_map[category.id]['status']
+                ):
+                    category_object.id = primary_key_map[category.id]['cost_category_id']
+                    cost_category_to_be_updated.append(category_object)
+
             else:
                 logger.error(f"Job name with job_id {category.job_id} or cost code name with cost_code_id {category.cost_code_id} not found in workspace {workspace_id}")
-
-            if category.id not in existing_cost_type_record_numbers:
-                cost_category_to_be_created.append(category_object)
-
-            elif category.id in primary_key_map.keys() and (
-                category.name != primary_key_map[category.id]['name'] or category.is_active != primary_key_map[category.id]['status']
-            ):
-                category_object.id = primary_key_map[category.id]['cost_category_id']
-                cost_category_to_be_updated.append(category_object)
 
         if cost_category_to_be_created:
             CostCategory.objects.bulk_create(cost_category_to_be_created, batch_size=2000)
