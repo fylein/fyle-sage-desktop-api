@@ -1,9 +1,13 @@
+import logging
 from django.utils.module_loading import import_string
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.workspaces.models import Sage300Credential
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from apps.sage300.models import CostCategory
 from apps.mappings.models import Version
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 class SageDesktopConnector:
@@ -106,11 +110,14 @@ class SageDesktopConnector:
         return ATTRIBUTE_CLASS_MAP[attribute_type]
 
     def _remove_credit_card_vendors(self):
-        DestinationAttribute.objects.filter(
+        credit_card_vendor = DestinationAttribute.objects.filter(
             workspace_id=self.workspace_id,
             attribute_type='VENDOR',
             detail__type='Credit Card'
-        ).delete()
+        )
+        vendor_count = credit_card_vendor.count()
+        logger.info(f'Deleting {vendor_count} credit card vendors')
+        credit_card_vendor.delete()
 
     def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_generator: bool = True, vendor_type_mapping = None):
         """

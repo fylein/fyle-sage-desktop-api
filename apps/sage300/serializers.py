@@ -80,6 +80,7 @@ class Sage300FieldSerializer(serializers.Serializer):
     def format_sage300_fields(self, workspace_id):
         attribute_types = [
             'VENDOR',
+            'VENDOR_TYPE',
             'ACCOUNT',
             'JOB',
             'CATEGORY',
