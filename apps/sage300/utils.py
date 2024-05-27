@@ -1,9 +1,13 @@
+import logging
 from django.utils.module_loading import import_string
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.workspaces.models import Sage300Credential
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from apps.sage300.models import CostCategory
 from apps.mappings.models import Version
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 class SageDesktopConnector:
@@ -67,9 +71,14 @@ class SageDesktopConnector:
 
         return []
 
-    def _add_to_destination_attributes(self, item, attribute_type, display_name, field_names):
+    def _add_to_destination_attributes(self, item, attribute_type, display_name, field_names, vendor_type_mapping = None):
 
         detail = {field: getattr(item, field) for field in field_names}
+        if vendor_type_mapping:
+            if item.type_id in vendor_type_mapping:
+                detail['type'] = vendor_type_mapping[item.type_id]
+            else:
+                detail['type'] = None
         if item.name:
             return self._create_destination_attribute(
                 attribute_type,
@@ -94,12 +103,23 @@ class SageDesktopConnector:
             'STANDARD_CATEGORY': 'StandardCategory',
             'COMMITMENT': 'Commitment',
             'COMMITMENT_ITEM': 'CommitmentItem',
-            'COST_CODE': 'CostCode'
+            'COST_CODE': 'CostCode',
+            'VENDOR_TYPE': 'VendorType'
         }
 
         return ATTRIBUTE_CLASS_MAP[attribute_type]
 
-    def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_generator: bool = True):
+    def _remove_credit_card_vendors(self):
+        credit_card_vendor = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type='VENDOR',
+            detail__type='Credit Card'
+        )
+        vendor_count = credit_card_vendor.count()
+        logger.info(f'Deleting {vendor_count} credit card vendors')
+        credit_card_vendor.delete()
+
+    def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_generator: bool = True, vendor_type_mapping = None):
         """
         Synchronize data from Sage Desktop SDK to your application
         :param data: Data to synchronize
@@ -116,7 +136,7 @@ class SageDesktopConnector:
                     for _item in items:
                         attribute_class = self._get_attribute_class(attribute_type)
                         item = import_string(f'sage_desktop_sdk.core.schema.read_only.{attribute_class}').from_dict(_item)
-                        destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names)
+                        destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names, vendor_type_mapping)
                         if destination_attr:
                             destination_attributes.append(destination_attr)
 
@@ -132,7 +152,10 @@ class SageDesktopConnector:
             DestinationAttribute.bulk_create_or_update_destination_attributes(
                 destination_attributes, attribute_type, workspace_id, True)
 
-        self._update_latest_version(attribute_type)
+        if attribute_type != 'VENDOR_TYPE':
+            self._update_latest_version(attribute_type)
+        if attribute_type == 'VENDOR':
+            self._remove_credit_card_vendors()
 
     def sync_accounts(self):
         """
@@ -153,8 +176,17 @@ class SageDesktopConnector:
             'code', 'version', 'default_expense_account', 'default_standard_category',
             'default_standard_costcode', 'type_id', 'created_on_utc'
         ]
+        vendor_types = None
+        vendor_type_mapping = None
 
-        self._sync_data(vendors, 'VENDOR', 'vendor', self.workspace_id, field_names)
+        if not DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='VENDOR_TYPE').exists():
+            vendor_types = self.connection.vendors.get_vendor_types()
+            self._sync_data(vendor_types, 'VENDOR_TYPE', 'vendor_type', self.workspace_id, ['version'])
+
+        vendor_types = DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='VENDOR_TYPE').values('destination_id', 'value').distinct()
+        vendor_type_mapping = {vendor_type['destination_id']: vendor_type['value'] for vendor_type in vendor_types}
+
+        self._sync_data(vendors, 'VENDOR', 'vendor', self.workspace_id, field_names, vendor_type_mapping=vendor_type_mapping)
         return []
 
     def sync_jobs(self):
