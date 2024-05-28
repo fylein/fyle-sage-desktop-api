@@ -59,7 +59,8 @@ class SageDesktopConnector:
         """
 
         latest_version = DestinationAttribute.objects.filter(
-            attribute_type=attribute_type
+            attribute_type=attribute_type,
+            workspace_id=self.workspace_id
         ).order_by('-detail__version').first()
 
         Version.objects.update_or_create(
