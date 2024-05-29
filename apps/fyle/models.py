@@ -87,7 +87,6 @@ class Expense(BaseForeignWorkspaceModel):
     currency = StringNotNullField(max_length=5, help_text='Home Currency')
     foreign_amount = FloatNullField(help_text='Foreign Amount')
     foreign_currency = StringNullField(max_length=5, help_text='Foreign Currency')
-    settlement_id = StringNullField(help_text='Settlement ID')
     reimbursable = BooleanFalseField(help_text='Expense reimbursable or not')
     state = StringNotNullField(help_text='Expense state')
     vendor = StringNullField(help_text='Vendor')
@@ -148,7 +147,6 @@ class Expense(BaseForeignWorkspaceModel):
                     'foreign_currency': expense['foreign_currency'],
                     'tax_amount': expense['tax_amount'],
                     'tax_group_id': expense['tax_group_id'],
-                    'settlement_id': expense['settlement_id'],
                     'reimbursable': expense['reimbursable'],
                     'billable': expense['billable'] if expense['billable'] else False,
                     'state': expense['state'],
