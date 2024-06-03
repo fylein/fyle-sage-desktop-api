@@ -10,8 +10,8 @@ from fyle_integrations_platform_connector import PlatformConnector
 from apps.workspaces.models import FyleCredential
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.dependent_fields import create_dependent_custom_field_in_fyle
-from apps.mappings.imports.schedules import schedule_or_delete_dependent_field_tasks
-
+from apps.mappings.imports.schedules import schedule_or_delete_fyle_import_tasks
+from apps.workspaces.models import ImportSetting
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -60,4 +60,8 @@ def run_post_save_dependent_field_settings_triggers(sender, instance: DependentF
     :param instance: Row instance of Sender Class
     :return: None
     """
-    schedule_or_delete_dependent_field_tasks(instance.workspace_id)
+    import_settings_instance = ImportSetting.objects.filter(workspace_id=instance.workspace.id).first()
+
+    schedule_or_delete_fyle_import_tasks(
+        import_settings=import_settings_instance
+    )
