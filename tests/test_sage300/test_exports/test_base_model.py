@@ -4,10 +4,12 @@ from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice
 from apps.fyle.models import Expense, DependentFieldSetting
 from fyle_accounting_mappings.models import (
     ExpenseAttribute,
+    DestinationAttribute,
     Mapping,
     MappingSetting,
     EmployeeMapping
 )
+from apps.workspaces.models import ExportSetting
 
 
 def test_base_model_get_invoice_date(
@@ -186,8 +188,10 @@ def test_get_vendor_id_2(
         accounting_export=accounting_export
     )
 
+    export_settings = ExportSetting.objects.filter(workspace_id=accounting_export.workspace_id).first()
+
     assert return_value is not None
-    assert return_value == 'dest_vendor123'
+    assert return_value == export_settings.default_vendor_id
 
 
 def test_get_vendor_id_3(
@@ -218,6 +222,59 @@ def test_get_vendor_id_3(
 
     assert return_value is not None
     assert return_value == '1'
+
+
+def test_get_vendor_id_4(
+    db,
+    create_temp_workspace,
+    create_expense_objects,
+    add_export_settings,
+    add_accounting_export_expenses,
+    create_employee_mapping_with_vendor
+):
+    workspace_id = 1
+    base_model = PurchaseInvoice
+
+    corporate_card, _ = ExpenseAttribute.objects.update_or_create(
+        workspace_id=workspace_id,
+        defaults = {
+            'attribute_type':'CORPORATE_CARD',
+            'display_name':'Corporate Card',
+            'value':'Bank of Fyle - T1711',
+            'source_id':'bankoffyle123',
+            'detail': {'cardholder_name': None}
+        }
+    )
+
+    vendor = DestinationAttribute.objects.filter(workspace_id=workspace_id, attribute_type='VENDOR').first()
+
+    Mapping.objects.update_or_create(
+        workspace_id=workspace_id,
+        defaults = {
+            'source_type':'CORPORATE_CARD',
+            'destination_type':'VENDOR',
+            'source':corporate_card,
+            'destination':vendor
+        }
+    )
+
+    expense = Expense.objects.filter(workspace_id=workspace_id).first()
+    expense.fund_source = 'CCC'
+    expense.corporate_card_id = corporate_card.source_id
+    expense.save()
+
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+    accounting_export.expenses.set([expense])
+    accounting_export.fund_source = 'CCC'
+    accounting_export.description = {'employee_email': 'ashwin.t@fyle.in'}
+    accounting_export.save()
+
+    return_value = base_model.get_vendor_id(
+        accounting_export=accounting_export
+    )
+
+    assert return_value is not None
+    assert return_value == vendor.destination_id
 
 
 def test_get_job_id(
