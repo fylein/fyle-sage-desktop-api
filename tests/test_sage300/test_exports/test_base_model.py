@@ -12,6 +12,7 @@ from fyle_accounting_mappings.models import (
 from apps.workspaces.models import ExportSetting
 from apps.accounting_exports.models import _group_expenses
 
+
 def test_base_model_get_invoice_date(
     db,
     create_temp_workspace,
