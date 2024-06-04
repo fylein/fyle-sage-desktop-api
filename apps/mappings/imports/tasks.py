@@ -1,3 +1,4 @@
+import logging
 from django_q.tasks import Chain
 
 from apps.mappings.models import ImportLog
@@ -6,6 +7,9 @@ from apps.mappings.imports.modules.projects import Project
 from apps.mappings.imports.modules.cost_centers import CostCenter
 from apps.mappings.imports.modules.merchants import Merchant
 from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 SOURCE_FIELD_CLASS_MAP = {
     'CATEGORY': Category,
@@ -48,8 +52,10 @@ def auto_import_and_map_fyle_fields(workspace_id):
     chain.append('apps.mappings.tasks.sync_sage300_attributes', 'JOB', workspace_id)
     chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CODE', workspace_id)
     chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CATEGORY', workspace_id)
-    if import_log and import_log.status == 'COMPLETE':
-        chain.append('apps.sage300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
+    chain.append('apps.sage300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
+
+    if import_log and import_log.status != 'COMPLETE':
+        logger.error("Project Import not in COMPLETE state in WORKSPACE_ID: %s", workspace_id)
 
     if chain.length() > 0:
         chain.run()
