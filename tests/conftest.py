@@ -617,15 +617,13 @@ def add_cost_category(create_temp_workspace):
 
 @pytest.fixture()
 @pytest.mark.django_db(databases=['default'])
-def add_dependent_field_setting(create_temp_workspace, mocker):
+def add_dependent_field_setting(create_temp_workspace):
     """
     Pytest fixture to add dependent fields to a workspace
     """
     workspace_ids = [
         1, 2, 3
     ]
-
-    mocker.patch('apps.fyle.signals.schedule_or_delete_fyle_import_tasks', return_value=None)
 
     for workspace_id in workspace_ids:
         DependentFieldSetting.objects.create(
