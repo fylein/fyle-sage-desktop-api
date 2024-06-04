@@ -69,7 +69,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
                 'Distributions': purchase_invoice_lineitem_payload,
                 'Header': {
                     'AccountingDate': body.invoice_date,
-                    'Amount': body.amount,
+                    'Amount': round(body.amount, 2),
                     "Code": '{}-{}'.format(body.description['fund_source'], body.id),
                     "Description": body.description['employee_email'],
                     "InvoiceDate": body.invoice_date,
