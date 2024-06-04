@@ -55,7 +55,7 @@ def auto_import_and_map_fyle_fields(workspace_id):
     chain.append('apps.sage300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
 
     if import_log and import_log.status != 'COMPLETE':
-        logger.error("Project Import not in COMPLETE state in WORKSPACE_ID: %s", workspace_id)
+        logger.error(f"Project Import is in {import_log.status} state in WORKSPACE_ID: {workspace_id} with error {str(import_log.error_log)}")
 
     if chain.length() > 0:
         chain.run()
