@@ -73,6 +73,14 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
     """
     Disable projects in Fyle when the projects are updated in Sage 300.
     This is a callback function that is triggered from accounting_mappings.
+    projects_to_disable object format:
+    {
+        'destination_id': {
+            'value': 'old_project_name',
+            'updated_value': 'new_project_name'
+        }
+    }
+
     """
     filters = {
         'workspace_id': workspace_id,
@@ -80,6 +88,7 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
         'value__in': [projects_map['value'] for projects_map in projects_to_disable.values()]
     }
 
+    # Expense attribute value map is as follows: {old_project_name: destination_id}
     expense_attribute_value_map = {v['value']: k for k, v in projects_to_disable.items()}
 
     expense_attributes = ExpenseAttribute.objects.filter(**filters)
@@ -125,8 +134,10 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
             'workspace_id': workspace_id
         }
 
+        # This call will disable the cost codes in Fyle that has old project name
         post_dependent_cost_code(dependent_field_setting, platform, filters, is_enabled=False)
 
+        # here we are updating the CostCategory with the new project name
         bulk_update_payload = []
         for destination_id, value in cost_codes_to_disable.items():
             cost_categories = CostCategory.objects.filter(
