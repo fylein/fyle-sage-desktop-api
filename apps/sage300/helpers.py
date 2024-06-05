@@ -82,6 +82,9 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
     }
 
     """
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+
     filters = {
         'workspace_id': workspace_id,
         'attribute_type': 'PROJECT',
@@ -107,17 +110,19 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
                 'is_enabled': False,
                 'id': expense_attribute.source_id
             }
+        else:
+            logger.error(f"Project with value {expense_attribute.value} not found | WORKSPACE_ID: {workspace_id}")
 
         bulk_payload.append(payload)
 
     sync_after = datetime.now(timezone.utc)
 
-    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
-    platform = PlatformConnector(fyle_credentials=fyle_credentials)
-
     if bulk_payload:
+        logger.info(f"Disabling Projects in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_payload)}")
         platform.projects.post_bulk(bulk_payload)
         platform.projects.sync(sync_after=sync_after)
+    else:
+        logger.info(f"No Projects to Disable in Fyle | WORKSPACE_ID: {workspace_id}")
 
     update_and_disable_cost_code(workspace_id, projects_to_disable, platform)
 
@@ -135,7 +140,9 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
         }
 
         # This call will disable the cost codes in Fyle that has old project name
-        post_dependent_cost_code(dependent_field_setting, platform, filters, is_enabled=False)
+        posted_cost_codes = post_dependent_cost_code(dependent_field_setting, platform, filters, is_enabled=False)
+
+        logger.info(f"Disabling Cost Codes in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(posted_cost_codes)}")
 
         # here we are updating the CostCategory with the new project name
         bulk_update_payload = []
@@ -151,4 +158,5 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
                 bulk_update_payload.append(cost_category)
 
         if bulk_update_payload:
+            logger.info(f"Updating Cost Categories | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_update_payload)}")
             CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'updated_at'], batch_size=50)
