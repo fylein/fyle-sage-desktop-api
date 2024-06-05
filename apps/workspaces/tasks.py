@@ -1,14 +1,14 @@
-from typing import List
 import logging
 from datetime import datetime, timedelta
+from typing import List
+
 from django_q.models import Schedule
 
-from apps.workspaces.models import ExportSetting, AdvancedSetting, FyleCredential
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
-from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
+from apps.fyle.queue import queue_import_credit_card_expenses, queue_import_reimbursable_expenses
 from apps.sage300.exports.direct_cost.tasks import ExportDirectCost
-from apps.fyle.queue import queue_import_reimbursable_expenses, queue_import_credit_card_expenses
-
+from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
+from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ def run_import_export(workspace_id: int, export_mode = None):
 
         if accounting_export.status == 'COMPLETE':
             accounting_export_ids = AccountingExport.objects.filter(
-                fund_source='PERSONAL', exported_at__isnull=True).values_list('id', flat=True)
+                fund_source='PERSONAL', exported_at__isnull=True, workspace_id=workspace_id).values_list('id', flat=True)
 
             if len(accounting_export_ids):
                 is_expenses_exported = True
@@ -67,7 +67,7 @@ def run_import_export(workspace_id: int, export_mode = None):
         )
         if accounting_export.status == 'COMPLETE':
             accounting_export_ids = AccountingExport.objects.filter(
-                fund_source='CCC', exported_at__isnull=True).values_list('id', flat=True)
+                fund_source='CCC', exported_at__isnull=True, workspace_id=workspace_id).values_list('id', flat=True)
 
             if len(accounting_export_ids):
                 is_expenses_exported = True
