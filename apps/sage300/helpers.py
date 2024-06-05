@@ -80,13 +80,13 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
         'value__in': [projects_map['value'] for projects_map in projects_to_disable.values()]
     }
 
-    value_id_map = {v['value']: k for k, v in projects_to_disable.items()}
+    expense_attribute_value_map = {v['value']: k for k, v in projects_to_disable.items()}
 
     expense_attributes = ExpenseAttribute.objects.filter(**filters)
 
     bulk_payload = []
     for expense_attribute in expense_attributes:
-        code = value_id_map.get(expense_attribute.value, None)
+        code = expense_attribute_value_map.get(expense_attribute.value, None)
         if code:
             payload = {
                 'name': expense_attribute.value,
@@ -119,24 +119,25 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
     """
     dependent_field_setting = DependentFieldSetting.objects.filter(workspace_id=workspace_id).first()
 
-    filters = {
-        'job_id__in':list(cost_codes_to_disable.keys()),
-        'workspace_id': workspace_id
-    }
+    if dependent_field_setting:
+        filters = {
+            'job_id__in':list(cost_codes_to_disable.keys()),
+            'workspace_id': workspace_id
+        }
 
-    post_dependent_cost_code(dependent_field_setting, platform, filters, is_enabled=False)
+        post_dependent_cost_code(dependent_field_setting, platform, filters, is_enabled=False)
 
-    bulk_update_payload = []
-    for destination_id, value in cost_codes_to_disable.items():
-        cost_categories = CostCategory.objects.filter(
-            workspace_id=workspace_id,
-            job_id=destination_id
-        ).exclude(job_name=value['updated_value'])
+        bulk_update_payload = []
+        for destination_id, value in cost_codes_to_disable.items():
+            cost_categories = CostCategory.objects.filter(
+                workspace_id=workspace_id,
+                job_id=destination_id
+            ).exclude(job_name=value['updated_value'])
 
-        for cost_category in cost_categories:
-            cost_category.job_name = value['updated_value']
-            cost_category.updated_at = datetime.now(timezone.utc)
-            bulk_update_payload.append(cost_category)
+            for cost_category in cost_categories:
+                cost_category.job_name = value['updated_value']
+                cost_category.updated_at = datetime.now(timezone.utc)
+                bulk_update_payload.append(cost_category)
 
-    if bulk_update_payload:
-        CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'updated_at'], batch_size=50)
+        if bulk_update_payload:
+            CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'updated_at'], batch_size=50)
