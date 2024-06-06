@@ -30,6 +30,7 @@ class CostCategory(BaseForeignWorkspaceModel):
     name = StringNotNullField(help_text='Sage300 Cost Type Name')
     cost_category_id = StringNotNullField(help_text='Sage300 Category Id')
     status = BooleanFalseField(help_text='Sage300 Cost Type Status')
+    is_imported = models.BooleanField(default=False, help_text='Is Imported')
 
     class Meta:
         db_table = 'cost_category'

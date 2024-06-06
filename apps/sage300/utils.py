@@ -281,3 +281,4 @@ class SageDesktopConnector:
         for cost_categories in cost_categories_generator:
             for categories in cost_categories:
                 CostCategory.bulk_create_or_update(categories, self.workspace_id)
+                self._update_latest_version('COST_CATEGORY')
