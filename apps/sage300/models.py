@@ -40,7 +40,6 @@ class CostCategory(BaseForeignWorkspaceModel):
         """
         Bulk create or update cost types
         """
-
         list_of_categories = []
         for data in categories:
             list_of_categories.append(Category.from_dict(data))
