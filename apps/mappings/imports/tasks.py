@@ -7,6 +7,8 @@ from apps.mappings.imports.modules.projects import Project
 from apps.mappings.imports.modules.cost_centers import CostCenter
 from apps.mappings.imports.modules.merchants import Merchant
 from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
+from apps.mappings.helpers import create_deps_import_log
+
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -49,9 +51,12 @@ def auto_import_and_map_fyle_fields(workspace_id):
 
     chain = Chain()
 
+    cost_code_import_log = create_deps_import_log('COST_CODE', workspace_id)
+    cost_category_import_log = create_deps_import_log('COST_CATEGORY', workspace_id)
+
     chain.append('apps.mappings.tasks.sync_sage300_attributes', 'JOB', workspace_id)
-    chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CODE', workspace_id)
-    chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CATEGORY', workspace_id)
+    chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CODE', workspace_id, cost_code_import_log)
+    chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CATEGORY', workspace_id, cost_category_import_log)
     chain.append('apps.sage300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
 
     if import_log and import_log.status != 'COMPLETE':

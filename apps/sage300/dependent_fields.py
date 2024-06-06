@@ -11,6 +11,8 @@ from fyle.platform.exceptions import InvalidTokenError as FyleInvalidTokenError
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.models import CostCategory
 from apps.fyle.helpers import connect_to_platform
+from apps.mappings.models import ImportLog
+from apps.mappings.exceptions import handle_import_exceptions_v2
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -68,7 +70,8 @@ def create_dependent_custom_field_in_fyle(workspace_id: int, fyle_attribute_type
     return platform.expense_custom_fields.post(expense_custom_field_payload)
 
 
-def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict, is_enabled: bool = True) -> List[str]:
+@handle_import_exceptions_v2
+def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict, is_enabled: bool = True) -> List[str]:
     projects = CostCategory.objects.filter(**filters).values('job_name').annotate(cost_codes=ArrayAgg('cost_code_name', distinct=True))
     projects_from_categories = [project['job_name'] for project in projects]
     posted_cost_codes = []
@@ -103,10 +106,14 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
                 logger.error(f'Exception while posting dependent cost code | Error: {exception} | Payload: {payload}')
                 raise
 
+    import_log.status = 'COMPLETE'
+    import_log.error_log = []
+    import_log.save()
     return posted_cost_codes
 
 
-def post_dependent_cost_type(dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict):
+@handle_import_exceptions_v2
+def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict):
     cost_categories = CostCategory.objects.filter(is_imported=False, **filters).values('cost_code_name').annotate(cost_categories=ArrayAgg('name', distinct=True))
 
     for category in cost_categories:
@@ -129,6 +136,10 @@ def post_dependent_cost_type(dependent_field_setting: DependentFieldSetting, pla
                 logger.error(f'Exception while posting dependent cost type | Error: {exception} | Payload: {payload}')
                 raise
 
+    import_log.status = 'COMPLETE'
+    import_log.error_log = []
+    import_log.save()
+
 
 def post_dependent_expense_field_values(workspace_id: int, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector = None):
     if not platform:
@@ -141,10 +152,23 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
     if dependent_field_setting.last_successful_import_at:
         filters['updated_at__gte'] = dependent_field_setting.last_successful_import_at
 
-    posted_cost_types = post_dependent_cost_code(dependent_field_setting, platform, filters)
+    cost_code_import_log = ImportLog.objects.filter(workspace_id=workspace_id, attribute_type='COST_CODE').first()
+    cost_category_import_log = ImportLog.objects.filter(workspace_id=workspace_id, attribute_type='COST_CATEGORY').first()
+
+    posted_cost_types = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters)
     if posted_cost_types:
+        if cost_code_import_log.status == 'FAILED':
+            cost_category_import_log.status = 'FAILED'
+            cost_category_import_log.error_log = {'message': 'Importing COST_CODE failed'}
+            cost_category_import_log.save()
+            return
+
         filters['cost_code_name__in'] = posted_cost_types
-        post_dependent_cost_type(dependent_field_setting, platform, filters)
+        post_dependent_cost_type(cost_category_import_log, dependent_field_setting, platform, filters)
+    else:
+        cost_category_import_log.status = 'COMPLETE'
+        cost_category_import_log.error_log = []
+        cost_category_import_log.save()
 
     DependentFieldSetting.objects.filter(workspace_id=workspace_id).update(last_successful_import_at=datetime.now())
 

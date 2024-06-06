@@ -12,6 +12,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 from apps.sage300.models import CostCategory
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.dependent_fields import post_dependent_cost_code
+from apps.mappings.helpers import create_deps_import_log
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -138,9 +139,10 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
             'job_id__in':list(cost_codes_to_disable.keys()),
             'workspace_id': workspace_id
         }
+        cost_code_import_log = create_deps_import_log('COST_CODE', workspace_id)
 
         # This call will disable the cost codes in Fyle that has old project name
-        posted_cost_codes = post_dependent_cost_code(dependent_field_setting, platform, filters, is_enabled=False)
+        posted_cost_codes = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters, is_enabled=False)
 
         logger.info(f"Disabling Cost Codes in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(posted_cost_codes)}")
 

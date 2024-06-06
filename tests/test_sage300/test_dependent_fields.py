@@ -6,6 +6,7 @@ from apps.sage300.dependent_fields import (
     import_dependent_fields_to_fyle
 )
 from apps.fyle.models import DependentFieldSetting
+from apps.mappings.helpers import create_deps_import_log
 
 
 def test_construct_custom_field_placeholder():
@@ -64,8 +65,10 @@ def test_post_dependent_cost_code(
     }
 
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
+    cost_code_import_log = create_deps_import_log('COST_CODE', workspace_id)
 
     result = post_dependent_cost_code(
+        cost_code_import_log,
         dependent_field_setting=dependent_field_settings,
         platform=platform.return_value,
         filters=filters
@@ -96,7 +99,10 @@ def test_post_dependent_cost_type(
 
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
 
+    cost_category_import_log = create_deps_import_log('COST_CATEGORY', workspace_id)
+
     post_dependent_cost_type(
+        cost_category_import_log,
         dependent_field_setting=dependent_field_settings,
         platform=platform.return_value,
         filters=filters
