@@ -130,6 +130,9 @@ def test_post_dependent_expense_field_values(
 
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
 
+    create_deps_import_log('COST_CODE', workspace_id)
+    create_deps_import_log('COST_CATEGORY', workspace_id)
+
     post_dependent_expense_field_values(
         workspace_id=workspace_id,
         dependent_field_setting=dependent_field_settings
@@ -155,6 +158,9 @@ def test_import_dependent_fields_to_fyle(
         platform.return_value,
         'dependent_fields.bulk_post_dependent_expense_field_values'
     )
+
+    create_deps_import_log('COST_CODE', workspace_id)
+    create_deps_import_log('COST_CATEGORY', workspace_id)
 
     import_dependent_fields_to_fyle(workspace_id)
 

@@ -74,7 +74,7 @@ def handle_import_exceptions(func):
 
 
 def handle_import_exceptions_v2(func):
-    def new_fn(*args):
+    def new_fn(*args, **kwargs):
         import_log: ImportLog = args[0]
         workspace_id = import_log.workspace_id
         attribute_type = import_log.attribute_type
@@ -85,7 +85,7 @@ def handle_import_exceptions_v2(func):
             'response': None
         }
         try:
-            return func(*args)
+            return func(*args, **kwargs)
         except WrongParamsError as exception:
             error['message'] = exception.message
             error['response'] = exception.response
