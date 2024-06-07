@@ -75,6 +75,14 @@ def test_post_dependent_cost_code(
     )
 
     assert result == ['Direct Mail Campaign', 'Platform APIs']
+    assert cost_code_import_log.status == 'COMPLETE'
+
+    post_dependent_cost_code(
+        cost_code_import_log,
+        dependent_field_setting=dependent_field_settings,
+        platform=platform.return_value
+    )
+    assert cost_code_import_log.status == 'FATAL'
 
 
 def test_post_dependent_cost_type(
@@ -109,6 +117,14 @@ def test_post_dependent_cost_type(
     )
 
     assert platform.return_value.dependent_fields.bulk_post_dependent_expense_field_values.call_count == 2
+    assert cost_category_import_log.status == 'COMPLETE'
+
+    post_dependent_cost_type(
+        cost_category_import_log,
+        dependent_field_setting=dependent_field_settings,
+        platform=platform.return_value
+    )
+    assert cost_category_import_log.status == 'FATAL'
 
 
 def test_post_dependent_expense_field_values(
