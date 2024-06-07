@@ -12,7 +12,7 @@ from apps.fyle.models import DependentFieldSetting
 from apps.sage300.models import CostCategory
 from apps.fyle.helpers import connect_to_platform
 from apps.mappings.models import ImportLog
-from apps.mappings.exceptions import handle_import_exceptions_v2
+from apps.mappings.exceptions import handle_import_exceptions
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -70,7 +70,7 @@ def create_dependent_custom_field_in_fyle(workspace_id: int, fyle_attribute_type
     return platform.expense_custom_fields.post(expense_custom_field_payload)
 
 
-@handle_import_exceptions_v2
+@handle_import_exceptions
 def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict, is_enabled: bool = True) -> List[str]:
     projects = CostCategory.objects.filter(**filters).values('job_name').annotate(cost_codes=ArrayAgg('cost_code_name', distinct=True))
     projects_from_categories = [project['job_name'] for project in projects]
@@ -112,7 +112,7 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     return posted_cost_codes
 
 
-@handle_import_exceptions_v2
+@handle_import_exceptions
 def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict):
     cost_categories = CostCategory.objects.filter(is_imported=False, **filters).values('cost_code_name').annotate(cost_categories=ArrayAgg('name', distinct=True))
 
