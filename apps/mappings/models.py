@@ -35,6 +35,20 @@ class ImportLog(BaseForeignWorkspaceModel):
         db_table = 'import_logs'
         unique_together = ('workspace', 'attribute_type')
 
+    @classmethod
+    def create_import_log(self, attribute_type, workspace_id):
+        """
+        Create import logs set to IN_PROGRESS
+        """
+        import_log, _ = self.objects.update_or_create(
+            workspace_id=workspace_id,
+            attribute_type=attribute_type,
+            defaults={
+                'status': 'IN_PROGRESS'
+            }
+        )
+        return import_log
+
 
 class Version(BaseModel):
     """

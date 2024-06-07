@@ -2,7 +2,7 @@ from apps.sage300.utils import SageDesktopConnector, Sage300Credential
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.mappings.models import Version
 from apps.workspaces.models import Workspace
-from apps.mappings.helpers import create_deps_import_log
+from apps.mappings.models import ImportLog
 
 
 def test_sage_desktop_connector(
@@ -454,7 +454,7 @@ def test_sync_cost_categories(
         workspace_id=workspace_id
     )
 
-    cost_category_import_log = create_deps_import_log('COST_CATEGORY', workspace_id)
+    cost_category_import_log = ImportLog.create_import_log('COST_CATEGORY', workspace_id)
 
     mock_category = [{
         "Id": 1,
@@ -504,7 +504,7 @@ def test_sync_cost_codes(
         workspace_id=workspace_id
     )
 
-    cost_code_import_log = create_deps_import_log('COST_CODE', workspace_id)
+    cost_code_import_log = ImportLog.create_import_log('COST_CODE', workspace_id)
 
     Version.objects.update_or_create(
         workspace_id=workspace_id,
