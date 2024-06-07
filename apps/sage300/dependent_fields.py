@@ -158,7 +158,6 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
     posted_cost_types = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters)
     if posted_cost_types:
         filters['cost_code_name__in'] = posted_cost_types
-        post_dependent_cost_type(cost_category_import_log, dependent_field_setting, platform, filters)
 
     if cost_code_import_log.status in ['FAILED', 'FATAL']:
         cost_category_import_log.status = 'FAILED'
@@ -166,9 +165,7 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
         cost_category_import_log.save()
         return
     else:
-        cost_category_import_log.status = 'COMPLETE'
-        cost_category_import_log.error_log = []
-        cost_category_import_log.save()
+        post_dependent_cost_type(cost_category_import_log, dependent_field_setting, platform, filters)
 
     DependentFieldSetting.objects.filter(workspace_id=workspace_id).update(last_successful_import_at=datetime.now())
 
