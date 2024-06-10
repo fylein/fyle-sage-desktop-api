@@ -96,14 +96,18 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
 
         if payload:
             sleep(0.2)
-            platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
-            posted_cost_codes.extend(cost_code_names)
+            try:
+                platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
+                posted_cost_codes.extend(cost_code_names)
+            except Exception as exception:
+                logger.error(f'Exception while posting dependent cost code | Error: {exception} | Payload: {payload}')
+                raise
 
     return posted_cost_codes
 
 
 def post_dependent_cost_type(dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict):
-    cost_categories = CostCategory.objects.filter(**filters).values('cost_code_name').annotate(cost_categories=ArrayAgg('name', distinct=True))
+    cost_categories = CostCategory.objects.filter(is_imported=False, **filters).values('cost_code_name').annotate(cost_categories=ArrayAgg('name', distinct=True))
 
     for category in cost_categories:
         payload = [
@@ -118,7 +122,12 @@ def post_dependent_cost_type(dependent_field_setting: DependentFieldSetting, pla
 
         if payload:
             sleep(0.2)
-            platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
+            try:
+                platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
+                CostCategory.objects.filter(cost_code_name=category['cost_code_name']).update(is_imported=True)
+            except Exception as exception:
+                logger.error(f'Exception while posting dependent cost type | Error: {exception} | Payload: {payload}')
+                raise
 
 
 def post_dependent_expense_field_values(workspace_id: int, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector = None):
