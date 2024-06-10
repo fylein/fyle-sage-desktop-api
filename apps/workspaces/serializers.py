@@ -158,6 +158,17 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         # Update workspace onboarding state
         workspace = export_settings.workspace
 
+        if export_settings.credit_card_expense_export_type == 'PURCHASE_INVOICE':
+            MappingSetting.objects.update_or_create(
+                workspace_id = workspace_id,
+                defaults={
+                    'source_field':'CORPORATE_CARD',
+                    'destination_field':'VENDOR',
+                    'import_to_fyle': False,
+                    'is_custom': False
+                }
+            )
+
         if workspace.onboarding_state == 'EXPORT_SETTINGS':
             workspace.onboarding_state = 'IMPORT_SETTINGS'
             workspace.save()
