@@ -4,14 +4,8 @@ from apps.sage300.helpers import (
     sync_dimensions,
     disable_projects,
     update_and_disable_cost_code
-    sync_dimensions,
-    disable_projects,
-    update_and_disable_cost_code
 )
 from apps.workspaces.models import Workspace, Sage300Credential
-from fyle_accounting_mappings.models import ExpenseAttribute
-from apps.fyle.models import DependentFieldSetting
-from apps.sage300.models import CostCategory
 from fyle_accounting_mappings.models import ExpenseAttribute
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.models import CostCategory
