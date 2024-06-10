@@ -68,8 +68,7 @@ def create_dependent_custom_field_in_fyle(workspace_id: int, fyle_attribute_type
     return platform.expense_custom_fields.post(expense_custom_field_payload)
 
 
-def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict) -> List[str]:
-
+def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict, is_enabled: bool = True) -> List[str]:
     projects = CostCategory.objects.filter(**filters).values('job_name').annotate(cost_codes=ArrayAgg('cost_code_name', distinct=True))
     projects_from_categories = [project['job_name'] for project in projects]
     posted_cost_codes = []
@@ -91,7 +90,7 @@ def post_dependent_cost_code(dependent_field_setting: DependentFieldSetting, pla
                     'parent_expense_field_value': project['job_name'],
                     'expense_field_id': dependent_field_setting.cost_code_field_id,
                     'expense_field_value': cost_code,
-                    'is_enabled': True
+                    'is_enabled': is_enabled
                 })
                 cost_code_names.append(cost_code)
 
