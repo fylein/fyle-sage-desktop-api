@@ -8,6 +8,10 @@ CSV Template for Cost Code:
     cost_code_name
 CSV Template for Cost Category:
     cost_category_name
+*/
+
+
+/*
 
 Steps for Cost Code:
 1. Create a temp table to store the data from the CSV
@@ -17,12 +21,8 @@ Steps for Cost Code:
 5. Delete from the fyle dependent_fields_values table where expense_field_value is the Cost Code
 6. Delete from the fyle dependent_fields_values table where parent_expense_field_value is the Cost Code
 
-Steps for Cost Category:
-1. Create a temp table to store the data from the CSV
-2. Copy the data from the CSV to the temp table
-3. Delete from the Cost Category table where Cost Category is the mentioned Cost Category
-4. Delete from the fyle dependent_fields_values table where expense_field_value is the Cost Category
 */
+
 
 ------ Cost Code ------
 rollback;
@@ -50,6 +50,8 @@ where cost_code_name in (
 )
 and workspace_id = _workspace_id;
 
+
+
 ---- Fyle DB ----
 --- update the org id here
 delete from platform_schema.dependent_expense_field_values 
@@ -68,6 +70,16 @@ where parent_expense_field_value in (
 )
 and org_id = _org_id;
 
+
+
+
+/*
+Steps for Cost Category:
+1. Create a temp table to store the data from the CSV
+2. Copy the data from the CSV to the temp table
+3. Delete from the Cost Category table where Cost Category is the mentioned Cost Category
+4. Delete from the fyle dependent_fields_values table where expense_field_value is the Cost Category
+*/
 
 ----- Cost Category ------
 rollback;
