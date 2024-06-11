@@ -164,7 +164,6 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
                 destination_field='VENDOR',
                 defaults={
                     'source_field':'CORPORATE_CARD',
-                    'destination_field':'VENDOR',
                     'import_to_fyle': False,
                     'is_custom': False
                 }
