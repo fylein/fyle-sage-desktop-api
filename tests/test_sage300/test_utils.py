@@ -487,6 +487,8 @@ def test_sync_cost_categories(
 
     assert Version.objects.get(workspace_id=workspace_id).cost_category == 2
 
+    assert Version.objects.get(workspace_id=workspace_id).cost_category == 2
+
 
 def test_sync_cost_codes(
     db,

@@ -8,7 +8,6 @@ from apps.mappings.imports.modules.cost_centers import CostCenter
 from apps.mappings.imports.modules.merchants import Merchant
 from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
 
-
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 

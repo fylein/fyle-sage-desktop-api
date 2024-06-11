@@ -49,7 +49,7 @@ class PurchaseInvoice(BaseExportModel):
         purchase_invoice, _ = PurchaseInvoice.objects.update_or_create(
             accounting_export=accounting_export,
             defaults={
-                'amount': amount,
+                'amount': round(amount, 2),
                 'vendor_id': vendor_id,
                 'description': description,
                 'invoice_date': invoice_date,
@@ -143,7 +143,7 @@ class PurchaseInvoiceLineitems(BaseExportModel):
                 purchase_invoice_id=purchase_invoice.id,
                 expense_id=lineitem.id,
                 defaults={
-                    'amount': lineitem.amount,
+                    'amount': round(lineitem.amount, 2),
                     'accounts_payable_account_id': account.destination_account.destination_id,
                     'job_id': job_id,
                     'commitment_id': commitment_id,

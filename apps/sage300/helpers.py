@@ -132,7 +132,7 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
     """
     Update the job_name in CostCategory and disable the old cost code in Fyle
     """
-    dependent_field_setting = DependentFieldSetting.objects.filter(workspace_id=workspace_id).first()
+    dependent_field_setting = DependentFieldSetting.objects.filter(is_import_enabled=True, workspace_id=workspace_id).first()
 
     if dependent_field_setting:
         filters = {
@@ -144,7 +144,7 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
         # This call will disable the cost codes in Fyle that has old project name
         posted_cost_codes = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters, is_enabled=False)
 
-        logger.info(f"Disabling Cost Codes in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(posted_cost_codes)}")
+        logger.info(f"Disabled Cost Codes in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(posted_cost_codes)}")
 
         # here we are updating the CostCategory with the new project name
         bulk_update_payload = []
