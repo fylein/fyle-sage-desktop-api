@@ -458,20 +458,31 @@ def test_sync_cost_categories(
         "JobId": "10064",
         "CostCodeId": "10064",
         "Name": "Test Category 1",
-        "IsActive": True
+        "IsActive": True,
+        "Version": 1,
     },{
         "Id": 2,
         "JobId": "10081",
         "CostCodeId": "10064",
         "Name": "Test Category 2",
-        "IsActive": False
+        "IsActive": False,
+        "Version": '2'
     }]
+
+    Version.objects.update_or_create(
+        workspace_id=workspace_id,
+        defaults={
+            'cost_category': 1
+        }
+    )
 
     categories_generator = [[mock_category]]
 
     sage_connector.connection.categories.get_all_categories.return_value = categories_generator
 
     sage_connector.sync_cost_categories()
+
+    assert Version.objects.get(workspace_id=workspace_id).cost_category == 2
 
 
 def test_sync_cost_codes(

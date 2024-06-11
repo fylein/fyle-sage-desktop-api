@@ -1,6 +1,7 @@
 from django_q.tasks import Chain
 from fyle_accounting_mappings.models import MappingSetting
 from apps.workspaces.models import ImportSetting
+from apps.fyle.models import DependentFieldSetting
 
 
 def chain_import_fields_to_fyle(workspace_id):
@@ -11,6 +12,9 @@ def chain_import_fields_to_fyle(workspace_id):
     mapping_settings = MappingSetting.objects.filter(workspace_id=workspace_id, import_to_fyle=True)
     custom_field_mapping_settings = MappingSetting.objects.filter(workspace_id=workspace_id, is_custom=True, import_to_fyle=True)
     import_settings = ImportSetting.objects.get(workspace_id=workspace_id)
+    dependent_field_settings = DependentFieldSetting.objects.filter(workspace_id=workspace_id, is_import_enabled=True).first()
+    project_mapping = MappingSetting.objects.filter(workspace_id=workspace_id, source_field='PROJECT', import_to_fyle=True).first()
+
     chain = Chain()
 
     if import_settings.import_categories:
@@ -45,6 +49,12 @@ def chain_import_fields_to_fyle(workspace_id):
             custom_fields_mapping_setting.destination_field,
             custom_fields_mapping_setting.source_field,
             True
+        )
+
+    if project_mapping and dependent_field_settings:
+        chain.append(
+            'apps.mappings.imports.tasks.auto_import_and_map_fyle_fields',
+            workspace_id
         )
 
     if chain.length() > 0:

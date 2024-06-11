@@ -624,6 +624,7 @@ def add_dependent_field_setting(create_temp_workspace):
     workspace_ids = [
         1, 2, 3
     ]
+
     for workspace_id in workspace_ids:
         DependentFieldSetting.objects.create(
             is_import_enabled=True,

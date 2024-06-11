@@ -141,8 +141,18 @@ class SageDesktopConnector:
                         if destination_attr:
                             destination_attributes.append(destination_attr)
 
-                    DestinationAttribute.bulk_create_or_update_destination_attributes(
-                        destination_attributes, attribute_type, workspace_id, True)
+                    if attribute_type == 'JOB':
+                        project_disable_callback_path = 'apps.sage300.helpers.disable_projects'
+                        DestinationAttribute.bulk_create_or_update_destination_attributes(
+                            destination_attributes,
+                            attribute_type,
+                            workspace_id,
+                            True,
+                            project_disable_callback_path=project_disable_callback_path
+                        )
+                    else:
+                        DestinationAttribute.bulk_create_or_update_destination_attributes(
+                            destination_attributes, attribute_type, workspace_id, True)
         else:
             destination_attributes = []
             for item in data_gen:
@@ -266,8 +276,12 @@ class SageDesktopConnector:
         """
          Synchronize categories from Sage Desktop SDK to your application
         """
-        cost_categories_generator = self.connection.categories.get_all_categories()
+        version = Version.objects.get(workspace_id=self.workspace_id)
+        cost_categories_generator = self.connection.categories.get_all_categories(version=version.cost_category)
 
         for cost_categories in cost_categories_generator:
             for categories in cost_categories:
+                latest_version = max([int(category['Version']) for category in categories])
                 CostCategory.bulk_create_or_update(categories, self.workspace_id)
+                version.cost_category = latest_version
+                version.save()

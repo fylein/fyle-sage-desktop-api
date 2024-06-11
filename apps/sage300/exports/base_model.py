@@ -3,7 +3,7 @@ from typing import Optional
 
 from django.db import models
 from django.db.models import Sum
-from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting, EmployeeMapping, DestinationAttribute
+from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting, EmployeeMapping
 
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.models import DependentFieldSetting, Expense
@@ -60,7 +60,6 @@ class BaseExportModel(models.Model):
     def get_vendor_id(accounting_export: AccountingExport):
         # Retrieve export settings for the given workspace
         export_settings = ExportSetting.objects.get(workspace_id=accounting_export.workspace_id)
-
         # Extract the description from the accounting export
         description = accounting_export.description
 
@@ -81,22 +80,22 @@ class BaseExportModel(models.Model):
         # Check if the fund source is 'CCC'
         elif accounting_export.fund_source == 'CCC':
             # Retrieve the vendor from the first expense
-            expense_vendor = accounting_export.expenses.first().vendor
+            vendor_id = None
+            corporate_card_id = accounting_export.expenses.first().corporate_card_id
 
-            # Query DestinationAttribute for the vendor with case-insensitive search
-            if expense_vendor:
-                vendor = DestinationAttribute.objects.filter(
+            if corporate_card_id:
+                vendor_mapping = Mapping.objects.filter(
                     workspace_id=accounting_export.workspace_id,
-                    value__icontains=expense_vendor,
-                    attribute_type='VENDOR'
-                ).values_list('destination_id', flat=True).first()
-                if not vendor:
-                    vendor = export_settings.default_vendor_id
-            else:
-                vendor = export_settings.default_vendor_id
+                    source_type='CORPORATE_CARD',
+                    destination_type='VENDOR',
+                    source__source_id=corporate_card_id
+                ).first()
 
-            # Update vendor_id with the retrieved vendor or default to export settings
-            vendor_id = vendor
+                if vendor_mapping:
+                    vendor_id = vendor_mapping.destination.destination_id
+
+            if not vendor_id:
+                vendor_id = export_settings.default_vendor_id
 
         # Return the determined vendor_id
         return vendor_id
