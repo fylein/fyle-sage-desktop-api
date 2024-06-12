@@ -174,7 +174,7 @@ class BaseExportModel(models.Model):
             elif job_settings.source_field == 'COST_CENTER':
                 source_value = expense.cost_center
             else:
-                attribute = ExpenseAttribute.objects.filter(attribute_type=job_settings.source_field).first()
+                attribute = ExpenseAttribute.objects.filter(attribute_type=job_settings.source_field, workspace_id=accounting_export.workspace_id).first()
                 source_value = expense.custom_properties.get(attribute.display_name, None)
 
             # Check for a mapping based on the source value
@@ -243,7 +243,7 @@ class BaseExportModel(models.Model):
 
         if standard_category_setting:
             # Retrieve the attribute corresponding to the source field
-            attribute = ExpenseAttribute.objects.filter(attribute_type=standard_category_setting.source_field).first()
+            attribute = ExpenseAttribute.objects.filter(attribute_type=standard_category_setting.source_field, workspace_id=accounting_export.workspace_id).first()
 
             # Determine the source value based on the configured source field
             source_value = expense.custom_properties.get(attribute.display_name, None)
@@ -283,7 +283,7 @@ class BaseExportModel(models.Model):
 
         if standard_cost_code_setting:
             # Retrieve the attribute corresponding to the source field
-            attribute = ExpenseAttribute.objects.filter(attribute_type=standard_cost_code_setting.source_field).first()
+            attribute = ExpenseAttribute.objects.filter(attribute_type=standard_cost_code_setting.source_field, workspace_id=accounting_export.workspace_id).first()
 
             # Determine the source value based on the configured source field
             source_value = expense.custom_properties.get(attribute.display_name, None)
