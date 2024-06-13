@@ -1,7 +1,12 @@
 from datetime import datetime
 from typing import List
 from apps.mappings.imports.modules.base import Base
+from apps.sage300.models import CostCategory
 from fyle_accounting_mappings.models import DestinationAttribute
+import logging
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 class Project(Base):
@@ -39,23 +44,59 @@ class Project(Base):
         """
         payload = []
 
-        for attribute in paginated_destination_attributes:
-            project = {
-                'name': attribute.value,
-                'code': attribute.destination_id,
-                'description': 'Sage 300 Project - {0}, Id - {1}'.format(
-                    attribute.value,
-                    attribute.destination_id
-                ),
-                'is_enabled': True if attribute.active is None else attribute.active
-            }
+        job_ids_in_cost_category = CostCategory.objects.filter(
+            workspace_id = self.workspace_id,
+            job_id__in = [attribute.destination_id for attribute in paginated_destination_attributes]
+        ).values_list('job_id', flat=True).distinct()
 
-            # Create a new project if it does not exist in Fyle
-            if attribute.value.lower() not in existing_fyle_attributes_map:
-                payload.append(project)
-            # Disable the existing project in Fyle if auto-sync status is allowed and the destination_attributes is inactive
-            elif is_auto_sync_status_allowed and not attribute.active:
-                project['id'] = existing_fyle_attributes_map[attribute.value.lower()]
-                payload.append(project)
+        logger.info(f'Job Ids in Cost Category: {job_ids_in_cost_category}')
+
+        for attribute in paginated_destination_attributes:
+            if attribute.destination_id in job_ids_in_cost_category:
+                project = {
+                    'name': attribute.value,
+                    'code': attribute.destination_id,
+                    'description': 'Sage 300 Project - {0}, Id - {1}'.format(
+                        attribute.value,
+                        attribute.destination_id
+                    ),
+                    'is_enabled': True if attribute.active is None else attribute.active
+                }
+
+                # Create a new project if it does not exist in Fyle
+                if attribute.value.lower() not in existing_fyle_attributes_map:
+                    payload.append(project)
+                # Disable the existing project in Fyle if auto-sync status is allowed and the destination_attributes is inactive
+                elif is_auto_sync_status_allowed and not attribute.active:
+                    project['id'] = existing_fyle_attributes_map[attribute.value.lower()]
+                    payload.append(project)
 
         return payload
+
+    def construct_attributes_filter(self, attribute_type: str, paginated_destination_attribute_values: List[str] = []):
+        """
+        Construct the attributes filter
+        :param attribute_type: attribute type
+        :param paginated_destination_attribute_values: paginated destination attribute values
+        :return: dict
+        """
+        filters = {
+            'attribute_type': attribute_type,
+            'workspace_id': self.workspace_id
+        }
+
+        if paginated_destination_attribute_values:
+            # filters['updated_at__gte'] = self.sync_after
+            filters['value__in'] = paginated_destination_attribute_values
+
+        else:
+            job_ids = CostCategory.objects.filter(
+                workspace_id = self.workspace_id,
+                is_imported = False
+            ).values_list('job_id', flat=True).distinct()
+
+            filters['destination_id__in'] = job_ids
+
+        logger.info(f'Attributes Filter: {filters}')
+
+        return filters

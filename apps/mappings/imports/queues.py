@@ -17,6 +17,13 @@ def chain_import_fields_to_fyle(workspace_id):
 
     chain = Chain()
 
+    if project_mapping and dependent_field_settings:
+        chain.append(
+            'apps.mappings.imports.tasks.auto_import_and_map_fyle_fields',
+            workspace_id,
+            False
+        )
+
     if import_settings.import_categories:
         chain.append(
             'apps.mappings.imports.tasks.trigger_import_via_schedule',
@@ -54,7 +61,8 @@ def chain_import_fields_to_fyle(workspace_id):
     if project_mapping and dependent_field_settings:
         chain.append(
             'apps.mappings.imports.tasks.auto_import_and_map_fyle_fields',
-            workspace_id
+            workspace_id,
+            True
         )
 
     if chain.length() > 0:

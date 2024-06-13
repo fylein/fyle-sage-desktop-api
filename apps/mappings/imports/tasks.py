@@ -38,7 +38,7 @@ def trigger_import_via_schedule(workspace_id: int, destination_field: str, sourc
         item.trigger_import()
 
 
-def auto_import_and_map_fyle_fields(workspace_id):
+def auto_import_and_map_fyle_fields(workspace_id, post_deps_to_fyle: bool = True):
     """
     Auto import and map fyle fields
     """
@@ -49,13 +49,16 @@ def auto_import_and_map_fyle_fields(workspace_id):
 
     chain = Chain()
 
-    cost_code_import_log = ImportLog.create_import_log('COST_CODE', workspace_id)
-    cost_category_import_log = ImportLog.create_import_log('COST_CATEGORY', workspace_id)
+    if not post_deps_to_fyle:
+        cost_code_import_log = ImportLog.create_import_log('COST_CODE', workspace_id)
+        cost_category_import_log = ImportLog.create_import_log('COST_CATEGORY', workspace_id)
 
-    chain.append('apps.mappings.tasks.sync_sage300_attributes', 'JOB', workspace_id)
-    chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CODE', workspace_id, cost_code_import_log)
-    chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CATEGORY', workspace_id, cost_category_import_log)
-    chain.append('apps.sage300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
+        chain.append('apps.mappings.tasks.sync_sage300_attributes', 'JOB', workspace_id)
+        chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CODE', workspace_id, cost_code_import_log)
+        chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CATEGORY', workspace_id, cost_category_import_log)
+
+    else:
+        chain.append('apps.sage300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
 
     if import_log and import_log.status != 'COMPLETE':
         logger.error(f"Project Import is in {import_log.status} state in WORKSPACE_ID: {workspace_id} with error {str(import_log.error_log)}")

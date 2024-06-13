@@ -167,6 +167,9 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
     else:
         post_dependent_cost_type(cost_category_import_log, dependent_field_setting, platform, filters)
 
+    if cost_category_import_log.status in ['FAILED', 'FATAL']:
+        return
+
     DependentFieldSetting.objects.filter(workspace_id=workspace_id).update(last_successful_import_at=datetime.now())
 
 

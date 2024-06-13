@@ -120,6 +120,7 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
 
     if bulk_payload:
         logger.info(f"Disabling Projects in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_payload)}")
+        logger.info(f"Projects to Disable: {bulk_payload}")
         platform.projects.post_bulk(bulk_payload)
         platform.projects.sync(sync_after=sync_after)
     else:
@@ -140,7 +141,7 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
             'workspace_id': workspace_id
         }
         cost_code_import_log = ImportLog.create_import_log('COST_CODE', workspace_id)
-
+        logger.info("Filters for Cost Code Import Log: %s", filters)
         # This call will disable the cost codes in Fyle that has old project name
         posted_cost_codes = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters, is_enabled=False)
 
@@ -157,8 +158,10 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
             for cost_category in cost_categories:
                 cost_category.job_name = value['updated_value']
                 cost_category.updated_at = datetime.now(timezone.utc)
+                cost_category.is_imported = False
                 bulk_update_payload.append(cost_category)
 
         if bulk_update_payload:
+            logger.info("Bulk Update Payload: %s", bulk_update_payload)
             logger.info(f"Updating Cost Categories | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_update_payload)}")
-            CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'updated_at'], batch_size=50)
+            CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'updated_at', 'is_imported'], batch_size=50)
