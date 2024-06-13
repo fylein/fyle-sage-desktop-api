@@ -1,5 +1,5 @@
 import logging
-from django_q.tasks import Chain
+# from django_q.tasks import Chain
 
 from apps.mappings.models import ImportLog
 from apps.mappings.imports.modules.categories import Category
