@@ -66,28 +66,3 @@ class Project(Base):
                     payload.append(project)
 
         return payload
-
-    def construct_attributes_filter(self, attribute_type: str, paginated_destination_attribute_values: List[str] = []):
-        """
-        Construct the attributes filter
-        :param attribute_type: attribute type
-        :param paginated_destination_attribute_values: paginated destination attribute values
-        :return: dict
-        """
-        filters = {
-            'attribute_type': attribute_type,
-            'workspace_id': self.workspace_id
-        }
-
-        if paginated_destination_attribute_values:
-            filters['value__in'] = paginated_destination_attribute_values
-
-        else:
-            job_ids = CostCategory.objects.filter(
-                workspace_id = self.workspace_id,
-                is_imported = False
-            ).values_list('job_id', flat=True).distinct()
-
-            filters['destination_id__in'] = job_ids
-
-        return filters

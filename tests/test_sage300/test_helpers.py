@@ -110,7 +110,8 @@ def test_disable_projects(
         attribute_type='PROJECT',
         display_name='Project',
         value='old_project',
-        source_id='source_id'
+        source_id='source_id',
+        active=True
     )
 
     mock_platform = mocker.patch('apps.sage300.helpers.PlatformConnector')
@@ -122,7 +123,7 @@ def test_disable_projects(
     disable_projects(workspace_id, projects_to_disable)
 
     assert bulk_post_call.call_count == 1
-    assert sync_call.call_count == 1
+    assert sync_call.call_count == 2
     disable_cost_code_call.assert_called_once()
 
     projects_to_disable = {
@@ -134,7 +135,7 @@ def test_disable_projects(
 
     disable_projects(workspace_id, projects_to_disable)
     assert bulk_post_call.call_count == 1
-    assert sync_call.call_count == 1
+    assert sync_call.call_count == 4
     disable_cost_code_call.call_count == 2
 
 
@@ -165,7 +166,8 @@ def test_update_and_disable_cost_code(
         attribute_type='PROJECT',
         display_name='Project',
         value='old_project',
-        source_id='source_id'
+        source_id='source_id',
+        active=True
     )
 
     mock_platform = mocker.patch('apps.sage300.helpers.PlatformConnector')

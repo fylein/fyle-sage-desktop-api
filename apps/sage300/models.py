@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from typing import List, Dict
 from django.db import models
 
@@ -71,6 +72,7 @@ class CostCategory(BaseForeignWorkspaceModel):
 
         cost_category_to_be_created = []
         cost_category_to_be_updated = []
+        jobs_to_be_updated = set()
 
         # Retrieve job names and cost code names in a single query
         cost_code_ids = [category.cost_code_id for category in list_of_categories]
@@ -83,6 +85,7 @@ class CostCategory(BaseForeignWorkspaceModel):
             job_name = job_name_mapping.get(category.job_id)
             cost_code_name = cost_code_name_mapping.get(category.cost_code_id)
             if job_name and cost_code_name:
+                jobs_to_be_updated.add(category.job_id)
                 category_object = CostCategory(
                     job_id=category.job_id,
                     job_name=job_name,
@@ -117,3 +120,7 @@ class CostCategory(BaseForeignWorkspaceModel):
                 ],
                 batch_size=2000
             )
+
+        if jobs_to_be_updated:
+            updated_time = datetime.now(timezone.utc)
+            DestinationAttribute.objects.filter(destination_id__in=list(jobs_to_be_updated), workspace_id=workspace_id).update(updated_at=updated_time)

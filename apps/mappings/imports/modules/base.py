@@ -74,7 +74,7 @@ class Base:
             'workspace_id': self.workspace_id
         }
 
-        if self.sync_after and self.platform_class_name not in ['expense_custom_fields']:
+        if self.sync_after and self.platform_class_name != 'expense_custom_fields':
             filters['updated_at__gte'] = self.sync_after
 
         if paginated_destination_attribute_values:

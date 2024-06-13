@@ -67,7 +67,7 @@ def test_post_dependent_cost_code(
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
     cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
 
-    result = post_dependent_cost_code(
+    result, is_errored = post_dependent_cost_code(
         cost_code_import_log,
         dependent_field_setting=dependent_field_settings,
         platform=platform.return_value,
@@ -76,6 +76,7 @@ def test_post_dependent_cost_code(
 
     assert result == ['Direct Mail Campaign', 'Platform APIs']
     assert cost_code_import_log.status == 'COMPLETE'
+    assert is_errored == False
 
     post_dependent_cost_code(
         cost_code_import_log,
@@ -106,6 +107,7 @@ def test_post_dependent_cost_type(
     }
 
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
+    dependent_field_settings.last_successful_import_at = None
 
     cost_category_import_log = ImportLog.create('COST_CATEGORY', workspace_id)
 
@@ -113,7 +115,8 @@ def test_post_dependent_cost_type(
         cost_category_import_log,
         dependent_field_setting=dependent_field_settings,
         platform=platform.return_value,
-        filters=filters
+        filters=filters,
+        posted_cost_codes=['Direct Mail Campaign', 'Platform APIs']
     )
 
     assert platform.return_value.dependent_fields.bulk_post_dependent_expense_field_values.call_count == 2
