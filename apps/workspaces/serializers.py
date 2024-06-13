@@ -30,6 +30,7 @@ from apps.workspaces.models import (
     AdvancedSetting
 )
 from apps.accounting_exports.models import AccountingExportSummary
+from apps.mappings.models import Version
 from apps.users.models import User
 from apps.fyle.helpers import get_cluster_domain
 from apps.workspaces.triggers import ImportSettingsTrigger, AdvancedSettingsTriggers
@@ -70,6 +71,7 @@ class WorkspaceSerializer(serializers.ModelSerializer):
                 name=name,
                 org_id=org_id,
             )
+            Version.objects.create(workspace_id=workspace.id)
 
             workspace.user.add(User.objects.get(user_id=user))
 

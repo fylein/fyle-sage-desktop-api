@@ -219,6 +219,7 @@ def test_export_to_sage300(
     add_accounting_export_expenses
 ):
     workspace_id = 1
+    AccountingExportSummary.objects.create(workspace_id=workspace_id)
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
 
     advanced_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)

@@ -78,7 +78,7 @@ def run_import_export(workspace_id: int, export_mode = None):
         accounting_summary.last_exported_at = last_exported_at
         accounting_summary.export_mode = export_mode or 'MANUAL'
 
-        if advance_settings:
+        if advance_settings and advance_settings.schedule_is_enabled:
             accounting_summary.next_export_at = last_exported_at + timedelta(hours=advance_settings.interval_hours)
 
         accounting_summary.save()
@@ -132,8 +132,7 @@ def export_to_sage300(workspace_id: int):
     # Retrieve export settings for the given workspace
     export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
 
-    # Update or create an AccountingExportSummary for the workspace
-    accounting_summary, _ = AccountingExportSummary.objects.update_or_create(workspace_id=workspace_id)
+    accounting_summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
     advance_settings = AdvancedSetting.objects.filter(workspace_id=workspace_id).first()
 
     # Set the timestamp for the last export
@@ -152,7 +151,7 @@ def export_to_sage300(workspace_id: int):
     if export_settings.reimbursable_expenses_export_type:
         # Get IDs of unreexported accounting exports for personal fund source
         accounting_export_ids = AccountingExport.objects.filter(
-            fund_source='PERSONAL', exported_at__isnull=True).values_list('id', flat=True)
+            fund_source='PERSONAL', exported_at__isnull=True, workspace_id=workspace_id).values_list('id', flat=True)
 
         if len(accounting_export_ids):
             # Set the flag indicating expenses are exported
@@ -165,7 +164,7 @@ def export_to_sage300(workspace_id: int):
     if export_settings.credit_card_expense_export_type:
         # Get IDs of unreexported accounting exports for credit card fund source
         accounting_export_ids = AccountingExport.objects.filter(
-            fund_source='CCC', exported_at__isnull=True).values_list('id', flat=True)
+            fund_source='CCC', exported_at__isnull=True, workspace_id=workspace_id).values_list('id', flat=True)
 
         if len(accounting_export_ids):
             # Set the flag indicating expenses are exported
