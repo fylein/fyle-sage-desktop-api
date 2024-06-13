@@ -155,9 +155,9 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
     cost_code_import_log = ImportLog.objects.filter(workspace_id=workspace_id, attribute_type='COST_CODE').first()
     cost_category_import_log = ImportLog.objects.filter(workspace_id=workspace_id, attribute_type='COST_CATEGORY').first()
 
-    posted_cost_types = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters)
-    if posted_cost_types:
-        filters['cost_code_name__in'] = posted_cost_types
+    posted_cost_codes = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters)
+    if posted_cost_codes:
+        filters['cost_code_name__in'] = posted_cost_codes
 
     if cost_code_import_log.status in ['FAILED', 'FATAL']:
         cost_category_import_log.status = 'FAILED'
@@ -166,11 +166,7 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
         return
     else:
         post_dependent_cost_type(cost_category_import_log, dependent_field_setting, platform, filters)
-
-    if cost_category_import_log.status in ['FAILED', 'FATAL']:
-        return
-
-    DependentFieldSetting.objects.filter(workspace_id=workspace_id).update(last_successful_import_at=datetime.now())
+        DependentFieldSetting.objects.filter(workspace_id=workspace_id).update(last_successful_import_at=datetime.now())
 
 
 def import_dependent_fields_to_fyle(workspace_id: str):

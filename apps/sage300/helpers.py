@@ -140,7 +140,7 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
             'job_id__in':list(cost_codes_to_disable.keys()),
             'workspace_id': workspace_id
         }
-        cost_code_import_log = ImportLog.create_import_log('COST_CODE', workspace_id)
+        cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
         logger.info("Filters for Cost Code Import Log: %s", filters)
         # This call will disable the cost codes in Fyle that has old project name
         posted_cost_codes = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters, is_enabled=False)

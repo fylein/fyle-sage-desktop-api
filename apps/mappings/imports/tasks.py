@@ -42,26 +42,27 @@ def auto_import_and_map_fyle_fields(workspace_id, post_deps_to_fyle: bool = True
     """
     Auto import and map fyle fields
     """
-    import_log = ImportLog.objects.filter(
-        workspace_id=workspace_id,
-        attribute_type = 'PROJECT'
-    ).first()
+    return
+    # import_log = ImportLog.objects.filter(
+    #     workspace_id=workspace_id,
+    #     attribute_type = 'PROJECT'
+    # ).first()
 
-    chain = Chain()
+    # chain = Chain()
 
-    if not post_deps_to_fyle:
-        cost_code_import_log = ImportLog.create_import_log('COST_CODE', workspace_id)
-        cost_category_import_log = ImportLog.create_import_log('COST_CATEGORY', workspace_id)
+    # if not post_deps_to_fyle:
+    #     cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
+    #     cost_category_import_log = ImportLog.create('COST_CATEGORY', workspace_id)
 
-        chain.append('apps.mappings.tasks.sync_sage300_attributes', 'JOB', workspace_id)
-        chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CODE', workspace_id, cost_code_import_log)
-        chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CATEGORY', workspace_id, cost_category_import_log)
+    #     chain.append('apps.mappings.tasks.sync_sage300_attributes', 'JOB', workspace_id)
+    #     chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CODE', workspace_id, cost_code_import_log)
+    #     chain.append('apps.mappings.tasks.sync_sage300_attributes', 'COST_CATEGORY', workspace_id, cost_category_import_log)
 
-    else:
-        chain.append('apps.sage300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
+    # else:
+    #     chain.append('apps.sage300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
 
-    if import_log and import_log.status != 'COMPLETE':
-        logger.error(f"Project Import is in {import_log.status} state in WORKSPACE_ID: {workspace_id} with error {str(import_log.error_log)}")
+    # if import_log and import_log.status != 'COMPLETE':
+    #     logger.error(f"Project Import is in {import_log.status} state in WORKSPACE_ID: {workspace_id} with error {str(import_log.error_log)}")
 
-    if chain.length() > 0:
-        chain.run()
+    # if chain.length() > 0:
+    #     chain.run()

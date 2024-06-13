@@ -3,10 +3,6 @@ from typing import List
 from apps.mappings.imports.modules.base import Base
 from apps.sage300.models import CostCategory
 from fyle_accounting_mappings.models import DestinationAttribute
-import logging
-
-logger = logging.getLogger(__name__)
-logger.level = logging.INFO
 
 
 class Project(Base):
@@ -49,8 +45,6 @@ class Project(Base):
             job_id__in = [attribute.destination_id for attribute in paginated_destination_attributes]
         ).values_list('job_id', flat=True).distinct()
 
-        logger.info(f'Job Ids in Cost Category: {job_ids_in_cost_category}')
-
         for attribute in paginated_destination_attributes:
             if attribute.destination_id in job_ids_in_cost_category:
                 project = {
@@ -86,7 +80,6 @@ class Project(Base):
         }
 
         if paginated_destination_attribute_values:
-            # filters['updated_at__gte'] = self.sync_after
             filters['value__in'] = paginated_destination_attribute_values
 
         else:
@@ -96,7 +89,5 @@ class Project(Base):
             ).values_list('job_id', flat=True).distinct()
 
             filters['destination_id__in'] = job_ids
-
-        logger.info(f'Attributes Filter: {filters}')
 
         return filters
