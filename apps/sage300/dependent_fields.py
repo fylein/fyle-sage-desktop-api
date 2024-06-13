@@ -75,6 +75,8 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     projects = CostCategory.objects.filter(**filters).values('job_name').annotate(cost_codes=ArrayAgg('cost_code_name', distinct=True))
     projects_from_categories = [project['job_name'] for project in projects]
     posted_cost_codes = []
+    total_batches = 0
+    processed_batches = 0
     is_errored = False
 
     existing_projects_in_fyle = ExpenseAttribute.objects.filter(
@@ -102,14 +104,18 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
         if payload:
             sleep(0.2)
             try:
+                total_batches += 1
                 platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
                 posted_cost_codes.extend(cost_code_names)
+                processed_batches += 1
             except Exception as exception:
                 is_errored = True
                 logger.error(f'Exception while posting dependent cost code | Error: {exception} | Payload: {payload}')
 
     import_log.status = 'COMPLETE'
     import_log.error_log = []
+    import_log.total_batches_count = total_batches
+    import_log.processed_batches_count = processed_batches
     import_log.save()
 
     return posted_cost_codes, is_errored
@@ -119,6 +125,8 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
 def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict, posted_cost_codes: List = []):
     cost_categories = CostCategory.objects.filter(is_imported=False, **filters).values('cost_code_name').annotate(cost_categories=ArrayAgg('name', distinct=True))
     is_errored = False
+    total_batches = 0
+    processed_batches = 0
 
     for category in cost_categories:
         if category['cost_code_name'] in posted_cost_codes:
@@ -135,14 +143,18 @@ def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: Dep
             if payload:
                 sleep(0.2)
                 try:
+                    total_batches += 1
                     platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
                     CostCategory.objects.filter(cost_code_name=category['cost_code_name']).update(is_imported=True)
+                    processed_batches += 1
                 except Exception as exception:
                     is_errored = True
                     logger.error(f'Exception while posting dependent cost type | Error: {exception} | Payload: {payload}')
 
     import_log.status = 'COMPLETE'
     import_log.error_log = []
+    import_log.total_batches_count = total_batches
+    import_log.processed_batches_count = processed_batches
     import_log.save()
 
     return is_errored
