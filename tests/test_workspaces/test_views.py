@@ -4,7 +4,7 @@ import pytest  # noqa
 from django.urls import reverse
 from fyle_accounting_mappings.models import MappingSetting
 
-from apps.accounting_exports.models import AccountingExport
+from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
 from apps.workspaces.models import (
     Workspace,
     Sage300Credential,
@@ -425,6 +425,8 @@ def test_trigger_export(
     """
     Test Export Trigger API
     """
+    workspace_id = 1
+    AccountingExportSummary.objects.create(workspace_id=workspace_id)
 
     url = reverse('trigger-exports', kwargs={'workspace_id': 1})
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))

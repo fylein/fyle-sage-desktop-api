@@ -6,7 +6,6 @@ from typing import Dict
 from django.utils.module_loading import import_string
 
 from apps.workspaces.models import Workspace, Sage300Credential, FyleCredential
-from apps.mappings.models import Version
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.sage300.models import CostCategory
@@ -51,9 +50,6 @@ def sync_dimensions(sage300_credential: Sage300Credential, workspace_id: int) ->
 
     This function syncs dimensions like accounts, vendors, commitments, jobs, categories, and cost codes.
     """
-
-    Version.objects.update_or_create(workspace_id=workspace_id)
-
     # Initialize the Sage 300 connection using the provided credentials and workspace ID
     sage300_connection = import_string('apps.sage300.utils.SageDesktopConnector')(sage300_credential, workspace_id)
 
