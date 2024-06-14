@@ -124,6 +124,7 @@ fixtures = {
                 "is_resolved": "false",
                 "error_title":"Employee Mapping Error",
                 "error_detail":"Employee Mapping Error",
+                "repetition_count":0,
                 "workspace":1,
                 "accounting_export":"None",
                 "expense_attribute":"None"
@@ -136,6 +137,7 @@ fixtures = {
                 "is_resolved": "false",
                 "error_title":"Category Mapping Error",
                 "error_detail":"Category Mapping Error",
+                "repetition_count":0,
                 "workspace":1,
                 "accounting_export":"None",
                 "expense_attribute":"None"
@@ -148,6 +150,7 @@ fixtures = {
                 "is_resolved": "false",
                 "error_title":"Sage Error",
                 "error_detail":"Sage Error",
+                "repetition_count":0,
                 "workspace":1,
                 "accounting_export":"None",
                 "expense_attribute":"None"
