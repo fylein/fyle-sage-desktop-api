@@ -22,7 +22,7 @@ from apps.fyle.models import Expense
 
 
 TYPE_CHOICES = (
-    ('INVOICES', 'INVOICES'),
+    ('PURCHASE_INVOICE', 'PURCHASE_INVOICE'),
     ('DIRECT_COST', 'DIRECT_COST'),
     ('FETCHING_REIMBURSABLE_EXPENSES', 'FETCHING_REIMBURSABLE_EXPENSES'),
     ('FETCHING_CREDIT_CARD_EXPENENSES', 'FETCHING_CREDIT_CARD_EXPENENSES')
@@ -142,6 +142,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
 
             # Create an AccountingExport object for the expense group
             accounting_export_instance = AccountingExport.objects.create(
+                type='PURCHASE_INVOICE',
                 workspace_id=workspace_id,
                 fund_source=accounting_export['fund_source'],
                 description=accounting_export,
