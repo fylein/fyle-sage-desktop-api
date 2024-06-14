@@ -54,6 +54,9 @@ and workspace_id = _workspace_id;
 
 ---- Fyle DB ----
 --- update the org id here
+rollback;
+begin;
+
 delete from platform_schema.dependent_expense_field_values 
 where expense_field_value in (
     select cost_code_name from temp_cost_code
