@@ -1,25 +1,24 @@
-from typing import List
-from django.db import models
 from datetime import datetime
-from django.contrib.postgres.fields import ArrayField
-from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import Count
+from typing import List
 
+from django.contrib.postgres.aggregates import ArrayAgg
+from django.contrib.postgres.fields import ArrayField
+from django.db import models
+from django.db.models import Count
 from fyle_accounting_mappings.models import ExpenseAttribute
 
+from apps.fyle.models import Expense
+from apps.workspaces.models import BaseForeignWorkspaceModel, BaseModel, ExportSetting
 from sage_desktop_api.models.fields import (
+    BooleanFalseField,
+    CustomDateTimeField,
+    CustomJsonField,
+    IntegerNullField,
     StringNotNullField,
     StringNullField,
-    CustomJsonField,
-    CustomDateTimeField,
-    BooleanFalseField,
-    TextNotNullField,
     StringOptionsField,
-    IntegerNullField
+    TextNotNullField,
 )
-from apps.workspaces.models import BaseForeignWorkspaceModel, BaseModel, ExportSetting
-from apps.fyle.models import Expense
-
 
 TYPE_CHOICES = (
     ('INVOICES', 'INVOICES'),
@@ -166,9 +165,17 @@ class Error(BaseForeignWorkspaceModel):
         ExpenseAttribute, on_delete=models.PROTECT,
         null=True, help_text='Reference to Expense Attribute'
     )
+    repetition_count = models.IntegerField(help_text='repetition count for the error', default=0)
     is_resolved = BooleanFalseField(help_text='Is resolved')
     error_title = StringNotNullField(help_text='Error title')
     error_detail = TextNotNullField(help_text='Error detail')
+
+    def increase_repetition_count_by_one(self):
+        """
+        Increase the repetition count by 1.
+        """
+        self.repetition_count += 1
+        self.save()
 
     class Meta:
         db_table = 'errors'

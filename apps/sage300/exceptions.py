@@ -2,13 +2,11 @@
 import logging
 import traceback
 
-from sage_desktop_api.exceptions import BulkError
-from apps.workspaces.models import FyleCredential, Sage300Credential
-from sage_desktop_sdk.exceptions.hh2_exceptions import WrongParamsError
-from apps.accounting_exports.models import AccountingExport
-from apps.accounting_exports.models import Error
+from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.actions import update_accounting_export_summary
-
+from apps.workspaces.models import FyleCredential, Sage300Credential
+from sage_desktop_api.exceptions import BulkError
+from sage_desktop_sdk.exceptions.hh2_exceptions import WrongParamsError
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -20,7 +18,9 @@ def handle_sage300_error(exception, accounting_export: AccountingExport, export_
     sage300_error = exception.response
     error_msg = 'Failed to create {0}'.format(export_type)
 
-    Error.objects.update_or_create(workspace_id=accounting_export.workspace_id, accounting_export=accounting_export, defaults={'error_title': error_msg, 'type': 'SAGE300_ERROR', 'error_detail': sage300_error, 'is_resolved': False})
+    error, _ = Error.objects.update_or_create(workspace_id=accounting_export.workspace_id, accounting_export=accounting_export, defaults={'error_title': error_msg, 'type': 'SAGE300_ERROR', 'error_detail': sage300_error, 'is_resolved': False})
+
+    error.increase_repetition_count_by_one()
 
     accounting_export.status = 'FAILED'
     accounting_export.detail = None
