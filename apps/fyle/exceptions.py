@@ -56,7 +56,7 @@ def handle_view_exceptions():
             try:
                 return func(*args, **kwargs)
             except AccountingExport.DoesNotExist:
-                return Response(data={'message': 'Expense group not found'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data={'message': 'Accounting Export not found'}, status=status.HTTP_400_BAD_REQUEST)
 
             except FyleCredential.DoesNotExist:
                 return Response(data={'message': 'Fyle credentials not found in workspace'}, status=status.HTTP_400_BAD_REQUEST)
