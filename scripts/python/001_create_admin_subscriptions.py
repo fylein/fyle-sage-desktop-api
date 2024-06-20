@@ -3,7 +3,7 @@
 from apps.workspaces.tasks import async_create_admin_subcriptions
 from apps.workspaces.models import Workspace
 
-workspaces = Workspace.objects.all()
+workspaces = Workspace.objects.filter(onboarding_state='COMPLETE').all()
 
 for workspace in workspaces:
     try:
