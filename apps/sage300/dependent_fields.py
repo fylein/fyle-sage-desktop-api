@@ -85,6 +85,9 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
         active=True
     ).values_list('value', flat=True)
 
+    import_log.total_batches_count = len(existing_projects_in_fyle)
+    import_log.save()
+
     for project in projects:
         payload = []
         cost_code_names = []
@@ -112,7 +115,6 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
 
     import_log.status = 'PARTIALLY_FAILED' if is_errored else 'COMPLETE'
     import_log.error_log = []
-    import_log.total_batches_count = len(existing_projects_in_fyle)
     import_log.processed_batches_count = processed_batches
     import_log.save()
 
@@ -124,6 +126,9 @@ def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: Dep
     cost_categories = CostCategory.objects.filter(is_imported=False, **filters).values('cost_code_name').annotate(cost_categories=ArrayAgg('name', distinct=True))
     is_errored = False
     processed_batches = 0
+
+    import_log.total_batches_count = len(cost_categories)
+    import_log.save()
 
     for category in cost_categories:
         if category['cost_code_name'] in posted_cost_codes:
@@ -149,7 +154,6 @@ def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: Dep
 
     import_log.status = 'PARTIALLY_FAILED' if is_errored else 'COMPLETE'
     import_log.error_log = []
-    import_log.total_batches_count = len(cost_categories)
     import_log.processed_batches_count = processed_batches
     import_log.save()
 
