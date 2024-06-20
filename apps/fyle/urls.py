@@ -26,7 +26,8 @@ from apps.fyle.views import (
     DependentFieldSettingView,
     ExportableAccountingExportView,
     AccountingExportSyncView,
-    SkippedExpenseView
+    SkippedExpenseView,
+    WebhookCallbackView
 )
 
 
@@ -42,6 +43,7 @@ other_paths = [
     path('fields/', FyleFieldsView.as_view(), name='fyle-fields'),
     path('dependent_field_settings/', DependentFieldSettingView.as_view(), name='dependent-field'),
     path('expenses/', SkippedExpenseView.as_view(), name='expenses'),
+    path('webhook_callback/', WebhookCallbackView.as_view(), name='webhook-callback'),
 ]
 
 fyle_dimension_paths = [

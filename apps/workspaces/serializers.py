@@ -3,6 +3,8 @@ Workspace Serializers
 """
 from django.conf import settings
 from django.core.cache import cache
+from django_q.tasks import async_task
+
 from rest_framework import serializers
 from fyle_accounting_mappings.models import MappingSetting
 from fyle_rest_auth.helpers import get_fyle_admin
@@ -373,6 +375,7 @@ class AdvancedSettingSerializer(serializers.ModelSerializer):
         if workspace.onboarding_state == 'ADVANCED_SETTINGS':
             workspace.onboarding_state = 'COMPLETE'
             workspace.save()
+            async_task('apps.workspaces.tasks.async_create_admin_subcriptions', workspace.id)
 
         return advanced_setting
 
