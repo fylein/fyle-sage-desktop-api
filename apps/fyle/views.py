@@ -22,6 +22,8 @@ from apps.fyle.models import ExpenseFilter, DependentFieldSetting, Expense
 from apps.fyle.helpers import get_exportable_accounting_exports_ids
 from apps.fyle.queue import queue_import_reimbursable_expenses, queue_import_credit_card_expenses
 
+from apps.fyle.exceptions import handle_view_exceptions
+from apps.fyle.queue import async_handle_webhook_callback
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -127,3 +129,17 @@ class SkippedExpenseView(generics.ListAPIView):
     queryset = Expense.objects.all().order_by("-updated_at")
     filter_backends = (DjangoFilterBackend,)
     filterset_class = ExpenseSearchFilter
+
+
+class WebhookCallbackView(generics.CreateAPIView):
+    """
+    Export View
+    """
+    authentication_classes = []
+    permission_classes = []
+
+    @handle_view_exceptions()
+    def post(self, request, *args, **kwargs):
+        async_handle_webhook_callback(request.data)
+
+        return Response(data={}, status=status.HTTP_200_OK)

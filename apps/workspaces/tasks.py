@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import List
 
+from django.conf import settings
 from django_q.models import Schedule
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
@@ -9,6 +10,8 @@ from apps.fyle.queue import queue_import_credit_card_expenses, queue_import_reim
 from apps.sage300.exports.direct_cost.tasks import ExportDirectCost
 from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
 from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential
+
+from fyle_integrations_platform_connector import PlatformConnector
 
 logger = logging.getLogger(__name__)
 
@@ -182,3 +185,18 @@ def export_to_sage300(workspace_id: int):
         accounting_summary.last_exported_at = last_exported_at
         accounting_summary.export_mode = 'MANUAL'
         accounting_summary.save()
+
+
+def async_create_admin_subcriptions(workspace_id: int) -> None:
+    """
+    Create admin subscriptions
+    :param workspace_id: workspace id
+    :return: None
+    """
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    platform = PlatformConnector(fyle_credentials)
+    payload = {
+        'is_enabled': True,
+        'webhook_url': '{}/workspaces/{}/fyle/webhook_callback/'.format(settings.API_URL, workspace_id)
+    }
+    platform.subscriptions.post(payload)
