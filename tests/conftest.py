@@ -594,24 +594,26 @@ def add_cost_category(create_temp_workspace):
     ]
     for workspace_id in workspace_ids:
         CostCategory.objects.create(
-            job_id='job_id',
+            job_id='10064',
             job_name='Platform APIs',
             cost_code_id='cost_code_id',
             cost_code_name='Platform APIs',
             name='API',
             cost_category_id='cost_category_id',
             status=True,
-            workspace = Workspace.objects.get(id=workspace_id)
+            workspace = Workspace.objects.get(id=workspace_id),
+            is_imported = False
         )
         CostCategory.objects.create(
-            job_id='job_id',
+            job_id='10081',
             job_name='Direct Mail Campaign',
             cost_code_id='cost_code_id',
             cost_code_name='Direct Mail Campaign',
             name='Mail',
             cost_category_id='cost_category_id',
             status=True,
-            workspace = Workspace.objects.get(id=workspace_id)
+            workspace = Workspace.objects.get(id=workspace_id),
+            is_imported = False
         )
 
 
