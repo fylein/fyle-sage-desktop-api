@@ -103,7 +103,7 @@ def test_get_cost_code_id(
         accounting_export=accounting_export,
         lineitem=Expense.objects.filter(workspace_id=workspace_id).first(),
         dependent_field_setting=DependentFieldSetting.objects.filter(workspace_id=workspace_id).first(),
-        job_id='job_id'
+        job_id='10081'
     )
 
     assert return_value == 'cost_code_id'
@@ -127,7 +127,7 @@ def test_get_cost_category_id(
         accounting_export=accounting_export,
         lineitem=Expense.objects.filter(workspace_id=workspace_id).first(),
         dependent_field_setting=DependentFieldSetting.objects.filter(workspace_id=workspace_id).first(),
-        project_id='job_id',
+        project_id='10064',
         cost_code_id='cost_code_id'
     )
 

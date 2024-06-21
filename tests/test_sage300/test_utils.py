@@ -2,6 +2,7 @@ from apps.sage300.utils import SageDesktopConnector, Sage300Credential
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.mappings.models import Version
 from apps.workspaces.models import Workspace
+from apps.mappings.models import ImportLog
 
 
 def test_sage_desktop_connector(
@@ -453,6 +454,8 @@ def test_sync_cost_categories(
         workspace_id=workspace_id
     )
 
+    cost_category_import_log = ImportLog.create('COST_CATEGORY', workspace_id)
+
     mock_category = [{
         "Id": 1,
         "JobId": "10064",
@@ -480,7 +483,9 @@ def test_sync_cost_categories(
 
     sage_connector.connection.categories.get_all_categories.return_value = categories_generator
 
-    sage_connector.sync_cost_categories()
+    sage_connector.sync_cost_categories(cost_category_import_log)
+
+    assert Version.objects.get(workspace_id=workspace_id).cost_category == 2
 
     assert Version.objects.get(workspace_id=workspace_id).cost_category == 2
 
@@ -501,6 +506,8 @@ def test_sync_cost_codes(
         workspace_id=workspace_id
     )
 
+    cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
+
     Version.objects.update_or_create(
         workspace_id=workspace_id,
         cost_code=1,
@@ -520,5 +527,5 @@ def test_sync_cost_codes(
 
     sage_connector.connection.cost_codes.get_all_costcodes.return_value = [[[mock_data]]]
 
-    result = sage_connector.sync_cost_codes()
+    result = sage_connector.sync_cost_codes(cost_code_import_log)
     assert result == []

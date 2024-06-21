@@ -5,6 +5,7 @@ from apps.workspaces.models import Sage300Credential
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from apps.sage300.models import CostCategory
 from apps.mappings.models import Version
+from apps.mappings.exceptions import handle_import_exceptions
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -262,7 +263,8 @@ class SageDesktopConnector:
             ]
             self._sync_data(commitment_items, 'COMMITMENT_ITEM', 'commitment_item', self.workspace_id, field_names, False)
 
-    def sync_cost_codes(self):
+    @handle_import_exceptions
+    def sync_cost_codes(self, _import_log = None):
         """
         Synchronize cost codes from Sage Desktop SDK to your application
         """
@@ -272,7 +274,8 @@ class SageDesktopConnector:
         self._sync_data(cost_codes, 'COST_CODE', 'cost_code', self.workspace_id, field_names)
         return []
 
-    def sync_cost_categories(self):
+    @handle_import_exceptions
+    def sync_cost_categories(self, import_log = None):
         """
          Synchronize categories from Sage Desktop SDK to your application
         """

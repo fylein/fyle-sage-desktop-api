@@ -11,6 +11,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 from apps.sage300.models import CostCategory
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.dependent_fields import post_dependent_cost_code
+from apps.mappings.models import ImportLog
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -80,11 +81,13 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
     """
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    platform.projects.sync()
 
     filters = {
         'workspace_id': workspace_id,
         'attribute_type': 'PROJECT',
-        'value__in': [projects_map['value'] for projects_map in projects_to_disable.values()]
+        'value__in': [projects_map['value'] for projects_map in projects_to_disable.values()],
+        'active': True
     }
 
     # Expense attribute value map is as follows: {old_project_name: destination_id}
@@ -111,16 +114,14 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
 
         bulk_payload.append(payload)
 
-    sync_after = datetime.now(timezone.utc)
-
     if bulk_payload:
         logger.info(f"Disabling Projects in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_payload)}")
         platform.projects.post_bulk(bulk_payload)
-        platform.projects.sync(sync_after=sync_after)
     else:
         logger.info(f"No Projects to Disable in Fyle | WORKSPACE_ID: {workspace_id}")
 
     update_and_disable_cost_code(workspace_id, projects_to_disable, platform)
+    platform.projects.sync()
 
 
 def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict, platform: PlatformConnector):
@@ -134,9 +135,9 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
             'job_id__in':list(cost_codes_to_disable.keys()),
             'workspace_id': workspace_id
         }
-
+        cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
         # This call will disable the cost codes in Fyle that has old project name
-        posted_cost_codes = post_dependent_cost_code(dependent_field_setting, platform, filters, is_enabled=False)
+        posted_cost_codes = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters, is_enabled=False)
 
         logger.info(f"Disabled Cost Codes in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(posted_cost_codes)}")
 
@@ -151,8 +152,9 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
             for cost_category in cost_categories:
                 cost_category.job_name = value['updated_value']
                 cost_category.updated_at = datetime.now(timezone.utc)
+                cost_category.is_imported = False
                 bulk_update_payload.append(cost_category)
 
         if bulk_update_payload:
             logger.info(f"Updating Cost Categories | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_update_payload)}")
-            CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'updated_at'], batch_size=50)
+            CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'updated_at', 'is_imported'], batch_size=50)

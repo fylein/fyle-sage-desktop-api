@@ -6,6 +6,7 @@ from apps.sage300.dependent_fields import (
     import_dependent_fields_to_fyle
 )
 from apps.fyle.models import DependentFieldSetting
+from apps.mappings.models import ImportLog
 
 
 def test_construct_custom_field_placeholder():
@@ -64,14 +65,25 @@ def test_post_dependent_cost_code(
     }
 
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
+    cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
 
-    result = post_dependent_cost_code(
+    result, is_errored = post_dependent_cost_code(
+        cost_code_import_log,
         dependent_field_setting=dependent_field_settings,
         platform=platform.return_value,
         filters=filters
     )
 
     assert result == ['Direct Mail Campaign', 'Platform APIs']
+    assert cost_code_import_log.status == 'COMPLETE'
+    assert is_errored == False
+
+    post_dependent_cost_code(
+        cost_code_import_log,
+        dependent_field_setting=dependent_field_settings,
+        platform=platform.return_value
+    )
+    assert cost_code_import_log.status == 'FATAL'
 
 
 def test_post_dependent_cost_type(
@@ -95,14 +107,27 @@ def test_post_dependent_cost_type(
     }
 
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
+    dependent_field_settings.last_successful_import_at = None
+
+    cost_category_import_log = ImportLog.create('COST_CATEGORY', workspace_id)
 
     post_dependent_cost_type(
+        cost_category_import_log,
         dependent_field_setting=dependent_field_settings,
         platform=platform.return_value,
-        filters=filters
+        filters=filters,
+        posted_cost_codes=['Direct Mail Campaign', 'Platform APIs']
     )
 
     assert platform.return_value.dependent_fields.bulk_post_dependent_expense_field_values.call_count == 2
+    assert cost_category_import_log.status == 'COMPLETE'
+
+    post_dependent_cost_type(
+        cost_category_import_log,
+        dependent_field_setting=dependent_field_settings,
+        platform=platform.return_value
+    )
+    assert cost_category_import_log.status == 'FATAL'
 
 
 def test_post_dependent_expense_field_values(
@@ -123,6 +148,9 @@ def test_post_dependent_expense_field_values(
     )
 
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
+
+    ImportLog.create('COST_CODE', workspace_id)
+    ImportLog.create('COST_CATEGORY', workspace_id)
 
     post_dependent_expense_field_values(
         workspace_id=workspace_id,
@@ -149,6 +177,9 @@ def test_import_dependent_fields_to_fyle(
         platform.return_value,
         'dependent_fields.bulk_post_dependent_expense_field_values'
     )
+
+    ImportLog.create('COST_CODE', workspace_id)
+    ImportLog.create('COST_CATEGORY', workspace_id)
 
     import_dependent_fields_to_fyle(workspace_id)
 

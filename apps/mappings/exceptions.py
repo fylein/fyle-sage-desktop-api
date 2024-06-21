@@ -17,8 +17,12 @@ logger.level = logging.INFO
 
 
 def handle_import_exceptions(func):
-    def new_fn(expense_attribute_instance, *args):
-        import_log: ImportLog = args[0]
+    def new_fn(expense_attribute_instance, *args, **kwargs):
+        import_log = None
+        if isinstance(expense_attribute_instance, ImportLog):
+            import_log: ImportLog = expense_attribute_instance
+        else:
+            import_log: ImportLog = args[0]
         workspace_id = import_log.workspace_id
         attribute_type = import_log.attribute_type
         error = {
@@ -28,7 +32,7 @@ def handle_import_exceptions(func):
             'response': None
         }
         try:
-            return func(expense_attribute_instance, *args)
+            return func(expense_attribute_instance, *args, **kwargs)
         except WrongParamsError as exception:
             error['message'] = exception.message
             error['response'] = exception.response
