@@ -46,12 +46,12 @@ class ExportPurchaseInvoice(AccountingDataExporter):
         purchase_invoice_lineitem_payload = []
         for lineitem in lineitems:
             expense = {
-                "AccountsPayableAccountId": lineitem.accounts_payable_account_id,
+                "AccountsPayableAccountId": lineitem.accounts_payable_id,
                 "Amount": lineitem.amount,
                 "CategoryId": lineitem.category_id,
                 "CostCodeId": lineitem.cost_code_id,
                 "Description": lineitem.description[0:30],
-                "ExpenseAccountId": lineitem.accounts_payable_account_id,
+                "ExpenseAccountId": lineitem.expense_account_id,
                 "JobId": lineitem.job_id,
                 "StandardCategoryId": lineitem.standard_category_id,
                 "StandardCostCodeId": lineitem.standard_cost_code_id
