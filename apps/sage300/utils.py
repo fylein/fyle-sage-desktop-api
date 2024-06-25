@@ -7,6 +7,14 @@ from apps.sage300.models import CostCategory
 from apps.mappings.models import Version
 from apps.mappings.exceptions import handle_import_exceptions
 
+from sage_desktop_sdk.exceptions import (
+    UserAccountLocked,
+    InvalidUserCredentials,
+    InvalidWebApiClientCredentials,
+    WebApiClientLocked,
+    SageDesktopSDKError
+)
+
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
@@ -22,14 +30,16 @@ class SageDesktopConnector:
         :param credentials_object: Sage300Credential instance containing API credentials
         :param workspace_id: ID of the workspace
         """
-
-        self.connection = SageDesktopSDK(
-            api_key=credentials_object.api_key,
-            api_secret=credentials_object.api_secret,
-            user_name=credentials_object.username,
-            password=credentials_object.password,
-            indentifier=credentials_object.identifier
-        )
+        try:
+            self.connection = SageDesktopSDK(
+                api_key=credentials_object.api_key,
+                api_secret=credentials_object.api_secret,
+                user_name=credentials_object.username,
+                password=credentials_object.password,
+                indentifier=credentials_object.identifier
+            )
+        except (InvalidUserCredentials, InvalidWebApiClientCredentials, UserAccountLocked, WebApiClientLocked, SageDesktopSDKError) as e:
+            logger.error(f'Error while connecting to Sage300: {e}')
 
         self.workspace_id = workspace_id
 
