@@ -4,7 +4,7 @@ from fyle_accounting_mappings.models import CategoryMapping, DestinationAttribut
 
 from apps.sage300.exports.base_model import BaseExportModel
 from apps.accounting_exports.models import AccountingExport
-from apps.workspaces.models import AdvancedSetting
+from apps.workspaces.models import AdvancedSetting, ExportSetting
 from apps.fyle.models import Expense, DependentFieldSetting
 
 
@@ -65,7 +65,8 @@ class PurchaseInvoiceLineitems(BaseExportModel):
     Purchase Invoice Lineitem Model
     """
 
-    accounts_payable_account_id = StringNullField(help_text='destination id of accounts payable account')
+    accounts_payable_id = StringNullField(help_text='destination id of accounts payable account')
+    expense_account_id = StringNullField(help_text='destination id of accounts expense account')
     purchase_invoice = models.ForeignKey(PurchaseInvoice, on_delete=models.PROTECT, help_text='Reference to PurchaseInvoice')
     expense = models.OneToOneField(Expense, on_delete=models.PROTECT, help_text='Reference to Expense')
     amount = FloatNullField(help_text='Amount of the invoice')
@@ -94,6 +95,7 @@ class PurchaseInvoiceLineitems(BaseExportModel):
         expenses = accounting_export.expenses.all()
         purchase_invoice = PurchaseInvoice.objects.get(accounting_export=accounting_export)
         dependent_field_setting = DependentFieldSetting.objects.filter(workspace_id=accounting_export.workspace_id).first()
+        export_setting = ExportSetting.objects.filter(workspace_id=purchase_invoice.workspace.id).first()
 
         cost_category_id = None
         cost_code_id = None
@@ -110,6 +112,12 @@ class PurchaseInvoiceLineitems(BaseExportModel):
                 source_category__value=category,
                 workspace_id=accounting_export.workspace_id
             ).first()
+
+            accounts_payable_id = self.get_account_payable_id(
+                export_setting = export_setting,
+                fund_source = lineitem.fund_source,
+                expense_account_id = account.destination_account.destination_id
+            )
 
             job_id = self.get_job_id(accounting_export, lineitem)
             standard_category_id = self.get_standard_category_id(accounting_export, lineitem)
@@ -144,7 +152,8 @@ class PurchaseInvoiceLineitems(BaseExportModel):
                 expense_id=lineitem.id,
                 defaults={
                     'amount': round(lineitem.amount, 2),
-                    'accounts_payable_account_id': account.destination_account.destination_id,
+                    'expense_account_id': account.destination_account.destination_id,
+                    'accounts_payable_id': accounts_payable_id,
                     'job_id': job_id,
                     'commitment_id': commitment_id,
                     'commitment_item_id': commitment_item_id,
@@ -159,3 +168,15 @@ class PurchaseInvoiceLineitems(BaseExportModel):
             purchase_invoice_lineitem_objects.append(purchase_invoice_lineitem_object)
 
         return purchase_invoice_lineitem_objects
+
+    def get_account_payable_id(export_setting: ExportSetting, fund_source: str, expense_account_id: str = None):
+        """
+        Get the account_payable_id
+        :param workspace_id: workspace_id
+        """
+        if fund_source == 'CCC' and export_setting.default_ccc_account_payable_id:
+            return export_setting.default_ccc_account_payable_id
+        elif fund_source == 'PERSONAL' and export_setting.default_reimbursable_account_payable_id:
+            return export_setting.default_reimbursable_account_payable_id
+        else:
+            return expense_account_id
