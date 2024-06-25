@@ -187,6 +187,10 @@ class ExportSetting(BaseModel):
     default_vendor_name = StringNullField(help_text='default Vendor Name')
     default_vendor_id = StringNullField(help_text='default Vendor Id')
     auto_map_employees = BooleanTrueField(help_text='Auto map employees')
+    default_reimbursable_account_payable_name = StringNullField(help_text='Reimbursable account payable name')
+    default_reimbursable_account_payable_id = StringNullField(help_text='Reimbursable account payable id')
+    default_ccc_account_payable_name = StringNullField(help_text='CCC Credit card account payable name')
+    default_ccc_account_payable_id = StringNullField(help_text='CCC Credit Card Account Payable ID')
 
     class Meta:
         db_table = 'export_settings'
