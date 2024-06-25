@@ -95,6 +95,7 @@ class PurchaseInvoiceLineitems(BaseExportModel):
         expenses = accounting_export.expenses.all()
         purchase_invoice = PurchaseInvoice.objects.get(accounting_export=accounting_export)
         dependent_field_setting = DependentFieldSetting.objects.filter(workspace_id=accounting_export.workspace_id).first()
+        export_setting = ExportSetting.objects.filter(workspace_id=purchase_invoice.workspace.id).first()
 
         cost_category_id = None
         cost_code_id = None
@@ -113,7 +114,7 @@ class PurchaseInvoiceLineitems(BaseExportModel):
             ).first()
 
             accounts_payable_id = self.get_account_payable_id(
-                workspace_id = lineitem.workspace_id,
+                export_setting = export_setting,
                 fund_source = lineitem.fund_source,
                 expense_account_id = account.destination_account.destination_id
             )
@@ -168,13 +169,11 @@ class PurchaseInvoiceLineitems(BaseExportModel):
 
         return purchase_invoice_lineitem_objects
 
-    def get_account_payable_id(workspace_id: int, fund_source: str, expense_account_id: str = None):
+    def get_account_payable_id(export_setting: ExportSetting, fund_source: str, expense_account_id: str = None):
         """
         Get the account_payable_id
         :param workspace_id: workspace_id
         """
-        export_setting = ExportSetting.objects.filter(workspace_id=workspace_id).first()
-
         if fund_source == 'CCC' and export_setting.default_ccc_account_payable_id:
             return export_setting.default_ccc_account_payable_id
         elif fund_source == 'PERSONAL' and export_setting.default_reimbursable_account_payable_id:
