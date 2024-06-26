@@ -5,6 +5,7 @@ from functools import wraps
 from fyle.platform.exceptions import NoPrivilegeError, RetryException, InvalidTokenError as FyleInvalidTokenError
 from rest_framework.response import Response
 from rest_framework.views import status
+from rest_framework.exceptions import ValidationError
 
 from sage_desktop_sdk.exceptions.hh2_exceptions import WrongParamsError
 from sage_desktop_api.exceptions import BulkError
@@ -89,6 +90,10 @@ def handle_view_exceptions():
             except BulkError as exception:
                 logger.info('Bulk Error %s', exception.response)
                 return Response(data={'message': 'Bulk Error'}, status=status.HTTP_400_BAD_REQUEST)
+
+            except ValidationError as e:
+                logger.exception(e)
+                return Response({"message": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
             except Exception as exception:
                 logger.exception(exception)
