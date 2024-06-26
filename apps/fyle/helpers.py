@@ -5,8 +5,9 @@ from django.conf import settings
 from django.db.models import Q
 
 from fyle_integrations_platform_connector import PlatformConnector
+from rest_framework.exceptions import ValidationError
 
-from apps.workspaces.models import FyleCredential, ExportSetting
+from apps.workspaces.models import Workspace, FyleCredential, ExportSetting
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.models import ExpenseFilter
 from apps.fyle.constants import DEFAULT_FYLE_CONDITIONS
@@ -255,3 +256,13 @@ def get_exportable_accounting_exports_ids(workspace_id: int):
     ).values_list('id', flat=True)
 
     return accounting_export_ids
+
+
+def assert_valid_request(workspace_id:int, org_id:str):
+    """
+    Assert if the request is valid by checking
+    the url_workspace_id and fyle_org_id workspace
+    """
+    workspace = Workspace.objects.get(org_id=org_id)
+    if workspace.id != workspace_id:
+        raise ValidationError('Workspace mismatch')
