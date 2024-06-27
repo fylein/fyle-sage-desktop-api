@@ -45,7 +45,6 @@ class Client:
         """
         self.__api_url = "https://{0}".format(indentifier)
 
-    @retry((json.JSONDecodeError, SageDesktopSDKError))
     def update_cookie(self, api_key: str, api_secret: str):
         """
         Sets the cookies for APIs
@@ -58,8 +57,7 @@ class Client:
         """
 
         request_header = {
-            'Accept': 'application/json',
-            'Content-type': 'application/json',
+            'Content-type': 'application/json'
         }
 
         api_data = json.dumps({
