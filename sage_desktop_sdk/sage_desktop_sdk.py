@@ -70,7 +70,6 @@ class SageDesktopSDK:
 
     def update_cookie(self):
         cookie = self.client.update_cookie(self.__api_key, self.__api_secret)
-        print("\n\nCOOKIE: ", cookie, "\n\n")
         self.accounts.set_cookie(cookie)
         self.vendors.set_cookie(cookie)
         self.jobs.set_cookie(cookie)
@@ -81,13 +80,3 @@ class SageDesktopSDK:
         self.categories.set_cookie(cookie)
         self.direct_costs.set_cookie(cookie)
         self.event_failures.set_cookie(cookie)
-        # self.accounts.update_cookie(self.__api_key, self.__api_secret)
-        # self.vendors.update_cookie(self.__api_key, self.__api_secret)
-        # self.jobs.update_cookie(self.__api_key, self.__api_secret)
-        # self.commitments.update_cookie(self.__api_key, self.__api_secret)
-        # self.documents.update_cookie(self.__api_key, self.__api_secret)
-        # self.operation_status.update_cookie(self.__api_key, self.__api_secret)
-        # self.cost_codes.update_cookie(self.__api_key, self.__api_secret)
-        # self.categories.update_cookie(self.__api_key, self.__api_secret)
-        # self.direct_costs.update_cookie(self.__api_key, self.__api_secret)
-        # self.event_failures.update_cookie(self.__api_key, self.__api_secret)
