@@ -13,6 +13,7 @@ from sage_desktop_sdk.exceptions import (
     SageDesktopSDKError,
     InternalServerError
 )
+from sage_desktop_sdk.core.helpers import retry
 
 
 class Client:
@@ -44,6 +45,7 @@ class Client:
         """
         self.__api_url = "https://{0}".format(indentifier)
 
+    @retry((json.JSONDecodeError, SageDesktopSDKError))
     def update_cookie(self, api_key: str, api_secret: str):
         """
         Sets the cookies for APIs
