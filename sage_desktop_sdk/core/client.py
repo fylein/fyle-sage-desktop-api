@@ -44,6 +44,9 @@ class Client:
         """
         self.__api_url = "https://{0}".format(indentifier)
 
+    def set_cookie(self, cookie: str):
+        self.__cookie = cookie
+
     def update_cookie(self, api_key: str, api_secret: str):
         """
         Sets the cookies for APIs
@@ -57,7 +60,7 @@ class Client:
 
         request_header = {
             'Accept': 'application/json',
-            'Content-type': 'application/json',
+            'Content-type': 'application/json'
         }
 
         api_data = json.dumps({
@@ -73,7 +76,9 @@ class Client:
             response = json.loads(result.text)
 
             if response['Result'] == 5:
-                self.__cookie = result.headers.get('Set-Cookie')
+                cookie = result.headers.get('Set-Cookie')
+                self.__cookie = cookie
+                return cookie
 
             if response['Result'] == 1:
                 raise InvalidUserCredentials('Invalid User Credentials')
