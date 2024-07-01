@@ -1,15 +1,15 @@
-from typing import List
 from datetime import datetime
+from typing import List
+
 from django.db.models import Q
-from django_q.tasks import Chain
 from django_q.models import Schedule
+from django_q.tasks import Chain
 
 from apps.accounting_exports.models import AccountingExport, Error
-from apps.workspaces.models import FyleCredential
-from apps.workspaces.models import Sage300Credential
-from apps.sage300.utils import SageDesktopConnector
-from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
 from apps.sage300.actions import update_accounting_export_summary
+from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
+from apps.sage300.utils import SageDesktopConnector
+from apps.workspaces.models import FyleCredential, Sage300Credential
 
 
 def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str]):
@@ -120,7 +120,7 @@ def poll_operation_status(workspace_id: int, last_export: bool):
                 # Save the updated accounting export
                 accounting_export.save()
 
-                Error.objects.update_or_create(
+                error, _ = Error.objects.update_or_create(
                     workspace_id=accounting_export.workspace_id,
                     accounting_export=accounting_export,
                     defaults={
@@ -130,6 +130,8 @@ def poll_operation_status(workspace_id: int, last_export: bool):
                         'is_resolved': False
                     }
                 )
+
+                error.increase_repetition_count_by_one()
 
                 # Continue to the next iteration
                 continue
