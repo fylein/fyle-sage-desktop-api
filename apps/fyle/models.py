@@ -116,7 +116,7 @@ class Expense(BaseForeignWorkspaceModel):
         db_table = 'expenses'
 
     @staticmethod
-    def create_expense_objects(expenses: List[Dict], workspace_id: int):
+    def create_expense_objects(expenses: List[Dict], workspace_id: int, skip_update: bool = False):
         """
         Bulk create expense objects
         """
@@ -129,6 +129,15 @@ class Expense(BaseForeignWorkspaceModel):
                 if expense['custom_properties'][custom_property_field] == '':
                     expense['custom_properties'][custom_property_field] = None
 
+            expense_data_to_append = None
+            if not skip_update:
+                expense_data_to_append = {
+                    'claim_number': expense['claim_number'],
+                    'report_title': expense['report_title'],
+                    'approved_at': expense['approved_at'],
+                    'payment_number': expense['payment_number']
+                }
+
             # Create or update an Expense object based on expense_id
             expense_object, _ = Expense.objects.update_or_create(
                 expense_id=expense['id'],
@@ -140,7 +149,6 @@ class Expense(BaseForeignWorkspaceModel):
                     'project': expense['project'],
                     'expense_number': expense['expense_number'],
                     'org_id': expense['org_id'],
-                    'claim_number': expense['claim_number'],
                     'amount': round(expense['amount'], 2),
                     'currency': expense['currency'],
                     'foreign_amount': expense['foreign_amount'],
@@ -154,20 +162,17 @@ class Expense(BaseForeignWorkspaceModel):
                     'cost_center': expense['cost_center'],
                     'purpose': expense['purpose'],
                     'report_id': expense['report_id'],
-                    'report_title': expense['report_title'],
                     'spent_at': expense['spent_at'],
-                    'approved_at': expense['approved_at'],
                     'posted_at': expense['posted_at'],
                     'expense_created_at': expense['expense_created_at'],
                     'expense_updated_at': expense['expense_updated_at'],
                     'fund_source': SOURCE_ACCOUNT_MAP[expense['source_account_type']],
                     'verified_at': expense['verified_at'],
                     'custom_properties': expense['custom_properties'],
-                    'payment_number': expense['payment_number'],
                     'file_ids': expense['file_ids'],
                     'corporate_card_id': expense['corporate_card_id'],
                     'workspace_id': workspace_id
-                }
+                }.update(expense_data_to_append or {})
             )
 
             # Check if an AccountingExport related to the expense object already exists
