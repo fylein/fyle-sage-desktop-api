@@ -140,9 +140,7 @@ def update_non_exported_expenses(data: Dict) -> None:
         else:
             expense_state = 'NOT_EXPORTED'
 
-        logger.info("Expense state: {}".format(expense_state))
         if expense_state and expense_state not in ['COMPLETE', 'IN_PROGRESS']:
-            logger.info("Inside")
             expense_obj = []
             expense_obj.append(data)
             expense_objects = FyleExpenses().construct_expense_object(expense_obj, expense.workspace_id)
