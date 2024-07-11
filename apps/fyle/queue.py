@@ -83,6 +83,7 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
 
     elif body.get('action') == 'UPDATED_AFTER_APPROVAL' and body.get('data') and body.get('resource') == 'EXPENSE':
         org_id = body['data']['org_id']
+        logger.info("Body: {}".format(body))
         logger.info("| Updating non-exported expenses through webhook | Content: {{WORKSPACE_ID: {} Payload: {}}}".format(workspace_id, body.get('data')))
         assert_valid_request(workspace_id=workspace_id, org_id=org_id)
         async_task('apps.fyle.tasks.update_non_exported_expenses', body['data'])
