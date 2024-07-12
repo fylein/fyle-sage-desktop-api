@@ -116,7 +116,7 @@ class Expense(BaseForeignWorkspaceModel):
         db_table = 'expenses'
 
     @staticmethod
-    def create_expense_objects(expenses: List[Dict], workspace_id: int):
+    def create_expense_objects(expenses: List[Dict], workspace_id: int, skip_update: bool = False):
         """
         Bulk create expense objects
         """
@@ -129,45 +129,55 @@ class Expense(BaseForeignWorkspaceModel):
                 if expense['custom_properties'][custom_property_field] == '':
                     expense['custom_properties'][custom_property_field] = None
 
+            expense_data_to_append = {}
+            if not skip_update:
+                expense_data_to_append = {
+                    'claim_number': expense['claim_number'],
+                    'report_title': expense['report_title'],
+                    'approved_at': expense['approved_at'],
+                    'payment_number': expense['payment_number'],
+                    'expense_created_at': expense['expense_created_at'],
+                    'expense_updated_at': expense['expense_updated_at']
+                }
+
+            defaults = {
+                'employee_email': expense['employee_email'],
+                'employee_name': expense['employee_name'],
+                'category': expense['category'],
+                'sub_category': expense['sub_category'],
+                'project': expense['project'],
+                'expense_number': expense['expense_number'],
+                'org_id': expense['org_id'],
+                'amount': round(expense['amount'], 2),
+                'currency': expense['currency'],
+                'foreign_amount': expense['foreign_amount'],
+                'foreign_currency': expense['foreign_currency'],
+                'tax_amount': expense['tax_amount'],
+                'tax_group_id': expense['tax_group_id'],
+                'reimbursable': expense['reimbursable'],
+                'billable': expense['billable'] if expense['billable'] else False,
+                'state': expense['state'],
+                'vendor': expense['vendor'][:250] if expense['vendor'] else None,
+                'cost_center': expense['cost_center'],
+                'purpose': expense['purpose'],
+                'report_id': expense['report_id'],
+                'spent_at': expense['spent_at'],
+                'posted_at': expense['posted_at'],
+                'fund_source': SOURCE_ACCOUNT_MAP[expense['source_account_type']],
+                'verified_at': expense['verified_at'],
+                'custom_properties': expense['custom_properties'],
+                'file_ids': expense['file_ids'],
+                'corporate_card_id': expense['corporate_card_id'],
+                'workspace_id': workspace_id
+            }
+
+            if expense_data_to_append:
+                defaults.update(expense_data_to_append)
+
             # Create or update an Expense object based on expense_id
             expense_object, _ = Expense.objects.update_or_create(
                 expense_id=expense['id'],
-                defaults={
-                    'employee_email': expense['employee_email'],
-                    'employee_name': expense['employee_name'],
-                    'category': expense['category'],
-                    'sub_category': expense['sub_category'],
-                    'project': expense['project'],
-                    'expense_number': expense['expense_number'],
-                    'org_id': expense['org_id'],
-                    'claim_number': expense['claim_number'],
-                    'amount': round(expense['amount'], 2),
-                    'currency': expense['currency'],
-                    'foreign_amount': expense['foreign_amount'],
-                    'foreign_currency': expense['foreign_currency'],
-                    'tax_amount': expense['tax_amount'],
-                    'tax_group_id': expense['tax_group_id'],
-                    'reimbursable': expense['reimbursable'],
-                    'billable': expense['billable'] if expense['billable'] else False,
-                    'state': expense['state'],
-                    'vendor': expense['vendor'][:250] if expense['vendor'] else None,
-                    'cost_center': expense['cost_center'],
-                    'purpose': expense['purpose'],
-                    'report_id': expense['report_id'],
-                    'report_title': expense['report_title'],
-                    'spent_at': expense['spent_at'],
-                    'approved_at': expense['approved_at'],
-                    'posted_at': expense['posted_at'],
-                    'expense_created_at': expense['expense_created_at'],
-                    'expense_updated_at': expense['expense_updated_at'],
-                    'fund_source': SOURCE_ACCOUNT_MAP[expense['source_account_type']],
-                    'verified_at': expense['verified_at'],
-                    'custom_properties': expense['custom_properties'],
-                    'payment_number': expense['payment_number'],
-                    'file_ids': expense['file_ids'],
-                    'corporate_card_id': expense['corporate_card_id'],
-                    'workspace_id': workspace_id
-                }
+                defaults=defaults
             )
 
             # Check if an AccountingExport related to the expense object already exists
