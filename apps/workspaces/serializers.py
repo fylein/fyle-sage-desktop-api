@@ -338,7 +338,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
             new_code_pref_list = data.get('import_settings').get('import_code_fields', [])
 
             """ If the JOB is in the code_fields then we also add Dep fields"""
-            if 'JOB' in new_code_pref_list:
+            if 'JOB' in new_code_pref_list and data.get('dependent_field_settings'):
                 new_code_pref_list += ['COST_CODE', 'COST_CATEGORY']
 
             new_code_pref_list = list(set(new_code_pref_list))
