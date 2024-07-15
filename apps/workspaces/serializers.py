@@ -334,21 +334,23 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         import_settings = ImportSetting.objects.filter(workspace_id=workspace_id).first()
 
         if import_settings:
-            old_code_pref_list = import_settings.import_code_fields
-            new_code_pref_list = data.get('import_settings').get('import_code_fields', [])
+            old_code_pref_list = set(import_settings.import_code_fields)
+            new_code_pref_list = set(data.get('import_settings', {}).get('import_code_fields', []))
 
             """ If the JOB is in the code_fields then we also add Dep fields"""
-            if 'JOB' in new_code_pref_list and data.get('dependent_field_settings'):
-                new_code_pref_list += ['COST_CODE', 'COST_CATEGORY']
+            mapping_settings = data.get('mapping_settings', [])
+            for setting in mapping_settings:
+                if setting['destination_field'] == 'JOB':
+                    if setting['source_field'] == 'PROJECT':
+                        new_code_pref_list.update(['COST_CODE', 'COST_CATEGORY'])
+                    else:
+                        old_code_pref_list.difference_update(['COST_CODE', 'COST_CATEGORY'])
+                    break
 
-            new_code_pref_list = list(set(new_code_pref_list))
+            if not old_code_pref_list.issubset(new_code_pref_list):
+                raise serializers.ValidationError('Cannot remove the attribute from the preference list once imported')
 
-            for item in old_code_pref_list:
-                """
-                checking if the old fields are not removed from the import_code_fields
-                """
-                if item not in new_code_pref_list:
-                    raise serializers.ValidationError('Cannot remove the attribute from the preference list once imported')
+            data.get('import_settings')['import_code_fields'] = list(new_code_pref_list)
 
         return data
 
