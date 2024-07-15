@@ -223,7 +223,8 @@ class ImportSettingFilterSerializer(serializers.ModelSerializer):
         fields = [
             'import_categories',
             'import_vendors_as_merchants',
-            'add_commitment_details'
+            'add_commitment_details',
+            'import_code_fields'
         ]
 
 
@@ -276,13 +277,16 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         import_settings = validated.pop('import_settings')
         dependent_field_settings = validated.pop('dependent_field_settings')
 
+        import_code_fields = import_settings.get('import_code_fields', [])
+
         with transaction.atomic():
             ImportSetting.objects.update_or_create(
                 workspace_id=instance.id,
                 defaults={
                     'import_categories': import_settings.get('import_categories'),
                     'import_vendors_as_merchants': import_settings.get('import_vendors_as_merchants'),
-                    'add_commitment_details': import_settings.get('add_commitment_details')
+                    'add_commitment_details': import_settings.get('add_commitment_details'),
+                    'import_code_fields': import_code_fields
                 }
             )
 
@@ -325,6 +329,26 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
 
         if data.get('mapping_settings') is None:
             raise serializers.ValidationError('Mapping settings are required')
+
+        workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
+        import_settings = ImportSetting.objects.filter(workspace_id=workspace_id).first()
+
+        if import_settings:
+            old_code_pref_list = import_settings.import_code_fields
+            new_code_pref_list = data.get('import_settings').get('import_code_fields', [])
+
+            """ If the JOB is in the code_fields then we also add Dep fields"""
+            if 'JOB' in new_code_pref_list:
+                new_code_pref_list += ['COST_CODE', 'COST_CATEGORY']
+
+            new_code_pref_list = list(set(new_code_pref_list))
+
+            for item in old_code_pref_list:
+                """
+                checking if the old fields are not removed from the import_code_fields
+                """
+                if item not in new_code_pref_list:
+                    raise serializers.ValidationError('Cannot remove the attribute from the preference list once imported')
 
         return data
 
