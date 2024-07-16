@@ -5,7 +5,7 @@ import logging
 from typing import Dict
 from django.utils.module_loading import import_string
 
-from apps.workspaces.models import Workspace, Sage300Credential, FyleCredential
+from apps.workspaces.models import Workspace, Sage300Credential, FyleCredential, ImportSetting
 from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.sage300.models import CostCategory
@@ -74,7 +74,9 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
     {
         'destination_id': {
             'value': 'old_project_name',
-            'updated_value': 'new_project_name'
+            'updated_value': 'new_project_name',
+            'code': 'old_project_code',
+            'updated_code': 'new_project_code'
         }
     }
 
@@ -83,15 +85,32 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
     platform.projects.sync()
 
+    use_code_in_naming = ImportSetting.objects.filter(
+        workspace_id = workspace_id,
+        import_code_fields__contains=['JOB']
+    ).first()
+
+    project_values = []
+    for projects_map in projects_to_disable.values():
+        project_name = projects_map['value']
+        if use_code_in_naming:
+            project_name = "{} {}".format(projects_map['code'], project_name)
+        project_values.append(project_name)
+
     filters = {
         'workspace_id': workspace_id,
         'attribute_type': 'PROJECT',
-        'value__in': [projects_map['value'] for projects_map in projects_to_disable.values()],
+        'value__in': project_values,
         'active': True
     }
 
     # Expense attribute value map is as follows: {old_project_name: destination_id}
-    expense_attribute_value_map = {v['value']: k for k, v in projects_to_disable.items()}
+    expense_attribute_value_map = {}
+    for k, v in projects_to_disable.items():
+        project_name = v['value']
+        if use_code_in_naming:
+            project_name = "{} {}".format(v['code'], project_name)
+        expense_attribute_value_map[project_name] = k
 
     expense_attributes = ExpenseAttribute.objects.filter(**filters)
 
@@ -120,11 +139,11 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
     else:
         logger.info(f"No Projects to Disable in Fyle | WORKSPACE_ID: {workspace_id}")
 
-    update_and_disable_cost_code(workspace_id, projects_to_disable, platform)
+    update_and_disable_cost_code(workspace_id, projects_to_disable, platform, use_code_in_naming)
     platform.projects.sync()
 
 
-def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict, platform: PlatformConnector):
+def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict, platform: PlatformConnector, use_code_in_naming: bool):
     """
     Update the job_name in CostCategory and disable the old cost code in Fyle
     """
@@ -144,12 +163,17 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
         # here we are updating the CostCategory with the new project name
         bulk_update_payload = []
         for destination_id, value in cost_codes_to_disable.items():
+            updated_job_name = value['updated_value']
+            if use_code_in_naming:
+                updated_job_name = "{} {}".format(value['updated_code'], value['updated_value'])
+
             cost_categories = CostCategory.objects.filter(
                 workspace_id=workspace_id,
                 job_id=destination_id
-            ).exclude(job_name=value['updated_value'])
+            ).exclude(job_name=updated_job_name)
 
             for cost_category in cost_categories:
+                cost_category.job_code = value['updated_code']
                 cost_category.job_name = value['updated_value']
                 cost_category.updated_at = datetime.now(timezone.utc)
                 cost_category.is_imported = False
@@ -157,4 +181,4 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
 
         if bulk_update_payload:
             logger.info(f"Updating Cost Categories | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_update_payload)}")
-            CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'updated_at', 'is_imported'], batch_size=50)
+            CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'job_code', 'updated_at', 'is_imported'], batch_size=50)

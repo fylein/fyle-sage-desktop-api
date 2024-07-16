@@ -16,6 +16,8 @@ def chain_import_fields_to_fyle(workspace_id):
     dependent_field_settings = DependentFieldSetting.objects.filter(workspace_id=workspace_id, is_import_enabled=True).first()
     project_mapping = MappingSetting.objects.filter(workspace_id=workspace_id, source_field='PROJECT', import_to_fyle=True).first()
 
+    import_code_fields = import_settings.import_code_fields
+
     chain = Chain()
 
     if project_mapping and dependent_field_settings:
@@ -47,7 +49,9 @@ def chain_import_fields_to_fyle(workspace_id):
                 'apps.mappings.imports.tasks.trigger_import_via_schedule',
                 workspace_id,
                 mapping_setting.destination_field,
-                mapping_setting.source_field
+                mapping_setting.source_field,
+                False,
+                True if mapping_setting.destination_field in import_code_fields else False
             )
 
     for custom_fields_mapping_setting in custom_field_mapping_settings:
@@ -56,7 +60,8 @@ def chain_import_fields_to_fyle(workspace_id):
             workspace_id,
             custom_fields_mapping_setting.destination_field,
             custom_fields_mapping_setting.source_field,
-            True
+            True,
+            True if custom_fields_mapping_setting.destination_field in import_code_fields else False
         )
 
     if project_mapping and dependent_field_settings:

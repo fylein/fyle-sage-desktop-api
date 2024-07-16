@@ -9,13 +9,14 @@ class Category(Base):
     Class for Category module
     """
 
-    def __init__(self, workspace_id: int, destination_field: str, sync_after: datetime):
+    def __init__(self, workspace_id: int, destination_field: str, sync_after: datetime, use_code_in_naming: bool = False):
         super().__init__(
             workspace_id=workspace_id,
             source_field="CATEGORY",
             destination_field=destination_field,
             platform_class_name="categories",
             sync_after=sync_after,
+            use_code_in_naming=use_code_in_naming
         )
 
     def trigger_import(self):

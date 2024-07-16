@@ -36,12 +36,14 @@ class Base:
         destination_field: str,
         platform_class_name: str,
         sync_after:datetime,
+        use_code_in_naming: bool = False
     ):
         self.workspace_id = workspace_id
         self.source_field = source_field
         self.destination_field = destination_field
         self.platform_class_name = platform_class_name
         self.sync_after = sync_after
+        self.use_code_in_naming = use_code_in_naming
 
     def get_platform_class(self, platform: PlatformConnector):
         """
@@ -92,9 +94,14 @@ class Base:
         attribute_values = []
 
         for destination_attribute in destination_attributes:
-            if destination_attribute.value.lower() not in attribute_values:
+            attribute_value = destination_attribute.value
+            if self.use_code_in_naming:
+                attribute_value = '{} {}'.format(destination_attribute.code, destination_attribute.value)
+
+            if attribute_value.lower() not in attribute_values:
+                destination_attribute.value = attribute_value
                 unique_attributes.append(destination_attribute)
-                attribute_values.append(destination_attribute.value.lower())
+                attribute_values.append(attribute_value.lower())
 
         return unique_attributes
 

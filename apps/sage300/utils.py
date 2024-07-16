@@ -33,7 +33,7 @@ class SageDesktopConnector:
 
         self.workspace_id = workspace_id
 
-    def _create_destination_attribute(self, attribute_type, display_name, value, destination_id, active, detail):
+    def _create_destination_attribute(self, attribute_type, display_name, value, destination_id, active, detail, code):
         """
         Create a destination attribute object
         :param attribute_type: Type of the attribute
@@ -50,7 +50,8 @@ class SageDesktopConnector:
             'value': value,
             'destination_id': destination_id,
             'active': active,
-            'detail': detail
+            'detail': detail,
+            'code': code
         }
 
     def _update_latest_version(self, attribute_type: str):
@@ -88,7 +89,8 @@ class SageDesktopConnector:
                 " ".join(item.name.split()),
                 item.id,
                 item.is_active,
-                detail
+                detail,
+                item.code
             )
 
     def _get_attribute_class(self, attribute_type: str):
@@ -149,7 +151,7 @@ class SageDesktopConnector:
                             attribute_type,
                             workspace_id,
                             True,
-                            project_disable_callback_path=project_disable_callback_path
+                            attribute_disable_callback_path=project_disable_callback_path
                         )
                     else:
                         DestinationAttribute.bulk_create_or_update_destination_attributes(

@@ -32,6 +32,9 @@ class CostCategory(BaseForeignWorkspaceModel):
     cost_category_id = StringNotNullField(help_text='Sage300 Category Id')
     status = BooleanFalseField(help_text='Sage300 Cost Type Status')
     is_imported = models.BooleanField(default=False, help_text='Is Imported')
+    job_code = models.CharField(max_length=255, null=True, help_text='Job - Code')
+    cost_code_code = models.CharField(max_length=255, null=True, help_text='Cost_Code - Code')
+    cost_category_code = models.CharField(max_length=255, null=True, help_text='Cost_Category - Code')
 
     class Meta:
         db_table = 'cost_category'
@@ -56,9 +59,11 @@ class CostCategory(BaseForeignWorkspaceModel):
             'id',
             'cost_category_id',
             'name',
-            'status'
+            'status',
+            'job_code',
+            'cost_code_code',
+            'cost_category_code'
         )
-
         existing_cost_type_record_numbers = []
         primary_key_map = {}
 
@@ -68,6 +73,9 @@ class CostCategory(BaseForeignWorkspaceModel):
                 'id': existing_category['id'],
                 'name': existing_category['name'],
                 'status': existing_category['status'],
+                'job_code': existing_category['job_code'],
+                'cost_code_code': existing_category['cost_code_code'],
+                'cost_category_code': existing_category['cost_category_code'],
             }
 
         cost_category_to_be_created = []
@@ -78,12 +86,28 @@ class CostCategory(BaseForeignWorkspaceModel):
         cost_code_ids = [category.cost_code_id for category in list_of_categories]
         job_ids = [category.job_id for category in list_of_categories]
 
-        job_name_mapping = {attr.destination_id: attr.value for attr in DestinationAttribute.objects.filter(destination_id__in=job_ids, workspace_id=workspace_id)}
-        cost_code_name_mapping = {attr.destination_id: attr.value for attr in DestinationAttribute.objects.filter(destination_id__in=cost_code_ids, workspace_id=workspace_id)}
+        jobs = DestinationAttribute.objects.filter(destination_id__in=job_ids, workspace_id=workspace_id)
+        cost_codes = DestinationAttribute.objects.filter(destination_id__in=cost_code_ids, workspace_id=workspace_id)
+
+        job_mapping = {}
+        cost_code_mapping = {}
+
+        for job in jobs:
+            job_mapping[job.destination_id] = {
+                'job_name': job.value,
+                'code': job.code
+            }
+
+        for cost_code in cost_codes:
+            cost_code_mapping[cost_code.destination_id] = {
+                'cost_code_name': cost_code.value,
+                'code': cost_code.code
+            }
 
         for category in list_of_categories:
-            job_name = job_name_mapping.get(category.job_id)
-            cost_code_name = cost_code_name_mapping.get(category.cost_code_id)
+            job_name = job_mapping.get(category.job_id)['job_name']
+            cost_code_name = cost_code_mapping.get(category.cost_code_id)['cost_code_name']
+            cost_category_code = " ".join(category.code.split()) if category.code is not None else None
             if job_name and cost_code_name:
                 jobs_to_be_updated.add(category.job_id)
                 category_object = CostCategory(
@@ -94,7 +118,10 @@ class CostCategory(BaseForeignWorkspaceModel):
                     name=" ".join(category.name.split()),
                     status=category.is_active,
                     cost_category_id=category.id,
-                    workspace_id=workspace_id
+                    workspace_id=workspace_id,
+                    job_code=job_mapping.get(category.job_id)['code'],
+                    cost_code_code=cost_code_mapping.get(category.cost_code_id)['code'],
+                    cost_category_code=cost_category_code
                 )
 
                 if category.id not in existing_cost_type_record_numbers:
@@ -102,8 +129,11 @@ class CostCategory(BaseForeignWorkspaceModel):
 
                 elif category.id in primary_key_map.keys() and (
                     category.name != primary_key_map[category.id]['name'] or category.is_active != primary_key_map[category.id]['status']
+                    or job_mapping.get(category.job_id)['code'] != primary_key_map[category.id]['job_code']
+                    or cost_code_mapping.get(category.cost_code_id)['code'] != primary_key_map[category.id]['cost_code_code']
+                    or cost_category_code != primary_key_map[category.id]['cost_category_code']
                 ):
-                    category_object.id = primary_key_map[category.id]['cost_category_id']
+                    category_object.id = primary_key_map[category.id]['id']
                     cost_category_to_be_updated.append(category_object)
 
             else:
@@ -116,7 +146,8 @@ class CostCategory(BaseForeignWorkspaceModel):
             CostCategory.objects.bulk_update(
                 cost_category_to_be_updated, fields=[
                     'job_id', 'job_name', 'cost_code_id', 'cost_code_name',
-                    'name', 'status', 'cost_category_id'
+                    'name', 'status', 'cost_category_id',
+                    'job_code', 'cost_code_code', 'cost_category_code'
                 ],
                 batch_size=2000
             )
