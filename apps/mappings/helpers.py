@@ -11,7 +11,7 @@ def format_attribute_name(use_code_in_naming: bool, attribute_name: str, attribu
     return attribute_name
 
 
-def allow_job_sync(import_log: ImportLog = None) -> bool:
+def is_job_sync_allowed(import_log: ImportLog = None) -> bool:
     """
     Check if job sync is allowed
     """

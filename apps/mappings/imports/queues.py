@@ -3,7 +3,7 @@ from fyle_accounting_mappings.models import MappingSetting
 from apps.workspaces.models import ImportSetting
 from apps.fyle.models import DependentFieldSetting
 from apps.mappings.models import ImportLog
-from apps.mappings.helpers import allow_job_sync
+from apps.mappings.helpers import is_job_sync_allowed
 
 
 def chain_import_fields_to_fyle(workspace_id):
@@ -22,7 +22,7 @@ def chain_import_fields_to_fyle(workspace_id):
 
     # We'll only sync job when the time_difference > 30 minutes to avoid
     # any dependent field import issue due to timestamp on job name update
-    is_sync_allowed = allow_job_sync(project_import_log)
+    is_sync_allowed = is_job_sync_allowed(project_import_log)
 
     chain = Chain()
 
