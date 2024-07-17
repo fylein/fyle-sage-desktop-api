@@ -344,8 +344,8 @@ def add_project_mappings():
             attribute_type='JOB',
             display_name='CRE Platform',
             value='CRE Platform',
-            destination_id='10064',
-            detail='Sage 300 Project - CRE Platform, Id - 10064',
+            destination_id='10065',
+            detail='Sage 300 Project - CRE Platform, Id - 10065',
             active=True,
             code='123'
         )
@@ -354,8 +354,8 @@ def add_project_mappings():
             attribute_type='JOB',
             display_name='Integrations CRE',
             value='Integrations CRE',
-            destination_id='10081',
-            detail='Sage 300 Project - Integrations CRE, Id - 10081',
+            destination_id='10082',
+            detail='Sage 300 Project - Integrations CRE, Id - 10082',
             active=True,
             code='123'
         )
