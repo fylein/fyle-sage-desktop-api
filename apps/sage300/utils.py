@@ -90,7 +90,7 @@ class SageDesktopConnector:
                 item.id,
                 item.is_active,
                 detail,
-                item.code
+                item.code if hasattr(item, 'code') else None
             )
 
     def _get_attribute_class(self, attribute_type: str):

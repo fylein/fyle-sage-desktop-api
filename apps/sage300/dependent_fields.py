@@ -16,6 +16,7 @@ from apps.fyle.helpers import connect_to_platform
 from apps.mappings.models import ImportLog
 from apps.mappings.exceptions import handle_import_exceptions
 from apps.workspaces.models import ImportSetting
+from apps.mappings.helpers import format_attribute_name
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -78,7 +79,7 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     import_settings = ImportSetting.objects.filter(workspace_id=import_log.workspace.id).first()
     use_job_code_in_naming = False
     use_cost_code_in_naming = False
-
+    last_successful_run_at = datetime.now()
     if 'JOB' in import_settings.import_code_fields:
         use_job_code_in_naming = True
     if 'COST_CODE' in import_settings.import_code_fields:
@@ -106,7 +107,7 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     is_errored = False
 
     for project in projects:
-        project_name = "{} {}".format(project['job_code'], project['job_name']) if use_job_code_in_naming else project['job_name']
+        project_name = format_attribute_name(use_code_in_naming=use_job_code_in_naming, attribute_name=project['job_name'], attribute_code=project['job_code'])
         projects_from_categories.append(project_name)
 
     existing_projects_in_fyle = ExpenseAttribute.objects.filter(
@@ -122,11 +123,11 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     for project in projects:
         payload = []
         cost_code_names = []
-        project_name = "{} {}".format(project['job_code'], project['job_name']) if use_job_code_in_naming else project['job_name']
+        project_name = format_attribute_name(use_code_in_naming=use_job_code_in_naming, attribute_name=project['job_name'], attribute_code=project['job_code'])
 
         for cost_code in project['cost_codes']:
             if project_name in existing_projects_in_fyle:
-                cost_code_name = "{} {}".format(cost_code['cost_code_code'], cost_code['cost_code_name']) if use_cost_code_in_naming else cost_code['cost_code_name']
+                cost_code_name = format_attribute_name(use_code_in_naming=use_cost_code_in_naming, attribute_name=cost_code['cost_code_name'], attribute_code=cost_code['cost_code_code'])
                 payload.append({
                     'parent_expense_field_id': dependent_field_setting.project_field_id,
                     'parent_expense_field_value': project_name,
@@ -149,7 +150,8 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     import_log.status = 'PARTIALLY_FAILED' if is_errored else 'COMPLETE'
     import_log.error_log = []
     import_log.processed_batches_count = processed_batches
-    import_log.last_successful_run_at = datetime.now() if not is_errored else import_log.last_successful_run_at
+    if not is_errored:
+        import_log.last_successful_run_at = last_successful_run_at
     import_log.save()
 
     return posted_cost_codes, is_errored
@@ -160,6 +162,7 @@ def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: Dep
     import_settings = ImportSetting.objects.filter(workspace_id=import_log.workspace.id).first()
     use_cost_code_in_naming = False
     use_category_code_in_naming = False
+    last_successful_run_at = datetime.now()
 
     if 'COST_CODE' in import_settings.import_code_fields:
         use_cost_code_in_naming = True
@@ -190,11 +193,11 @@ def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: Dep
 
     for category in cost_categories:
         if category['cost_code_name'] in posted_cost_codes:
-            cost_code_name = "{} {}".format(category['cost_code_code'], category['cost_code_name']) if use_cost_code_in_naming else category['cost_code_name']
+            cost_code_name = format_attribute_name(use_code_in_naming=use_cost_code_in_naming, attribute_name=category['cost_code_name'], attribute_code=category['cost_code_code'])
             payload = []
 
             for cost_type in category['cost_categories']:
-                cost_type_name = "{} {}".format(cost_type['cost_category_code'], cost_type['cost_category_name']) if use_category_code_in_naming else cost_type['cost_category_name']
+                cost_type_name = format_attribute_name(use_code_in_naming=use_category_code_in_naming, attribute_name=cost_type['cost_category_name'], attribute_code=cost_type['cost_category_code'])
                 payload.append({
                     'parent_expense_field_id': dependent_field_setting.cost_code_field_id,
                     'parent_expense_field_value': cost_code_name,
@@ -216,7 +219,8 @@ def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: Dep
     import_log.status = 'PARTIALLY_FAILED' if is_errored else 'COMPLETE'
     import_log.error_log = []
     import_log.processed_batches_count = processed_batches
-    import_log.last_successful_run_at = datetime.now() if not is_errored else import_log.last_successful_run_at
+    if not is_errored:
+        import_log.last_successful_run_at = last_successful_run_at
     import_log.save()
 
     return is_errored
