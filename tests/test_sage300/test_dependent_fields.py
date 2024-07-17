@@ -50,7 +50,8 @@ def test_post_dependent_cost_code(
     create_temp_workspace,
     add_cost_category,
     add_dependent_field_setting,
-    add_project_mappings
+    add_project_mappings,
+    add_import_settings
 ):
     workspace_id = 1
 
@@ -92,7 +93,8 @@ def test_post_dependent_cost_type(
     create_temp_workspace,
     add_cost_category,
     add_dependent_field_setting,
-    add_project_mappings
+    add_project_mappings,
+    add_import_settings
 ):
     workspace_id = 1
 
@@ -136,7 +138,8 @@ def test_post_dependent_expense_field_values(
     create_temp_workspace,
     add_cost_category,
     add_dependent_field_setting,
-    add_project_mappings
+    add_project_mappings,
+    add_import_settings
 ):
     workspace_id = 1
 
@@ -167,7 +170,8 @@ def test_import_dependent_fields_to_fyle(
     create_temp_workspace,
     add_cost_category,
     add_dependent_field_setting,
-    add_project_mappings
+    add_project_mappings,
+    add_import_settings
 ):
     workspace_id = 1
 

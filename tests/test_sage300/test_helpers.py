@@ -5,7 +5,7 @@ from apps.sage300.helpers import (
     disable_projects,
     update_and_disable_cost_code
 )
-from apps.workspaces.models import Workspace, Sage300Credential
+from apps.workspaces.models import Workspace, Sage300Credential, ImportSetting
 from fyle_accounting_mappings.models import ExpenseAttribute
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.models import CostCategory
@@ -101,7 +101,9 @@ def test_disable_projects(
     projects_to_disable = {
         'destination_id': {
             'value': 'old_project',
-            'updated_value': 'new_project'
+            'updated_value': 'new_project',
+            'code': 'old_project_code',
+            'updated_code': 'old_project_code'
         }
     }
 
@@ -129,7 +131,9 @@ def test_disable_projects(
     projects_to_disable = {
         'destination_id': {
             'value': 'old_project_2',
-            'updated_value': 'new_project'
+            'updated_value': 'new_project',
+            'code': 'old_project_code',
+            'updated_code': 'new_project_code'
         }
     }
 
@@ -145,16 +149,24 @@ def test_update_and_disable_cost_code(
     create_temp_workspace,
     add_fyle_credentials,
     add_dependent_field_setting,
-    add_cost_category
+    add_cost_category,
+    add_import_settings
 ):
     workspace_id = 1
 
     projects_to_disable = {
         'destination_id': {
             'value': 'old_project',
-            'updated_value': 'new_project'
+            'updated_value': 'new_project',
+            'code': 'old_project_code',
+            'updated_code': 'old_project_code'
         }
     }
+
+    import_settings = ImportSetting.objects.get(workspace_id=workspace_id)
+    use_code_in_naming = False
+    if 'JOB' in import_settings.import_code_fields:
+        use_code_in_naming = True
 
     cost_category = CostCategory.objects.filter(workspace_id=workspace_id).first()
     cost_category.job_name = 'old_project'
@@ -175,7 +187,7 @@ def test_update_and_disable_cost_code(
     mocker.patch.object(mock_platform.return_value.cost_centers, 'sync')
     mocker.patch.object(mock_platform.return_value.dependent_fields, 'bulk_post_dependent_expense_field_values')
 
-    update_and_disable_cost_code(workspace_id, projects_to_disable, mock_platform)
+    update_and_disable_cost_code(workspace_id, projects_to_disable, mock_platform, use_code_in_naming)
 
     updated_cost_category = CostCategory.objects.filter(workspace_id=workspace_id, job_id='destination_id').first()
     assert updated_cost_category.job_name == 'new_project'
@@ -185,7 +197,7 @@ def test_update_and_disable_cost_code(
 
     DependentFieldSetting.objects.get(workspace_id=workspace_id).delete()
 
-    update_and_disable_cost_code(workspace_id, projects_to_disable, mock_platform)
+    update_and_disable_cost_code(workspace_id, projects_to_disable, mock_platform, use_code_in_naming)
 
     updated_cost_category = CostCategory.objects.filter(workspace_id=workspace_id, job_id='destination_id').first()
     assert updated_cost_category.job_name == 'old_project'

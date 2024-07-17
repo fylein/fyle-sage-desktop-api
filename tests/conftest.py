@@ -464,7 +464,8 @@ def add_import_settings():
         ImportSetting.objects.create(
             workspace_id=workspace_id,
             import_categories=False,
-            import_vendors_as_merchants=False
+            import_vendors_as_merchants=False,
+            import_code_fields = []
         )
 
 

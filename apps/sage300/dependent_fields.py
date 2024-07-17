@@ -109,6 +109,7 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     for project in projects:
         project_name = format_attribute_name(use_code_in_naming=use_job_code_in_naming, attribute_name=project['job_name'], attribute_code=project['job_code'])
         projects_from_categories.append(project_name)
+    print(projects_from_categories)
 
     existing_projects_in_fyle = ExpenseAttribute.objects.filter(
         workspace_id=dependent_field_setting.workspace_id,
@@ -117,6 +118,7 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
         active=True
     ).values_list('value', flat=True)
 
+    print(existing_projects_in_fyle)
     import_log.total_batches_count = len(existing_projects_in_fyle)
     import_log.save()
 

@@ -46,6 +46,7 @@ def test__create_destination_attribute(
     destination_id = 1
     active = True
     detail = 'test'
+    code = '123'
 
     expected_result = {
         'attribute_type': attribute_type,
@@ -53,7 +54,8 @@ def test__create_destination_attribute(
         'value': value,
         'destination_id': destination_id,
         'active': active,
-        'detail': detail
+        'detail': detail,
+        'code': code
     }
 
     assert sage_connector._create_destination_attribute(
@@ -62,7 +64,8 @@ def test__create_destination_attribute(
         value=value,
         destination_id=destination_id,
         active=active,
-        detail=detail
+        detail=detail,
+        code=code
     ) == expected_result
 
 
