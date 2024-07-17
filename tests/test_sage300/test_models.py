@@ -44,7 +44,7 @@ def test_bulk_create_or_update(
     categories_gen_data = [{
         "Id": 3,
         "JobId": "10065",
-        "CostCodeId": "10064",
+        "CostCodeId": "10065",
         "Name": "Test Category 2",
         "IsActive": True,
         "Code": "456",
@@ -52,7 +52,7 @@ def test_bulk_create_or_update(
 
     ImportSetting.objects.filter(workspace_id=workspace_id).update(import_code_fields=['JOB', 'COST_CODE', 'COST_CATEGORY'])
     DestinationAttribute.objects.filter(workspace_id=workspace_id, destination_id='10065', attribute_type = 'JOB').update(code='10065')
-    DestinationAttribute.objects.filter(workspace_id=workspace_id, destination_id='10064', attribute_type = 'COST_CODE').update(code='10064')
+    DestinationAttribute.objects.filter(workspace_id=workspace_id, destination_id='10065', attribute_type = 'COST_CODE').update(code='10065')
 
     categories_generator = categories_gen_data
     CostCategory.bulk_create_or_update(categories_generator, workspace_id)
@@ -67,5 +67,5 @@ def test_bulk_create_or_update(
         assert category.name == category_data['Name']
         assert category.status == category_data['IsActive']
         assert category.cost_category_code == category_data['Code']
-        assert category.cost_code_code == '10064'
+        assert category.cost_code_code == '10065'
         assert category.job_code == '10065'

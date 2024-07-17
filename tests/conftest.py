@@ -455,6 +455,15 @@ def add_cost_code_mappings():
             detail='Cost Center - Platform APIs, Id - 10081',
             active=True
         )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='COST_CODE',
+            display_name='New Cost Code',
+            value='New Cost Code',
+            destination_id='10065',
+            detail='Cost Code - New Cost Code, Id - 10065',
+            active=True
+        )
 
 
 @pytest.fixture()
