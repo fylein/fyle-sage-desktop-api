@@ -3,6 +3,7 @@ from fyle_accounting_mappings.models import MappingSetting
 from apps.workspaces.models import ImportSetting
 from apps.fyle.models import DependentFieldSetting
 from apps.mappings.models import ImportLog
+from apps.mappings.helpers import allow_job_sync
 
 
 def chain_import_fields_to_fyle(workspace_id):
@@ -17,10 +18,15 @@ def chain_import_fields_to_fyle(workspace_id):
     project_mapping = MappingSetting.objects.filter(workspace_id=workspace_id, source_field='PROJECT', import_to_fyle=True).first()
 
     import_code_fields = import_settings.import_code_fields
+    project_import_log = ImportLog.objects.filter(workspace_id=workspace_id, attribute_type='PROJECT').first()
+
+    # We'll only sync job when the time_difference > 30 minutes to avoid
+    # any dependent field import issue due to timestamp on job name update
+    is_sync_allowed = allow_job_sync(project_import_log)
 
     chain = Chain()
 
-    if project_mapping and dependent_field_settings:
+    if project_mapping and dependent_field_settings and is_sync_allowed:
         cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
         cost_category_import_log = ImportLog.create('COST_CATEGORY', workspace_id)
         chain.append('apps.mappings.tasks.sync_sage300_attributes', 'JOB', workspace_id)
@@ -64,7 +70,7 @@ def chain_import_fields_to_fyle(workspace_id):
             True if custom_fields_mapping_setting.destination_field in import_code_fields else False
         )
 
-    if project_mapping and dependent_field_settings:
+    if project_mapping and dependent_field_settings and is_sync_allowed:
         chain.append('apps.sage300.dependent_fields.import_dependent_fields_to_fyle', workspace_id)
 
     if chain.length() > 0:

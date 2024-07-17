@@ -94,7 +94,9 @@ def test_disable_projects(
     db,
     mocker,
     create_temp_workspace,
-    add_fyle_credentials
+    add_fyle_credentials,
+    add_project_mappings,
+    add_import_settings
 ):
     workspace_id = 1
 
@@ -142,6 +144,42 @@ def test_disable_projects(
     assert sync_call.call_count == 4
     disable_cost_code_call.call_count == 2
 
+    # Test disable projects with code in naming
+    import_settings = ImportSetting.objects.get(workspace_id=workspace_id)
+    import_settings.import_code_fields = ['JOB']
+    import_settings.save()
+
+    ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='PROJECT',
+        display_name='Project',
+        value='old_project_code old_project',
+        source_id='source_id_123',
+        active=True
+    )
+
+    projects_to_disable = {
+        'destination_id': {
+            'value': 'old_project',
+            'updated_value': 'new_project',
+            'code': 'old_project_code',
+            'updated_code': 'old_project_code'
+        }
+    }
+
+    payload = [{
+        'name': 'old_project_code old_project',
+        'code': 'destination_id',
+        'description': 'Sage 300 Project - {0}, Id - {1}'.format(
+            'old_project_code old_project',
+            'destination_id'
+        ),
+        'is_enabled': False,
+        'id': 'source_id_123'
+    }]
+
+    assert disable_projects(workspace_id, projects_to_disable) == payload
+
 
 def test_update_and_disable_cost_code(
     db,
@@ -158,8 +196,8 @@ def test_update_and_disable_cost_code(
         'destination_id': {
             'value': 'old_project',
             'updated_value': 'new_project',
-            'code': 'old_project_code',
-            'updated_code': 'old_project_code'
+            'code': 'new_project_code',
+            'updated_code': 'new_project_code'
         }
     }
 
@@ -192,6 +230,23 @@ def test_update_and_disable_cost_code(
     updated_cost_category = CostCategory.objects.filter(workspace_id=workspace_id, job_id='destination_id').first()
     assert updated_cost_category.job_name == 'new_project'
 
+    # Test with code in naming
+    use_code_in_naming = True
+
+    ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='PROJECT',
+        display_name='Project',
+        value='old_project_code old_project',
+        source_id='source_id_123',
+        active=True
+    )
+
+    update_and_disable_cost_code(workspace_id, projects_to_disable, mock_platform, use_code_in_naming)
+    assert updated_cost_category.job_name == 'new_project'
+    assert updated_cost_category.job_code == 'new_project_code'
+
+    # Delete dependent field setting
     updated_cost_category.job_name = 'old_project'
     updated_cost_category.save()
 

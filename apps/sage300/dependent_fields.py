@@ -109,7 +109,6 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     for project in projects:
         project_name = format_attribute_name(use_code_in_naming=use_job_code_in_naming, attribute_name=project['job_name'], attribute_code=project['job_code'])
         projects_from_categories.append(project_name)
-    print(projects_from_categories)
 
     existing_projects_in_fyle = ExpenseAttribute.objects.filter(
         workspace_id=dependent_field_setting.workspace_id,
@@ -118,7 +117,6 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
         active=True
     ).values_list('value', flat=True)
 
-    print(existing_projects_in_fyle)
     import_log.total_batches_count = len(existing_projects_in_fyle)
     import_log.save()
 
@@ -253,7 +251,7 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
         return
     else:
         is_cost_type_errored = post_dependent_cost_type(cost_category_import_log, dependent_field_setting, platform, filters, posted_cost_codes)
-        if not is_cost_type_errored and not is_cost_code_errored:
+        if not is_cost_type_errored and not is_cost_code_errored and cost_category_import_log.processed_batches_count > 0:
             DependentFieldSetting.objects.filter(workspace_id=workspace_id).update(last_successful_import_at=datetime.now())
 
 

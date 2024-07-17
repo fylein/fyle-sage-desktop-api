@@ -339,6 +339,26 @@ def add_project_mappings():
             detail='Sage 300 Project - Platform APIs, Id - 10081',
             active=True
         )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='JOB',
+            display_name='CRE Platform',
+            value='CRE Platform',
+            destination_id='10064',
+            detail='Sage 300 Project - CRE Platform, Id - 10064',
+            active=True,
+            code='123'
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='JOB',
+            display_name='Integrations CRE',
+            value='Integrations CRE',
+            destination_id='10081',
+            detail='Sage 300 Project - Integrations CRE, Id - 10081',
+            active=True,
+            code='123'
+        )
         ExpenseAttribute.objects.create(
             workspace_id=workspace_id,
             attribute_type='PROJECT',
@@ -355,6 +375,24 @@ def add_project_mappings():
             value='Platform APIs',
             source_id='10081',
             detail='Sage 300 Project - Platform APIs, Id - 10081',
+            active=True
+        )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='CRE Platform',
+            value='123 CRE Platform',
+            source_id='10065',
+            detail='Sage 300 Project - 123 CRE Platform, Id - 10065',
+            active=True
+        )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='Integrations CRE',
+            value='123 Integrations CRE',
+            source_id='10082',
+            detail='Sage 300 Project - 123 Integrations CRE, Id - 10082',
             active=True
         )
 
@@ -612,6 +650,28 @@ def add_cost_category(create_temp_workspace):
             cost_code_name='Direct Mail Campaign',
             name='Mail',
             cost_category_id='cost_category_id',
+            status=True,
+            workspace = Workspace.objects.get(id=workspace_id),
+            is_imported = False
+        )
+        CostCategory.objects.create(
+            job_id='10065',
+            job_name='Integrations CRE',
+            cost_code_id='cost_code_id_123',
+            cost_code_name='Integrations CRE',
+            name='Integrations',
+            cost_category_id='cost_category_id_456',
+            status=True,
+            workspace = Workspace.objects.get(id=workspace_id),
+            is_imported = False
+        )
+        CostCategory.objects.create(
+            job_id='10082',
+            job_name='CRE Platform',
+            cost_code_id='cost_code_id_545',
+            cost_code_name='CRE Platform',
+            name='CRE',
+            cost_category_id='cost_category_id_583',
             status=True,
             workspace = Workspace.objects.get(id=workspace_id),
             is_imported = False

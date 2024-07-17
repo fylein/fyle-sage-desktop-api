@@ -148,6 +148,7 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
 
     update_and_disable_cost_code(workspace_id, projects_to_disable, platform, use_code_in_naming)
     platform.projects.sync()
+    return bulk_payload
 
 
 def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict, platform: PlatformConnector, use_code_in_naming: bool):
