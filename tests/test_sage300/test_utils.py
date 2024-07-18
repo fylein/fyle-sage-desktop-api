@@ -530,3 +530,112 @@ def test_sync_cost_codes(
 
     result = sage_connector.sync_cost_codes(cost_code_import_log)
     assert result == []
+
+
+def test_bulk_create_or_update_destination_attributes_with_code(db, create_temp_workspace):
+    workspace_id = 1
+
+    # Dummy data for testing
+    attributes = [
+        {
+            'attribute_type': 'COST_CODE',
+            'display_name': 'Display 1',
+            'value': 'Value 1',
+            'destination_id': 'DestID1',
+            'detail': {'info': 'Detail 1'},
+            'active': True,
+            'code': 'Code1'
+        },
+        {
+            'attribute_type': 'COST_CODE',
+            'display_name': 'Display 2',
+            'value': 'Value 2',
+            'destination_id': 'DestID2',
+            'detail': {'info': 'Detail 2'},
+            'active': False,
+            'code': 'Code2'
+        }
+    ]
+
+    # Call the function to test
+    DestinationAttribute.bulk_create_or_update_destination_attributes(
+        attributes=attributes,
+        attribute_type='COST_CODE',
+        workspace_id=workspace_id,
+        update=True
+    )
+
+    # Verify creation
+    assert DestinationAttribute.objects.filter(destination_id='DestID1').exists()
+    assert DestinationAttribute.objects.filter(destination_id='DestID2').exists()
+
+    # Update data
+    attributes[0]['value'] = 'Updated Value 1'
+    attributes[1]['value'] = 'Updated Value 2'
+    attributes[0]['code'] = 'Updated Code1'
+    attributes[1]['code'] = 'Updated Code2'
+    DestinationAttribute.bulk_create_or_update_destination_attributes(
+        attributes=attributes,
+        attribute_type='COST_CODE',
+        workspace_id=workspace_id,
+        update=True
+    )
+
+    # Verify update
+    destination_attributes = DestinationAttribute.objects.filter(destination_id__in=['DestID1', 'DestID2'])
+    destination_attributes_dict = {attr.destination_id: attr for attr in destination_attributes}
+
+    assert destination_attributes_dict['DestID1'].value == 'Updated Value 1'
+    assert destination_attributes_dict['DestID2'].value == 'Updated Value 2'
+    assert destination_attributes_dict['DestID1'].code == 'Updated Code1'
+    assert destination_attributes_dict['DestID2'].code == 'Updated Code2'
+
+
+def test_bulk_create_or_update_destination_attributes_without_code(db, create_temp_workspace):
+    workspace_id = 1
+
+    # Dummy data for testing
+    attributes = [
+        {
+            'attribute_type': 'COST_CODE',
+            'display_name': 'Display 1',
+            'value': 'Value 1',
+            'destination_id': 'DestID1',
+            'detail': {'info': 'Detail 1'},
+            'active': True,
+        },
+        {
+            'attribute_type': 'COST_CODE',
+            'display_name': 'Display 2',
+            'value': 'Value 2',
+            'destination_id': 'DestID2',
+            'detail': {'info': 'Detail 2'},
+            'active': False,
+        }
+    ]
+
+    # Call the function to test
+    DestinationAttribute.bulk_create_or_update_destination_attributes(
+        attributes=attributes,
+        attribute_type='COST_CODE',
+        workspace_id=workspace_id,
+        update=True
+    )
+
+    # Verify creation
+    assert DestinationAttribute.objects.filter(destination_id='DestID1').exists()
+    assert DestinationAttribute.objects.filter(destination_id='DestID2').exists()
+
+    # Update data
+    attributes[0]['value'] = 'Updated Value 1'
+    attributes[1]['value'] = 'Updated Value 2'
+    DestinationAttribute.bulk_create_or_update_destination_attributes(
+        attributes=attributes,
+        attribute_type='COST_CODE',
+        workspace_id=workspace_id,
+        update=True
+    )
+
+    # Verify update
+    assert DestinationAttribute.objects.get(destination_id='DestID1').value == 'Updated Value 1'
+    assert DestinationAttribute.objects.get(destination_id='DestID2').value == 'Updated Value 2'

@@ -33,6 +33,44 @@ def add_project_mappings():
             detail='Sage 300 Project - Platform APIs, Id - 10081',
             active=True
         )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='JOB',
+            display_name='CRE Platform',
+            value='CRE Platform',
+            destination_id='10065',
+            detail='Sage 300 Project - CRE Platform, Id - 10065',
+            active=True,
+            code='123'
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='JOB',
+            display_name='Integrations CRE',
+            value='Integrations CRE',
+            destination_id='10082',
+            detail='Sage 300 Project - Integrations CRE, Id - 10082',
+            active=True,
+            code='123'
+        )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='CRE Platform',
+            value='123 CRE Platform',
+            source_id='10065',
+            detail='Sage 300 Project - 123 CRE Platform, Id - 10065',
+            active=True
+        )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='PROJECT',
+            display_name='Integrations CRE',
+            value='123 Integrations CRE',
+            source_id='10082',
+            detail='Sage 300 Project - 123 Integrations CRE, Id - 10082',
+            active=True
+        )
 
 
 @pytest.fixture()
