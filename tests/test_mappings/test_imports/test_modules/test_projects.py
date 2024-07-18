@@ -1,5 +1,4 @@
 from apps.mappings.imports.modules.projects import Project
-from apps.workspaces.models import ImportSetting
 from fyle_accounting_mappings.models import DestinationAttribute
 from .fixtures import data
 
