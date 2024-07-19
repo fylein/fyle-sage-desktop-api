@@ -1,7 +1,14 @@
+import logging
 from datetime import datetime
-from typing import List
+from typing import List, Dict
 from apps.mappings.imports.modules.base import Base
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, MappingSetting, Mapping
+from apps.workspaces.models import FyleCredential, ImportSetting
+from fyle_integrations_platform_connector import PlatformConnector
+from apps.mappings.helpers import format_attribute_name
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 class CostCenter(Base):
@@ -56,3 +63,77 @@ class CostCenter(Base):
                 payload.append(cost_center)
 
         return payload
+
+
+def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict):
+    """
+    cost_centers_to_disable object format:
+    {
+        'destination_id': {
+            'value': 'old_cost_center_name',
+            'updated_value': 'new_cost_center_name',
+            'code': 'old_code',
+            'update_code': 'new_code' ---- if the code is updated else same as code
+        }
+    }
+    """
+    destination_type = MappingSetting.objects.get(workspace_id=workspace_id, source_field='COST_CENTER').destination_field
+    use_code_in_naming = ImportSetting.objects.filter(workspace_id=workspace_id, import_code_fields__contains=[destination_type]).first()
+
+    cost_center_mappings = Mapping.objects.filter(
+        workspace_id=workspace_id,
+        source_type='COST_CENTER',
+        destination_type=destination_type,
+        destination_id__destination_id__in=cost_centers_to_disable.keys()
+    )
+
+    logger.info(f"Deleting Cost Center Mappings | WORKSPACE_ID: {workspace_id} | COUNT: {cost_center_mappings.count()}")
+    cost_center_mappings.delete()
+
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+
+    cost_center_values = []
+    for cost_center_map in cost_centers_to_disable.values():
+        cost_center_name = format_attribute_name(use_code_in_naming=use_code_in_naming, attribute_name=cost_center_map['value'], attribute_code=cost_center_map['code'])
+        cost_center_values.append(cost_center_name)
+
+    filters = {
+        'workspace_id': workspace_id,
+        'attribute_type': 'COST_CENTER',
+        'value__in': cost_center_values,
+        'active': True
+    }
+
+    expense_attribute_value_map = {}
+    for k, v in cost_centers_to_disable.items():
+        cost_center_name = format_attribute_name(use_code_in_naming=use_code_in_naming, attribute_name=v['value'], attribute_code=v['code'])
+        expense_attribute_value_map[cost_center_name] = k
+
+    expense_attributes = ExpenseAttribute.objects.filter(**filters)
+
+    bulk_payload = []
+    for expense_attribute in expense_attributes:
+        code = expense_attribute_value_map.get(expense_attribute.value, None)
+        if code:
+            payload = {
+                'name': expense_attribute.value,
+                'code': code,
+                'is_enabled': False,
+                'id': expense_attribute.source_id,
+                'description': 'Cost Center - {0}, Id - {1}'.format(
+                    expense_attribute.value,
+                    code
+                )
+            }
+            bulk_payload.append(payload)
+        else:
+            logger.error(f"Cost Center with value {expense_attribute.value} not found | WORKSPACE_ID: {workspace_id}")
+
+    if bulk_payload:
+        logger.info(f"Disabling Cost Center in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_payload)}")
+        platform.cost_centers.post_bulk(bulk_payload)
+    else:
+        logger.info(f"No Cost Center to Disable in Fyle | WORKSPACE_ID: {workspace_id}")
+
+    return bulk_payload
