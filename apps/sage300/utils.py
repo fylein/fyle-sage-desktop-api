@@ -14,6 +14,7 @@ logger.level = logging.INFO
 ATTRIBUTE_CALLBACK_MAP = {
     'JOB': 'apps.sage300.helpers.disable_projects',
     'ACCOUNT': 'apps.mappings.imports.modules.categories.disable_categories',
+    'VENDOR': 'apps.mappings.imports.modules.merchants.disable_merchants',
 }
 
 

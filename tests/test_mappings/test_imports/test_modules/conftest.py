@@ -150,6 +150,44 @@ def add_merchant_mappings():
             detail='Merchant - Platform APIs, Id - 10081',
             active=True
         )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='VENDOR',
+            display_name='CRE Platform',
+            value='CRE Platform',
+            destination_id='10065',
+            detail='Sage 300 Merchant - CRE Platform, Id - 10065',
+            active=True,
+            code='123'
+        )
+        DestinationAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='VENDOR',
+            display_name='Integrations CRE',
+            value='Integrations CRE',
+            destination_id='10082',
+            detail='Sage 300 Merchant - Integrations CRE, Id - 10082',
+            active=True,
+            code='123'
+        )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='MERCHANT',
+            display_name='CRE Platform',
+            value='123 CRE Platform',
+            source_id='10065',
+            detail='Sage 300 Merchant - 123 CRE Platform, Id - 10065',
+            active=True
+        )
+        ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='MERCHANT',
+            display_name='Integrations CRE',
+            value='123 Integrations CRE',
+            source_id='10082',
+            detail='Sage 300 Merchant - 123 Integrations CRE, Id - 10082',
+            active=True
+        )
 
 
 @pytest.fixture()
