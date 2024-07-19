@@ -260,3 +260,28 @@ def add_expense_destination_attributes_2():
             },
             active=True
         )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_expense_destination_attributes_3():
+    ExpenseAttribute.objects.create(
+        workspace_id=1,
+        attribute_type='CATEGORY',
+        display_name='Category',
+        value="123 Sage300",
+        source_id='10095',
+        detail='Merchant - Platform APIs, Id - 10085',
+        active=True
+    )
+
+    DestinationAttribute.objects.create(
+        workspace_id=1,
+        attribute_type='ACCOUNT',
+        display_name='Account',
+        value="Sage300",
+        destination_id='10085',
+        detail='Merchant - Platform APIs, Id - 10085',
+        active=True,
+        code='123'
+    )

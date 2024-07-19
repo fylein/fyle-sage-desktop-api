@@ -8201,5 +8201,22 @@ data = {
             'description': 'Sage 300 Project - 123 Integrations CRE, Id - 10082',
             'is_enabled': True
         }
+    ],
+    "create_fyle_category_payload_with_code_create_new_case":[
+        {
+            'name': 'Internet',
+            'code': 'Internet',
+            'is_enabled': True
+        },
+        {
+            'name': 'Meals',
+            'code': 'Meals',
+            'is_enabled': True
+        },
+        {
+            'name': '123 Sage300',
+            'code': '10085',
+            'is_enabled': True
+        }
     ]
 }

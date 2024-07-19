@@ -45,7 +45,9 @@ def chain_import_fields_to_fyle(workspace_id):
             'apps.mappings.imports.tasks.trigger_import_via_schedule',
             workspace_id,
             'ACCOUNT',
-            'CATEGORY'
+            'CATEGORY',
+            False,
+            True if 'ACCOUNT' in import_code_fields else False
         )
 
     if import_settings.import_vendors_as_merchants:

@@ -11,6 +11,12 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
+ATTRIBUTE_CALLBACK_MAP = {
+    'JOB': 'apps.sage300.helpers.disable_projects',
+    'ACCOUNT': 'apps.mappings.imports.modules.categories.disable_categories',
+}
+
+
 class SageDesktopConnector:
     """
     Sage300 utility functions for syncing data from Sage Desktop SDK to your application
@@ -144,14 +150,13 @@ class SageDesktopConnector:
                         if destination_attr:
                             destination_attributes.append(destination_attr)
 
-                    if attribute_type == 'JOB':
-                        project_disable_callback_path = 'apps.sage300.helpers.disable_projects'
+                    if attribute_type in ATTRIBUTE_CALLBACK_MAP.keys():
                         DestinationAttribute.bulk_create_or_update_destination_attributes(
                             destination_attributes,
                             attribute_type,
                             workspace_id,
                             True,
-                            attribute_disable_callback_path=project_disable_callback_path
+                            attribute_disable_callback_path=ATTRIBUTE_CALLBACK_MAP[attribute_type]
                         )
                     else:
                         DestinationAttribute.bulk_create_or_update_destination_attributes(
