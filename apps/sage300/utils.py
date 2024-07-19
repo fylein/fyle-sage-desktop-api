@@ -161,7 +161,7 @@ class SageDesktopConnector:
                             attribute_type,
                             workspace_id,
                             True,
-                            attribute_disable_callback_path=ATTRIBUTE_CALLBACK_MAP[attribute_type]
+                            attribute_disable_callback_path=ATTRIBUTE_CALLBACK_MAP[source_type]
                         )
                     else:
                         DestinationAttribute.bulk_create_or_update_destination_attributes(
