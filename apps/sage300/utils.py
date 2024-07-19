@@ -1,6 +1,6 @@
 import logging
 from django.utils.module_loading import import_string
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
 from apps.workspaces.models import Sage300Credential
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from apps.sage300.models import CostCategory
@@ -12,9 +12,9 @@ logger.level = logging.INFO
 
 
 ATTRIBUTE_CALLBACK_MAP = {
-    'JOB': 'apps.sage300.helpers.disable_projects',
-    'ACCOUNT': 'apps.mappings.imports.modules.categories.disable_categories',
-    'VENDOR': 'apps.mappings.imports.modules.merchants.disable_merchants',
+    'PROJECT': 'apps.sage300.helpers.disable_projects',
+    'CATEGORY': 'apps.mappings.imports.modules.categories.disable_categories',
+    'MERCHANT': 'apps.mappings.imports.modules.merchants.disable_merchants'
 }
 
 
@@ -139,6 +139,10 @@ class SageDesktopConnector:
         :param workspace_id: ID of the workspace
         :param field_names: Names of fields to include in detail
         """
+        source_type = None
+        mapping_setting = MappingSetting.objects.filter(workspace_id=workspace_id, destination_field=attribute_type).first()
+        if mapping_setting:
+            source_type = mapping_setting.source_field if not mapping_setting.is_custom else 'CUSTOM'
 
         if is_generator:
             for data in data_gen:
@@ -151,7 +155,7 @@ class SageDesktopConnector:
                         if destination_attr:
                             destination_attributes.append(destination_attr)
 
-                    if attribute_type in ATTRIBUTE_CALLBACK_MAP.keys():
+                    if source_type in ATTRIBUTE_CALLBACK_MAP.keys():
                         DestinationAttribute.bulk_create_or_update_destination_attributes(
                             destination_attributes,
                             attribute_type,
