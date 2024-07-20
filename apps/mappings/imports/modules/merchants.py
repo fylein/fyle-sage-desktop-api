@@ -7,7 +7,7 @@ from apps.mappings.models import ImportLog
 from apps.mappings.exceptions import handle_import_exceptions
 from apps.workspaces.models import FyleCredential, ImportSetting
 from fyle_integrations_platform_connector import PlatformConnector
-from apps.mappings.helpers import format_attribute_name
+from apps.mappings.helpers import prepend_code_to_name
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -75,7 +75,7 @@ class Merchant(Base):
         self.sync_expense_attributes(platform)
 
 
-def disable_merchants(workspace_id: int, merchants_to_disable: Dict):
+def disable_merchants(workspace_id: int, merchants_to_disable: Dict, *args, **kwargs):
     """
     merchants_to_disable object format:
     {
@@ -93,7 +93,7 @@ def disable_merchants(workspace_id: int, merchants_to_disable: Dict):
 
     merchant_values = []
     for merchant_map in merchants_to_disable.values():
-        merchant_name = format_attribute_name(use_code_in_naming=use_code_in_naming, attribute_name=merchant_map['value'], attribute_code=merchant_map['code'])
+        merchant_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=merchant_map['value'], code=merchant_map['code'])
         merchant_values.append(merchant_name)
 
     filters = {
