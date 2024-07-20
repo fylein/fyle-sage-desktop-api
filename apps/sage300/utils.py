@@ -16,6 +16,7 @@ ATTRIBUTE_CALLBACK_MAP = {
     'CATEGORY': 'apps.mappings.imports.modules.categories.disable_categories',
     'MERCHANT': 'apps.mappings.imports.modules.merchants.disable_merchants',
     'COST_CENTER': 'apps.mappings.imports.modules.cost_centers.disable_cost_centers',
+    'CUSTOM': 'apps.mappings.imports.modules.expense_custom_fields.disable_custom_attributes'
 }
 
 
