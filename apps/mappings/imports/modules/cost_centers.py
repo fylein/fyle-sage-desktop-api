@@ -5,7 +5,7 @@ from apps.mappings.imports.modules.base import Base
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, MappingSetting, Mapping
 from apps.workspaces.models import FyleCredential, ImportSetting
 from fyle_integrations_platform_connector import PlatformConnector
-from apps.mappings.helpers import format_attribute_name
+from apps.mappings.helpers import prepend_code_to_name
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -65,7 +65,7 @@ class CostCenter(Base):
         return payload
 
 
-def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict):
+def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict, *args, **kwargs):
     """
     cost_centers_to_disable object format:
     {
@@ -95,7 +95,7 @@ def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict):
 
     cost_center_values = []
     for cost_center_map in cost_centers_to_disable.values():
-        cost_center_name = format_attribute_name(use_code_in_naming=use_code_in_naming, attribute_name=cost_center_map['value'], attribute_code=cost_center_map['code'])
+        cost_center_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=cost_center_map['value'], code=cost_center_map['code'])
         cost_center_values.append(cost_center_name)
 
     filters = {
@@ -107,7 +107,7 @@ def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict):
 
     expense_attribute_value_map = {}
     for k, v in cost_centers_to_disable.items():
-        cost_center_name = format_attribute_name(use_code_in_naming=use_code_in_naming, attribute_name=v['value'], attribute_code=v['code'])
+        cost_center_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=v['value'], code=v['code'])
         expense_attribute_value_map[cost_center_name] = k
 
     expense_attributes = ExpenseAttribute.objects.filter(**filters)
