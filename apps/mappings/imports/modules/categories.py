@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List, Dict
 from apps.workspaces.models import ImportSetting, FyleCredential
 from apps.mappings.imports.modules.base import Base
-from apps.mappings.helpers import format_attribute_name
+from apps.mappings.helpers import prepend_code_to_name
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, CategoryMapping
 
@@ -117,7 +117,7 @@ def disable_categories(workspace_id: int, categories_to_disable: Dict):
 
     category_values = []
     for category_map in categories_to_disable.values():
-        category_name = format_attribute_name(use_code_in_naming=use_code_in_naming, attribute_name=category_map['value'], attribute_code=category_map['code'])
+        category_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=category_map['value'], code=category_map['code'])
         category_values.append(category_name)
 
     filters = {
@@ -130,7 +130,7 @@ def disable_categories(workspace_id: int, categories_to_disable: Dict):
     # Expense attribute value map is as follows: {old_category_name: destination_id}
     expense_attribute_value_map = {}
     for k, v in categories_to_disable.items():
-        category_name = format_attribute_name(use_code_in_naming=use_code_in_naming, attribute_name=v['value'], attribute_code=v['code'])
+        category_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=v['value'], code=v['code'])
         expense_attribute_value_map[category_name] = k
 
     expense_attributes = ExpenseAttribute.objects.filter(**filters)
