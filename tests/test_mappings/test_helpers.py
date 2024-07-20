@@ -1,23 +1,23 @@
 from datetime import datetime, timedelta, timezone
-from apps.mappings.helpers import format_attribute_name, is_job_sync_allowed
+from apps.mappings.helpers import prepend_code_to_name, is_job_sync_allowed
 from apps.mappings.models import ImportLog
 
 
-def test_format_attribute_name():
+def test_prepend_code_to_name():
     # Test case 1: use_code_in_naming is True and attribute_code is not None
-    result = format_attribute_name(True, "attribute_name", "attribute_code")
+    result = prepend_code_to_name(True, "attribute_name", "attribute_code")
     assert result == "attribute_code attribute_name"
 
     # Test case 2: use_code_in_naming is True but attribute_code is None
-    result = format_attribute_name(True, "attribute_name", None)
+    result = prepend_code_to_name(True, "attribute_name", None)
     assert result == "attribute_name"
 
     # Test case 3: use_code_in_naming is False and attribute_code is not None
-    result = format_attribute_name(False, "attribute_name", "attribute_code")
+    result = prepend_code_to_name(False, "attribute_name", "attribute_code")
     assert result == "attribute_name"
 
     # Test case 4: use_code_in_naming is False and attribute_code is None
-    result = format_attribute_name(False, "attribute_name", None)
+    result = prepend_code_to_name(False, "attribute_name", None)
     assert result == "attribute_name"
 
 
@@ -34,19 +34,13 @@ def test_is_job_sync_allowed(db, create_temp_workspace):
     result = is_job_sync_allowed(import_log)
     assert result is True
 
-    # Test case 3: import_log is not None and status is not 'COMPLETE'
-    import_log.last_successful_run_at = '2021-01-01T00:00:00Z'
+    # Test case 3: import_log is not None and last_successful_run_at is less than 30 minutes
+    import_log.last_successful_run_at = (datetime.now(timezone.utc) - timedelta(minutes=29)).replace(tzinfo=timezone.utc)
     import_log.status = 'FATAL'
-    result = is_job_sync_allowed(import_log)
-    assert result is True
-
-    # Test case 4: import_log is not None and last_successful_run_at is less than 30 minutes
-    import_log.last_successful_run_at = datetime.now(timezone.utc) - timedelta(minutes=29)
-    import_log.status = 'COMPLETE'
     result = is_job_sync_allowed(import_log)
     assert result is False
 
-    # Test case 5: import_log is not None and last_successful_run_at is greater than 30 minutes
+    # Test case 4: import_log is not None and last_successful_run_at is greater than 30 minutes
     import_log.last_successful_run_at = datetime.now(timezone.utc) - timedelta(minutes=31)
     import_log.status = 'COMPLETE'
     result = is_job_sync_allowed(import_log)

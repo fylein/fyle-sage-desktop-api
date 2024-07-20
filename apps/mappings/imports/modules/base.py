@@ -19,7 +19,7 @@ from apps.workspaces.models import Sage300Credential
 from apps.sage300.utils import SageDesktopConnector
 from apps.mappings.exceptions import handle_import_exceptions
 from apps.accounting_exports.models import Error
-from apps.mappings.helpers import format_attribute_name
+from apps.mappings.helpers import prepend_code_to_name
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -95,7 +95,7 @@ class Base:
 
         for destination_attribute in destination_attributes:
             attribute_value = destination_attribute.value
-            attribute_value = format_attribute_name(self.use_code_in_naming, destination_attribute.value, destination_attribute.code)
+            attribute_value = prepend_code_to_name(self.use_code_in_naming, destination_attribute.value, destination_attribute.code)
 
             if attribute_value.lower() not in attribute_values:
                 destination_attribute.value = attribute_value
