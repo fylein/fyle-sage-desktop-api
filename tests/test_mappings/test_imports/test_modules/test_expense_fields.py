@@ -241,7 +241,11 @@ def test_disable_custom_attributes(db, create_temp_workspace):
 
     disable_custom_attributes(1, custom_fields_to_disable)
 
+    count = 0
     try:
         mapping.refresh_from_db()
     except Exception as e:
+        count += 1
         assert str(e) == 'Mapping matching query does not exist.'
+
+    assert count == 1
