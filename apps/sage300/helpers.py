@@ -12,7 +12,7 @@ from apps.sage300.models import CostCategory
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.dependent_fields import post_dependent_cost_code
 from apps.mappings.models import ImportLog
-from apps.mappings.helpers import format_attribute_name
+from apps.mappings.helpers import prepend_code_to_name
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -67,7 +67,7 @@ def sync_dimensions(sage300_credential: Sage300Credential, workspace_id: int) ->
             logger.info(exception)
 
 
-def disable_projects(workspace_id: int, projects_to_disable: Dict):
+def disable_projects(workspace_id: int, projects_to_disable: Dict, *args, **kwargs):
     """
     Disable projects in Fyle when the projects are updated in Sage 300.
     This is a callback function that is triggered from accounting_mappings.
@@ -103,7 +103,7 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
 
     project_values = []
     for projects_map in projects_to_disable.values():
-        project_name = format_attribute_name(use_code_in_naming=use_code_in_naming, attribute_name=projects_map['value'], attribute_code=projects_map['code'])
+        project_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=projects_map['value'], code=projects_map['code'])
         project_values.append(project_name)
 
     filters = {
@@ -116,7 +116,7 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict):
     # Expense attribute value map is as follows: {old_project_name: destination_id}
     expense_attribute_value_map = {}
     for k, v in projects_to_disable.items():
-        project_name = format_attribute_name(use_code_in_naming=use_code_in_naming, attribute_name=v['value'], attribute_code=v['code'])
+        project_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=v['value'], code=v['code'])
         expense_attribute_value_map[project_name] = k
 
     expense_attributes = ExpenseAttribute.objects.filter(**filters)
@@ -171,7 +171,7 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
         # here we are updating the CostCategory with the new project name
         bulk_update_payload = []
         for destination_id, value in cost_codes_to_disable.items():
-            updated_job_name = format_attribute_name(use_code_in_naming=use_code_in_naming, attribute_name=value['updated_value'], attribute_code=value['updated_code'])
+            updated_job_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=value['updated_value'], code=value['updated_code'])
 
             cost_categories = CostCategory.objects.filter(
                 workspace_id=workspace_id,

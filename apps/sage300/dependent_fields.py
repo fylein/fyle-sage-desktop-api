@@ -16,7 +16,7 @@ from apps.fyle.helpers import connect_to_platform
 from apps.mappings.models import ImportLog
 from apps.mappings.exceptions import handle_import_exceptions
 from apps.workspaces.models import ImportSetting
-from apps.mappings.helpers import format_attribute_name
+from apps.mappings.helpers import prepend_code_to_name
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -107,7 +107,7 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     is_errored = False
 
     for project in projects:
-        project_name = format_attribute_name(use_code_in_naming=use_job_code_in_naming, attribute_name=project['job_name'], attribute_code=project['job_code'])
+        project_name = prepend_code_to_name(prepend_code_in_name=use_job_code_in_naming, value=project['job_name'], code=project['job_code'])
         projects_from_categories.append(project_name)
 
     existing_projects_in_fyle = ExpenseAttribute.objects.filter(
@@ -123,11 +123,11 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     for project in projects:
         payload = []
         cost_code_names = []
-        project_name = format_attribute_name(use_code_in_naming=use_job_code_in_naming, attribute_name=project['job_name'], attribute_code=project['job_code'])
+        project_name = prepend_code_to_name(prepend_code_in_name=use_job_code_in_naming, value=project['job_name'], code=project['job_code'])
 
         for cost_code in project['cost_codes']:
             if project_name in existing_projects_in_fyle:
-                cost_code_name = format_attribute_name(use_code_in_naming=use_cost_code_in_naming, attribute_name=cost_code['cost_code_name'], attribute_code=cost_code['cost_code_code'])
+                cost_code_name = prepend_code_to_name(prepend_code_in_name=use_cost_code_in_naming, value=cost_code['cost_code_name'], code=cost_code['cost_code_code'])
                 payload.append({
                     'parent_expense_field_id': dependent_field_setting.project_field_id,
                     'parent_expense_field_value': project_name,
@@ -193,11 +193,11 @@ def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: Dep
 
     for category in cost_categories:
         if category['cost_code_name'] in posted_cost_codes:
-            cost_code_name = format_attribute_name(use_code_in_naming=use_cost_code_in_naming, attribute_name=category['cost_code_name'], attribute_code=category['cost_code_code'])
+            cost_code_name = prepend_code_to_name(prepend_code_in_name=use_cost_code_in_naming, value=category['cost_code_name'], code=category['cost_code_code'])
             payload = []
 
             for cost_type in category['cost_categories']:
-                cost_type_name = format_attribute_name(use_code_in_naming=use_category_code_in_naming, attribute_name=cost_type['cost_category_name'], attribute_code=cost_type['cost_category_code'])
+                cost_type_name = prepend_code_to_name(prepend_code_in_name=use_category_code_in_naming, value=cost_type['cost_category_name'], code=cost_type['cost_category_code'])
                 payload.append({
                     'parent_expense_field_id': dependent_field_setting.cost_code_field_id,
                     'parent_expense_field_value': cost_code_name,
