@@ -91,7 +91,7 @@ class Category(Base):
         )
 
 
-def disable_categories(workspace_id: int, categories_to_disable: Dict):
+def disable_categories(workspace_id: int, categories_to_disable: Dict, *args, **kwargs):
     """
     categories_to_disable object format:
     {
