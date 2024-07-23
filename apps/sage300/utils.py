@@ -1,6 +1,6 @@
 import logging
 from django.utils.module_loading import import_string
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
 from apps.workspaces.models import Sage300Credential
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from apps.sage300.models import CostCategory
@@ -9,6 +9,15 @@ from apps.mappings.exceptions import handle_import_exceptions
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
+
+
+ATTRIBUTE_CALLBACK_MAP = {
+    'PROJECT': 'apps.sage300.helpers.disable_projects',
+    'CATEGORY': 'apps.mappings.imports.modules.categories.disable_categories',
+    'MERCHANT': 'apps.mappings.imports.modules.merchants.disable_merchants',
+    'COST_CENTER': 'apps.mappings.imports.modules.cost_centers.disable_cost_centers',
+    'CUSTOM': 'apps.mappings.imports.modules.expense_custom_fields.disable_custom_attributes'
+}
 
 
 class SageDesktopConnector:
@@ -132,6 +141,15 @@ class SageDesktopConnector:
         :param workspace_id: ID of the workspace
         :param field_names: Names of fields to include in detail
         """
+        source_type = None
+        mapping_setting = MappingSetting.objects.filter(workspace_id=workspace_id, destination_field=attribute_type).first()
+        if mapping_setting:
+            if attribute_type == 'VENDOR':
+                source_type = 'MERCHANT'
+            elif mapping_setting.is_custom:
+                source_type = 'CUSTOM'
+            else:
+                source_type = mapping_setting.source_field
 
         if is_generator:
             for data in data_gen:
@@ -144,14 +162,13 @@ class SageDesktopConnector:
                         if destination_attr:
                             destination_attributes.append(destination_attr)
 
-                    if attribute_type == 'JOB':
-                        project_disable_callback_path = 'apps.sage300.helpers.disable_projects'
+                    if source_type in ATTRIBUTE_CALLBACK_MAP.keys():
                         DestinationAttribute.bulk_create_or_update_destination_attributes(
                             destination_attributes,
                             attribute_type,
                             workspace_id,
                             True,
-                            attribute_disable_callback_path=project_disable_callback_path
+                            attribute_disable_callback_path=ATTRIBUTE_CALLBACK_MAP[source_type]
                         )
                     else:
                         DestinationAttribute.bulk_create_or_update_destination_attributes(

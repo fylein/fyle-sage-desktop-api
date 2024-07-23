@@ -135,10 +135,9 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict, *args, **kwar
                 'is_enabled': False,
                 'id': expense_attribute.source_id
             }
+            bulk_payload.append(payload)
         else:
             logger.error(f"Project with value {expense_attribute.value} not found | WORKSPACE_ID: {workspace_id}")
-
-        bulk_payload.append(payload)
 
     if bulk_payload:
         logger.info(f"Disabling Projects in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_payload)}")
