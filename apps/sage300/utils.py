@@ -14,7 +14,9 @@ logger.level = logging.INFO
 ATTRIBUTE_CALLBACK_MAP = {
     'PROJECT': 'apps.sage300.helpers.disable_projects',
     'CATEGORY': 'apps.mappings.imports.modules.categories.disable_categories',
-    'MERCHANT': 'apps.mappings.imports.modules.merchants.disable_merchants'
+    'MERCHANT': 'apps.mappings.imports.modules.merchants.disable_merchants',
+    'COST_CENTER': 'apps.mappings.imports.modules.cost_centers.disable_cost_centers',
+    'CUSTOM': 'apps.mappings.imports.modules.expense_custom_fields.disable_custom_attributes'
 }
 
 
