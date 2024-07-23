@@ -141,15 +141,7 @@ class SageDesktopConnector:
         :param workspace_id: ID of the workspace
         :param field_names: Names of fields to include in detail
         """
-        source_type = None
-        mapping_setting = MappingSetting.objects.filter(workspace_id=workspace_id, destination_field=attribute_type).first()
-        if mapping_setting:
-            if attribute_type == 'VENDOR':
-                source_type = 'MERCHANT'
-            elif mapping_setting.is_custom:
-                source_type = 'CUSTOM'
-            else:
-                source_type = mapping_setting.source_field
+        source_type = self.get_source_type(attribute_type, workspace_id)
 
         if is_generator:
             for data in data_gen:
@@ -307,3 +299,22 @@ class SageDesktopConnector:
                 CostCategory.bulk_create_or_update(categories, self.workspace_id)
                 version.cost_category = latest_version
                 version.save()
+
+    def get_source_type(self, attribute_type, workspace_id):
+        """
+        Get the source type to fetch the disable callback function
+        :return: Source type
+        """
+        source_type = None
+        mapping_setting = MappingSetting.objects.filter(workspace_id=workspace_id, destination_field=attribute_type).first()
+        if mapping_setting:
+            if attribute_type == 'VENDOR':
+                source_type = 'MERCHANT'
+            elif mapping_setting.is_custom:
+                source_type = 'CUSTOM'
+            else:
+                source_type = mapping_setting.source_field
+        elif attribute_type == 'ACCOUNT':
+            source_type = 'CATEGORY'
+
+        return source_type
