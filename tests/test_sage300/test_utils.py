@@ -1,8 +1,11 @@
+import pytest
+from unittest.mock import MagicMock
 from apps.sage300.utils import SageDesktopConnector, Sage300Credential
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.mappings.models import Version
 from apps.workspaces.models import Workspace
 from apps.mappings.models import ImportLog
+from sage_desktop_sdk.core.schema.read_only import CommitmentItem
 
 
 def test_sage_desktop_connector(
@@ -639,3 +642,107 @@ def test_bulk_create_or_update_destination_attributes_without_code(db, create_te
     # Verify update
     assert DestinationAttribute.objects.get(destination_id='DestID1').value == 'Updated Value 1'
     assert DestinationAttribute.objects.get(destination_id='DestID2').value == 'Updated Value 2'
+
+
+@pytest.fixture
+def sync_instance(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_sage300_creds
+):
+    workspace_id = 1
+    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+
+    mocker.patch('apps.sage300.utils.SageDesktopSDK')
+
+    sage_connector = SageDesktopConnector(
+        credentials_object=sage_creds,
+        workspace_id=workspace_id
+    )
+
+    return sage_connector
+
+
+def test_sync_data_with_generator(sync_instance, mocker):
+    # Mock dependencies
+    mock_mapping_setting = mocker.patch('apps.sage300.utils.MappingSetting')
+    mock_bulk_create = mocker.patch('apps.sage300.utils.DestinationAttribute.bulk_create_or_update_destination_attributes')
+    mock_get_attribute_class = mocker.patch('apps.sage300.utils.SageDesktopConnector._get_attribute_class')
+    mock_update_latest_version = mocker.patch('apps.sage300.utils.SageDesktopConnector._update_latest_version')
+    mock_import_string = mocker.patch('apps.sage300.utils.import_string')
+
+    # Setup mock return values
+    mock_mapping_setting.objects.filter.return_value.first.return_value = MagicMock(is_custom=False, source_field='PROJECT', destination_field='JOB')
+    mock_get_attribute_class.return_value = 'Job'
+    mock_update_latest_version.return_value = None
+    mock_import_string.return_value.from_dict.return_value = MagicMock()
+
+    # Mock data generator
+    data_gen = iter([iter([{'key': 'value'}])])
+
+    # Call method
+    sync_instance._sync_data(data_gen, 'JOB', 'job', 1, ['code', 'version'], is_generator=True)
+
+    # Assertions
+    mock_bulk_create.assert_called_once()
+    called_args = mock_bulk_create.call_args[0]
+
+    assert called_args[1] == 'JOB'
+    assert called_args[2] == 1
+    assert mock_bulk_create.call_args[1]['attribute_disable_callback_path'] == 'apps.sage300.helpers.disable_projects'  # ATTRIBUTE_CALLBACK_MAP['PROJECT']
+
+
+def test_sync_data_without_generator(sync_instance, mocker):
+    # Mock dependencies
+    mock_bulk_create = mocker.patch('apps.sage300.utils.DestinationAttribute.bulk_create_or_update_destination_attributes')
+    mock_get_attribute_class = mocker.patch('apps.sage300.utils.SageDesktopConnector._get_attribute_class')
+    mock_update_latest_version = mocker.patch('apps.sage300.utils.SageDesktopConnector._update_latest_version')
+    mock_import_string = mocker.patch('apps.sage300.utils.import_string')
+
+    # Setup mock return values
+    mock_get_attribute_class.return_value = 'CommitmentItem'
+    mock_update_latest_version.return_value = None
+    mock_import_string.return_value.from_dict.return_value = MagicMock()
+
+    # Mock data
+    data = [
+        CommitmentItem(
+            id='ffb326e3-783f-4667-a443-b06c0083ef07',
+            version=212585,
+            amount=250.0,
+            amount_approved=0.0,
+            amount_invoiced=591.0,
+            amount_paid=0.0,
+            amount_original=250.0,
+            amount_pending=0.0,
+            amount_retained=22.5,
+            category_id='ece00064-b585-4f87-b0bc-b06100a9bec8',
+            code='1',
+            commitment_id='ddb74931-f138-4e2e-a1f6-b06c0083edd5',
+            cost_code_id='d3b321be-1e6c-4d4b-add4-b06100a9bd2c',
+            created_on_utc='2023-08-28T08:00:21Z',
+            description='',
+            has_external_id=True,
+            is_active=True,
+            is_archived=False,
+            job_id='5e0eb476-b189-4409-b9b3-b061009602a4',
+            name='Refrigeration',
+            standard_category_id='302918fb-2f89-4d7f-972a-b05b00f3c431',
+            tax=0.0,
+            tax_group_id='a721a071-9cac-4134-9d8b-b05b00f3cb2a',
+            tax_group_code='EXMPT',
+            unit_cost=0.0,
+            units=0.0
+        )
+    ]
+
+    # Call method
+    sync_instance._sync_data(data, 'COMMITMENT_ITEM', 'commitment_item', 1, ['code', 'version'], is_generator=False)
+
+    # Assertions
+    mock_bulk_create.assert_called_once()
+    called_args = mock_bulk_create.call_args[0]
+    assert called_args[1] == 'COMMITMENT_ITEM'
+    assert called_args[2] == 1
+    assert len(called_args) == 4
