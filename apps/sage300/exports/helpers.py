@@ -1,8 +1,8 @@
 import itertools
 
-from fyle_accounting_mappings.models import CategoryMapping, ExpenseAttribute, Mapping, EmployeeMapping
-from apps.accounting_exports.models import AccountingExport, Error
+from fyle_accounting_mappings.models import CategoryMapping, EmployeeMapping, ExpenseAttribute, Mapping
 
+from apps.accounting_exports.models import AccountingExport, Error
 from sage_desktop_api.exceptions import BulkError
 
 
@@ -66,7 +66,7 @@ def __validate_category_mapping(accounting_export: AccountingExport):
             })
 
             if category_attribute:
-                Error.objects.update_or_create(
+                error, _ = Error.objects.update_or_create(
                     workspace_id=accounting_export.workspace_id,
                     expense_attribute=category_attribute,
                     defaults={
@@ -76,6 +76,8 @@ def __validate_category_mapping(accounting_export: AccountingExport):
                         'is_resolved': False
                     }
                 )
+
+                error.increase_repetition_count_by_one()
 
         row = row + 1
 
