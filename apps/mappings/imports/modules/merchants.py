@@ -1,11 +1,16 @@
+import logging
 from datetime import datetime
-from typing import List
+from typing import List, Dict
 from apps.mappings.imports.modules.base import Base
-from fyle_accounting_mappings.models import DestinationAttribute
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 from apps.mappings.models import ImportLog
 from apps.mappings.exceptions import handle_import_exceptions
-from apps.workspaces.models import FyleCredential
+from apps.workspaces.models import FyleCredential, ImportSetting
 from fyle_integrations_platform_connector import PlatformConnector
+from apps.mappings.helpers import prepend_code_to_name
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 class Merchant(Base):
@@ -68,3 +73,42 @@ class Merchant(Base):
         self.construct_payload_and_import_to_fyle(platform, import_log)
 
         self.sync_expense_attributes(platform)
+
+
+def disable_merchants(workspace_id: int, merchants_to_disable: Dict, *args, **kwargs):
+    """
+    merchants_to_disable object format:
+    {
+        'destination_id': {
+            'value': 'old_merchant_name',
+            'updated_value': 'new_merchant_name',
+            'code': 'old_code',
+            'update_code': 'new_code' ---- if the code is updated else same as code
+        }
+    }
+    """
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+    use_code_in_naming = ImportSetting.objects.filter(workspace_id = workspace_id, import_code_fields__contains=['VENDOR']).first()
+
+    merchant_values = []
+    for merchant_map in merchants_to_disable.values():
+        merchant_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=merchant_map['value'], code=merchant_map['code'])
+        merchant_values.append(merchant_name)
+
+    filters = {
+        'workspace_id': workspace_id,
+        'attribute_type': 'MERCHANT',
+        'value__in': merchant_values,
+        'active': True
+    }
+
+    bulk_payload = ExpenseAttribute.objects.filter(**filters).values_list('value', flat=True)
+
+    if bulk_payload:
+        logger.info(f"Disabling Merchants in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_payload)}")
+        platform.merchants.post(bulk_payload, delete_merchants=True)
+    else:
+        logger.info(f"No Merchants to Disable in Fyle | WORKSPACE_ID: {workspace_id}")
+
+    return bulk_payload
