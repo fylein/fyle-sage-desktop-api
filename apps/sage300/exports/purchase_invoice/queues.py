@@ -1,20 +1,18 @@
-from typing import List
 import logging
 from datetime import datetime
-from django.db.models import Q
-from django_q.tasks import Chain
-from django_q.models import Schedule
+from typing import List
 
+from django.db.models import Q
+from django_q.models import Schedule
+from django_q.tasks import Chain
 from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import AccountingExport, Error
-from apps.workspaces.models import FyleCredential
-from apps.workspaces.models import Sage300Credential
-from apps.sage300.utils import SageDesktopConnector
 from apps.sage300.actions import update_accounting_export_summary
 from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
 from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
-
+from apps.sage300.utils import SageDesktopConnector
+from apps.workspaces.models import FyleCredential, Sage300Credential
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -136,7 +134,7 @@ def poll_operation_status(workspace_id: int, last_export: bool):
 
                 # Save the updated accounting export
                 accounting_export.save()
-                Error.objects.update_or_create(
+                error, _ = Error.objects.update_or_create(
                     workspace_id=accounting_export.workspace_id,
                     accounting_export=accounting_export,
                     defaults={
@@ -146,6 +144,8 @@ def poll_operation_status(workspace_id: int, last_export: bool):
                         'is_resolved': False
                     }
                 )
+
+                error.increase_repetition_count_by_one()
 
                 # Save the updated accounting export
                 accounting_export.save()
