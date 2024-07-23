@@ -1,9 +1,11 @@
+import logging
 from datetime import datetime
 from typing import List, Dict
 from apps.mappings.imports.modules.base import Base
 from fyle_accounting_mappings.models import (
     DestinationAttribute,
-    ExpenseAttribute
+    ExpenseAttribute,
+    Mapping
 )
 from apps.mappings.exceptions import handle_import_exceptions
 from apps.mappings.models import ImportLog
@@ -11,18 +13,22 @@ from fyle_integrations_platform_connector import PlatformConnector
 from apps.workspaces.models import FyleCredential
 from apps.mappings.constants import FYLE_EXPENSE_SYSTEM_FIELDS
 
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
+
 
 class ExpenseCustomField(Base):
     """
     Class for ExepenseCustomField module
     """
-    def __init__(self, workspace_id: int, source_field: str, destination_field: str, sync_after: datetime):
+    def __init__(self, workspace_id: int, source_field: str, destination_field: str, sync_after: datetime, use_code_in_naming: bool = False):
         super().__init__(
             workspace_id=workspace_id,
             source_field=source_field,
             destination_field=destination_field,
             platform_class_name='expense_custom_fields',
-            sync_after=sync_after
+            sync_after=sync_after,
+            use_code_in_naming=use_code_in_naming
         )
 
     def trigger_import(self):
@@ -175,3 +181,28 @@ class ExpenseCustomField(Base):
         self.sync_expense_attributes(platform)
 
         self.create_mappings()
+
+
+def disable_custom_attributes(workspace_id: int, custom_fields_to_disable: Dict, *args, **kwargs):
+    """
+    custom_fields_to_disable object format:
+    {
+        'destination_id': {
+            'value': 'old_custom_field_name',
+            'updated_value': 'new_custom_field_name',
+            'code': 'old_code',
+            'update_code': 'new_code' ---- if the code is updated else same as code
+        }
+    }
+
+    Currently JOB is only field that can be imported as Custom Field, may need to
+    update this function if more fields are added in future
+    """
+    custom_field_mappings = Mapping.objects.filter(
+        workspace_id=workspace_id,
+        destination_type='JOB',
+        destination_id__destination_id__in=custom_fields_to_disable.keys()
+    )
+
+    logger.info(f"Deleting Custom Field Mappings | WORKSPACE_ID: {workspace_id} | COUNT: {custom_field_mappings.count()}")
+    custom_field_mappings.delete()

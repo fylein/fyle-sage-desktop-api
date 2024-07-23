@@ -7,6 +7,8 @@ from apps.sage300.dependent_fields import (
 )
 from apps.fyle.models import DependentFieldSetting
 from apps.mappings.models import ImportLog
+from apps.sage300.models import CostCategory
+from apps.workspaces.models import ImportSetting
 
 
 def test_construct_custom_field_placeholder():
@@ -50,7 +52,8 @@ def test_post_dependent_cost_code(
     create_temp_workspace,
     add_cost_category,
     add_dependent_field_setting,
-    add_project_mappings
+    add_project_mappings,
+    add_import_settings
 ):
     workspace_id = 1
 
@@ -85,6 +88,19 @@ def test_post_dependent_cost_code(
     )
     assert cost_code_import_log.status == 'FATAL'
 
+    # Code pre-prepend case
+    ImportSetting.objects.filter(workspace_id=workspace_id).update(import_code_fields=['JOB', 'COST_CODE', 'COST_CATEGORY'])
+    CostCategory.objects.filter(workspace_id=workspace_id).update(job_code='123', cost_code_code='456', cost_category_code='789')
+
+    result, is_errored = post_dependent_cost_code(
+        cost_code_import_log,
+        dependent_field_setting=dependent_field_settings,
+        platform=platform.return_value,
+        filters=filters
+    )
+    assert result == ['CRE Platform', 'Integrations CRE']
+    assert is_errored == False
+
 
 def test_post_dependent_cost_type(
     db,
@@ -92,7 +108,8 @@ def test_post_dependent_cost_type(
     create_temp_workspace,
     add_cost_category,
     add_dependent_field_setting,
-    add_project_mappings
+    add_project_mappings,
+    add_import_settings
 ):
     workspace_id = 1
 
@@ -129,6 +146,21 @@ def test_post_dependent_cost_type(
     )
     assert cost_category_import_log.status == 'FATAL'
 
+    # Code pre-prepend case
+    ImportSetting.objects.filter(workspace_id=workspace_id).update(import_code_fields=['JOB', 'COST_CODE', 'COST_CATEGORY'])
+    CostCategory.objects.filter(workspace_id=workspace_id).update(job_code='123', cost_code_code='456', cost_category_code='789')
+
+    post_dependent_cost_type(
+        cost_category_import_log,
+        dependent_field_setting=dependent_field_settings,
+        platform=platform.return_value,
+        filters=filters,
+        posted_cost_codes=['CRE Platform', 'Integrations CRE']
+    )
+
+    assert platform.return_value.dependent_fields.bulk_post_dependent_expense_field_values.call_count == 4
+    assert cost_category_import_log.status == 'COMPLETE'
+
 
 def test_post_dependent_expense_field_values(
     db,
@@ -136,7 +168,8 @@ def test_post_dependent_expense_field_values(
     create_temp_workspace,
     add_cost_category,
     add_dependent_field_setting,
-    add_project_mappings
+    add_project_mappings,
+    add_import_settings
 ):
     workspace_id = 1
 
@@ -167,7 +200,8 @@ def test_import_dependent_fields_to_fyle(
     create_temp_workspace,
     add_cost_category,
     add_dependent_field_setting,
-    add_project_mappings
+    add_project_mappings,
+    add_import_settings
 ):
     workspace_id = 1
 
