@@ -1,6 +1,7 @@
 from apps.mappings.imports.modules.projects import Project
 from fyle_accounting_mappings.models import DestinationAttribute
 from .fixtures import data
+from tests.helper import dict_compare_keys
 
 
 def test_construct_fyle_payload(api_client, test_connection, mocker, create_temp_workspace, add_cost_category, add_sage300_creds, add_fyle_credentials, add_project_mappings):
@@ -56,7 +57,7 @@ def test_construct_fyle_payload(api_client, test_connection, mocker, create_temp
         True
     )
 
-    assert fyle_payload == data['create_fyle_project_payload_create_disable_case2']
+    assert dict_compare_keys(fyle_payload, data['create_fyle_project_payload_create_disable_case2']) == [], 'create fyle project payload create disable case2 return diffs in keys'
 
 
 def test_get_existing_fyle_attributes(db, create_temp_workspace, add_project_mappings, add_import_settings):

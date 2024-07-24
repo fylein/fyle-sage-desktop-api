@@ -156,7 +156,7 @@ def test_disable_categories(
 ):
     workspace_id = 1
 
-    projects_to_disable = {
+    categories_to_disable = {
         'destination_id': {
             'value': 'old_category',
             'updated_value': 'new_category',
@@ -177,11 +177,11 @@ def test_disable_categories(
     mock_platform = mocker.patch('apps.mappings.imports.modules.categories.PlatformConnector')
     bulk_post_call = mocker.patch.object(mock_platform.return_value.categories, 'post_bulk')
 
-    disable_categories(workspace_id, projects_to_disable)
+    disable_categories(workspace_id, categories_to_disable)
 
     assert bulk_post_call.call_count == 1
 
-    projects_to_disable = {
+    categories_to_disable = {
         'destination_id': {
             'value': 'old_category_2',
             'updated_value': 'new_category',
@@ -190,7 +190,7 @@ def test_disable_categories(
         }
     }
 
-    disable_categories(workspace_id, projects_to_disable)
+    disable_categories(workspace_id, categories_to_disable)
     assert bulk_post_call.call_count == 1
 
     # Test disable projects with code in naming
@@ -207,7 +207,7 @@ def test_disable_categories(
         active=True
     )
 
-    projects_to_disable = {
+    categories_to_disable = {
         'destination_id': {
             'value': 'old_category',
             'updated_value': 'new_category',
@@ -223,5 +223,5 @@ def test_disable_categories(
         'id': 'source_id_123'
     }]
 
-    bulk_payload = disable_categories(workspace_id, projects_to_disable)
+    bulk_payload = disable_categories(workspace_id, categories_to_disable)
     assert bulk_payload == payload
