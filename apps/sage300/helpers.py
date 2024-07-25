@@ -6,7 +6,7 @@ from typing import Dict
 from django.utils.module_loading import import_string
 
 from apps.workspaces.models import Workspace, Sage300Credential, FyleCredential, ImportSetting
-from fyle_accounting_mappings.models import ExpenseAttribute, Mapping
+from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.sage300.models import CostCategory
 from apps.fyle.models import DependentFieldSetting
