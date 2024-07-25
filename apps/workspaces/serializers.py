@@ -340,39 +340,41 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
         import_logs = ImportLog.objects.filter(workspace_id=workspace_id).values_list('attribute_type', flat=True)
 
         is_errored = False
+        old_code_pref_list = set()
 
         if import_settings:
             old_code_pref_list = set(import_settings.import_code_fields)
-            new_code_pref_list = set(data.get('import_settings', {}).get('import_code_fields', []))
-            diff_code_pref_list = list(old_code_pref_list.symmetric_difference(new_code_pref_list))
 
-            logger.info("Import Settings import_code_fields | Content: {{WORKSPACE_ID: {}, Old Import Code Fields: {}, New Import Code Fields: {}}}".format(workspace_id, old_code_pref_list if old_code_pref_list else {}, new_code_pref_list))
-            """ If the JOB is in the code_fields then we also add Dep fields"""
-            mapping_settings = data.get('mapping_settings', [])
-            for setting in mapping_settings:
-                if setting['destination_field'] == 'JOB':
-                    if setting['source_field'] == 'PROJECT':
-                        new_code_pref_list.update(['COST_CODE', 'COST_CATEGORY'])
-                    else:
-                        old_code_pref_list.difference_update(['COST_CODE', 'COST_CATEGORY'])
+        new_code_pref_list = set(data.get('import_settings', {}).get('import_code_fields', []))
+        diff_code_pref_list = list(old_code_pref_list.symmetric_difference(new_code_pref_list))
 
-                if setting['destination_field'] in diff_code_pref_list and setting['source_field'] in import_logs:
-                    is_errored = True
-                    break
+        logger.info("Import Settings import_code_fields | Content: {{WORKSPACE_ID: {}, Old Import Code Fields: {}, New Import Code Fields: {}}}".format(workspace_id, old_code_pref_list if old_code_pref_list else {}, new_code_pref_list if new_code_pref_list else {}))
+        """ If the JOB is in the code_fields then we also add Dep fields"""
+        mapping_settings = data.get('mapping_settings', [])
+        for setting in mapping_settings:
+            if setting['destination_field'] == 'JOB' and 'JOB' in new_code_pref_list:
+                if setting['source_field'] == 'PROJECT':
+                    new_code_pref_list.update(['COST_CODE', 'COST_CATEGORY'])
+                else:
+                    old_code_pref_list.difference_update(['COST_CODE', 'COST_CATEGORY'])
 
-            if 'ACCOUNT' in diff_code_pref_list and 'CATEGORY' in import_logs:
+            if setting['destination_field'] in diff_code_pref_list and setting['source_field'] in import_logs:
                 is_errored = True
+                break
 
-            if 'VENDOR' in diff_code_pref_list and 'MERCHANT' in import_logs:
-                is_errored = True
+        if 'ACCOUNT' in diff_code_pref_list and 'CATEGORY' in import_logs:
+            is_errored = True
 
-            if not old_code_pref_list.issubset(new_code_pref_list):
-                is_errored = True
+        if 'VENDOR' in diff_code_pref_list and 'MERCHANT' in import_logs:
+            is_errored = True
 
-            if is_errored:
-                raise serializers.ValidationError('Cannot change the code fields once they are imported')
+        if not old_code_pref_list.issubset(new_code_pref_list):
+            is_errored = True
 
-            data.get('import_settings')['import_code_fields'] = list(new_code_pref_list)
+        if is_errored:
+            raise serializers.ValidationError('Cannot change the code fields once they are imported')
+
+        data.get('import_settings')['import_code_fields'] = list(new_code_pref_list)
 
         return data
 

@@ -86,16 +86,6 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict, *args, **kwar
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
     platform.projects.sync()
 
-    project_job_mapping = Mapping.objects.filter(
-        workspace_id=workspace_id,
-        source_type='PROJECT',
-        destination_type='JOB',
-        destination_id__destination_id__in=projects_to_disable.keys()
-    )
-
-    logger.info(f"Deleting Project-Job Mappings | WORKSPACE_ID: {workspace_id} | COUNT: {project_job_mapping.count()}")
-    project_job_mapping.delete()
-
     use_code_in_naming = ImportSetting.objects.filter(
         workspace_id = workspace_id,
         import_code_fields__contains=['JOB']

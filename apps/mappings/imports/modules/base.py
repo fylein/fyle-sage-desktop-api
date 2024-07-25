@@ -171,8 +171,7 @@ class Base:
         destination_attributes_without_duplicates = []
         destination_attributes = DestinationAttribute.objects.filter(
             workspace_id=self.workspace_id,
-            attribute_type=self.destination_field,
-            mapping__isnull=True
+            attribute_type=self.destination_field
         ).order_by('value', 'id')
         destination_attributes_without_duplicates = self.remove_duplicate_attributes(destination_attributes)
         if destination_attributes_without_duplicates:
