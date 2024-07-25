@@ -11,7 +11,7 @@ from apps.workspaces.models import (
     ExportSetting,
     AdvancedSetting
 )
-
+from apps.mappings.models import ImportLog
 from tests.helper import dict_compare_keys
 from tests.test_fyle.fixtures import fixtures as data
 
@@ -308,7 +308,21 @@ def test_import_settings(mocker, api_client, test_connection, create_temp_worksp
 
     assert response.status_code == 400
     response = json.loads(response.content)
-    assert response['non_field_errors'] == ["Cannot remove the attribute from the preference list once imported"]
+    assert response['non_field_errors'] == ["Cannot change the code fields once they are imported"]
+
+    # Test with categories import without code and then adding code
+    ImportLog.create('CATEGORY', 1)
+
+    add_import_code_fields_payload = data['import_code_fields_payload']
+    add_import_code_fields_payload['import_settings']['import_code_fields'] = ['ACCOUNT', 'JOB', 'VENDOR']
+    response = api_client.put(
+        url,
+        data=add_import_code_fields_payload,
+        format='json'
+    )
+    assert response.status_code == 400
+    response = json.loads(response.content)
+    assert response['non_field_errors'] == ["Cannot change the code fields once they are imported"]
 
 
 def test_advanced_settings(api_client, test_connection):
