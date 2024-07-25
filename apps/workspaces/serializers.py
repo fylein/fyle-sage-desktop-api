@@ -1,6 +1,8 @@
 """
 Workspace Serializers
 """
+import logging
+
 from django.conf import settings
 from django.core.cache import cache
 from django_q.tasks import async_task
@@ -36,6 +38,9 @@ from apps.mappings.models import Version, ImportLog
 from apps.users.models import User
 from apps.fyle.helpers import get_cluster_domain
 from apps.workspaces.triggers import ImportSettingsTrigger, AdvancedSettingsTriggers
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 class WorkspaceSerializer(serializers.ModelSerializer):
@@ -341,6 +346,7 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
             new_code_pref_list = set(data.get('import_settings', {}).get('import_code_fields', []))
             diff_code_pref_list = list(old_code_pref_list.symmetric_difference(new_code_pref_list))
 
+            logger.info("Import Settings import_code_fields | Content: {{WORKSPACE_ID: {}, Old Import Code Fields: {}, New Import Code Fields: {}}}".format(workspace_id, old_code_pref_list if old_code_pref_list else {}, new_code_pref_list))
             """ If the JOB is in the code_fields then we also add Dep fields"""
             mapping_settings = data.get('mapping_settings', [])
             for setting in mapping_settings:
