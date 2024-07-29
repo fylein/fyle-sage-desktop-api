@@ -107,13 +107,6 @@ def disable_categories(workspace_id: int, categories_to_disable: Dict, *args, **
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
     use_code_in_naming = ImportSetting.objects.filter(workspace_id=workspace_id, import_code_fields__contains=['ACCOUNT']).first()
-    category_account_mapping = CategoryMapping.objects.filter(
-        workspace_id=workspace_id,
-        destination_account__destination_id__in=categories_to_disable.keys()
-    )
-
-    logger.info(f"Deleting Category-Account Mappings | WORKSPACE_ID: {workspace_id} | COUNT: {category_account_mapping.count()}")
-    category_account_mapping.delete()
 
     category_values = []
     for category_map in categories_to_disable.values():

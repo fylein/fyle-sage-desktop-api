@@ -6,7 +6,7 @@ from typing import Dict
 from django.utils.module_loading import import_string
 
 from apps.workspaces.models import Workspace, Sage300Credential, FyleCredential, ImportSetting
-from fyle_accounting_mappings.models import ExpenseAttribute, Mapping
+from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.sage300.models import CostCategory
 from apps.fyle.models import DependentFieldSetting
@@ -85,16 +85,6 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict, *args, **kwar
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
     platform.projects.sync()
-
-    project_job_mapping = Mapping.objects.filter(
-        workspace_id=workspace_id,
-        source_type='PROJECT',
-        destination_type='JOB',
-        destination_id__destination_id__in=projects_to_disable.keys()
-    )
-
-    logger.info(f"Deleting Project-Job Mappings | WORKSPACE_ID: {workspace_id} | COUNT: {project_job_mapping.count()}")
-    project_job_mapping.delete()
 
     use_code_in_naming = ImportSetting.objects.filter(
         workspace_id = workspace_id,

@@ -459,7 +459,8 @@ fixtures = {
         "import_settings": {
             "import_categories": True,
             "import_vendors_as_merchants": True,
-            "add_commitment_details": False
+            "add_commitment_details": False,
+            "import_code_fields": ["JOB"]
         },
         "mapping_settings": [
             {
@@ -490,6 +491,7 @@ fixtures = {
             "import_categories": True,
             "import_vendors_as_merchants": True,
             "add_commitment_details": False,
+            "import_code_fields": ["JOB"]
         },
         "mapping_settings": [
             {
@@ -498,6 +500,13 @@ fixtures = {
                 "import_to_fyle": True,
                 "is_custom": True,
                 "source_placeholder": "class",
+            },
+            {
+                "source_field": "PROJECT",
+                "destination_field": "JOB",
+                "import_to_fyle": True,
+                "is_custom": False,
+                "source_placeholder": None,
             }
         ],
         "dependent_field_settings": None,
@@ -506,12 +515,13 @@ fixtures = {
         "import_settings": {
             "import_categories": True,
             "import_vendors_as_merchants": True,
-            "add_commitment_details": False
+            "add_commitment_details": False,
+            "import_code_fields": ["JOB"]
         },
         "mapping_settings": [
             {
                 "source_field": "PROJECT",
-                "destination_field": "PROJECT",
+                "destination_field": "JOB",
                 "import_to_fyle": True,
                 "is_custom": False,
                 "source_placeholder": "Select Project",
@@ -524,7 +534,7 @@ fixtures = {
             "import_categories": True,
             "import_vendors_as_merchants": True,
             "add_commitment_details": True,
-            "import_code_fields": []
+            "import_code_fields": ["JOB", "COST_CODE", "COST_CATEGORY"]
         },
         "mapping_settings": [
             {

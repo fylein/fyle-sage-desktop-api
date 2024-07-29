@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import List, Dict
 from apps.mappings.imports.modules.base import Base
-from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, MappingSetting, Mapping
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, MappingSetting
 from apps.workspaces.models import FyleCredential, ImportSetting
 from fyle_integrations_platform_connector import PlatformConnector
 from apps.mappings.helpers import prepend_code_to_name
@@ -79,16 +79,6 @@ def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict, *args
     """
     destination_type = MappingSetting.objects.get(workspace_id=workspace_id, source_field='COST_CENTER').destination_field
     use_code_in_naming = ImportSetting.objects.filter(workspace_id=workspace_id, import_code_fields__contains=[destination_type]).first()
-
-    cost_center_mappings = Mapping.objects.filter(
-        workspace_id=workspace_id,
-        source_type='COST_CENTER',
-        destination_type=destination_type,
-        destination_id__destination_id__in=cost_centers_to_disable.keys()
-    )
-
-    logger.info(f"Deleting Cost Center Mappings | WORKSPACE_ID: {workspace_id} | COUNT: {cost_center_mappings.count()}")
-    cost_center_mappings.delete()
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)

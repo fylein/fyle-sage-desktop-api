@@ -1,5 +1,5 @@
-from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField, disable_custom_attributes
-from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, Mapping
+from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
+from fyle_accounting_mappings.models import DestinationAttribute
 from apps.mappings.models import ImportLog
 
 
@@ -202,50 +202,3 @@ def test_post_to_fyle_and_sync(
             'is_enabled': True
         }]
     )
-
-
-def test_disable_custom_attributes(db, create_temp_workspace):
-    destination_attribute = DestinationAttribute.objects.create(
-        workspace_id=1,
-        attribute_type='JOB',
-        value='old_custom_field_name',
-        code='old_code',
-        destination_id='123',
-        active=True
-    )
-
-    expense_attribute = ExpenseAttribute.objects.create(
-        workspace_id=1,
-        attribute_type='CUSTOM',
-        value='old_code old_custom_field_name',
-        source_id='456',
-        active=True
-    )
-
-    mapping = Mapping.objects.create(
-        workspace_id=1,
-        source_id=expense_attribute.id,
-        source_type='CUSTOM',
-        destination_id=destination_attribute.id,
-        destination_type='JOB'
-    )
-
-    custom_fields_to_disable = {
-        '123': {
-            'value': 'old_custom_field_name',
-            'updated_value': 'new_custom_field_name',
-            'code': 'old_code',
-            'updated_code': 'new_code'
-        }
-    }
-
-    disable_custom_attributes(1, custom_fields_to_disable)
-
-    count = 0
-    try:
-        mapping.refresh_from_db()
-    except Exception as e:
-        count += 1
-        assert str(e) == 'Mapping matching query does not exist.'
-
-    assert count == 1
