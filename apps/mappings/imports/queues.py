@@ -11,8 +11,12 @@ def chain_import_fields_to_fyle(workspace_id):
     Chain import fields to Fyle
     :param workspace_id: Workspace Id
     """
+    import_settings = ImportSetting.objects.filter(workspace_id=workspace_id).first()
+
+    if not import_settings:
+        return
+
     mapping_settings = MappingSetting.objects.filter(workspace_id=workspace_id, import_to_fyle=True)
-    import_settings = ImportSetting.objects.get(workspace_id=workspace_id)
     dependent_field_settings = DependentFieldSetting.objects.filter(workspace_id=workspace_id, is_import_enabled=True).first()
 
     import_code_fields = import_settings.import_code_fields
