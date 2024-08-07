@@ -158,7 +158,7 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
 
 
 @handle_import_exceptions
-def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict, posted_cost_codes: List = []):
+def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict):
     import_settings = ImportSetting.objects.filter(workspace_id=import_log.workspace.id).first()
     use_cost_code_in_naming = False
     use_category_code_in_naming = False
@@ -192,29 +192,28 @@ def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: Dep
     import_log.save()
 
     for category in cost_categories:
-        if category['cost_code_name'] in posted_cost_codes:
-            cost_code_name = prepend_code_to_name(prepend_code_in_name=use_cost_code_in_naming, value=category['cost_code_name'], code=category['cost_code_code'])
-            payload = []
+        cost_code_name = prepend_code_to_name(prepend_code_in_name=use_cost_code_in_naming, value=category['cost_code_name'], code=category['cost_code_code'])
+        payload = []
 
-            for cost_type in category['cost_categories']:
-                cost_type_name = prepend_code_to_name(prepend_code_in_name=use_category_code_in_naming, value=cost_type['cost_category_name'], code=cost_type['cost_category_code'])
-                payload.append({
-                    'parent_expense_field_id': dependent_field_setting.cost_code_field_id,
-                    'parent_expense_field_value': cost_code_name,
-                    'expense_field_id': dependent_field_setting.cost_category_field_id,
-                    'expense_field_value': cost_type_name,
-                    'is_enabled': True
-                })
+        for cost_type in category['cost_categories']:
+            cost_type_name = prepend_code_to_name(prepend_code_in_name=use_category_code_in_naming, value=cost_type['cost_category_name'], code=cost_type['cost_category_code'])
+            payload.append({
+                'parent_expense_field_id': dependent_field_setting.cost_code_field_id,
+                'parent_expense_field_value': cost_code_name,
+                'expense_field_id': dependent_field_setting.cost_category_field_id,
+                'expense_field_value': cost_type_name,
+                'is_enabled': True
+            })
 
-            if payload:
-                sleep(0.2)
-                try:
-                    platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
-                    CostCategory.objects.filter(cost_code_name=category['cost_code_name']).update(is_imported=True)
-                    processed_batches += 1
-                except Exception as exception:
-                    is_errored = True
-                    logger.error(f'Exception while posting dependent cost type | Error: {exception} | Payload: {payload}')
+        if payload:
+            sleep(0.2)
+            try:
+                platform.dependent_fields.bulk_post_dependent_expense_field_values(payload)
+                CostCategory.objects.filter(cost_code_name=category['cost_code_name']).update(is_imported=True)
+                processed_batches += 1
+            except Exception as exception:
+                is_errored = True
+                logger.error(f'Exception while posting dependent cost type | Error: {exception} | Payload: {payload}')
 
     import_log.status = 'PARTIALLY_FAILED' if is_errored else 'COMPLETE'
     import_log.error_log = []
@@ -250,7 +249,7 @@ def post_dependent_expense_field_values(workspace_id: int, dependent_field_setti
         cost_category_import_log.save()
         return
     else:
-        is_cost_type_errored = post_dependent_cost_type(cost_category_import_log, dependent_field_setting, platform, filters, posted_cost_codes)
+        is_cost_type_errored = post_dependent_cost_type(cost_category_import_log, dependent_field_setting, platform, filters)
         if not is_cost_type_errored and not is_cost_code_errored and cost_category_import_log.processed_batches_count > 0:
             DependentFieldSetting.objects.filter(workspace_id=workspace_id).update(last_successful_import_at=datetime.now())
 

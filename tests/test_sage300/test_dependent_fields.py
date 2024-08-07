@@ -120,7 +120,8 @@ def test_post_dependent_cost_type(
     )
 
     filters = {
-        "workspace_id": workspace_id
+        "workspace_id": workspace_id,
+        "cost_code_name__in": ['Direct Mail Campaign', 'Platform APIs']
     }
 
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
@@ -132,8 +133,7 @@ def test_post_dependent_cost_type(
         cost_category_import_log,
         dependent_field_setting=dependent_field_settings,
         platform=platform.return_value,
-        filters=filters,
-        posted_cost_codes=['Direct Mail Campaign', 'Platform APIs']
+        filters=filters
     )
 
     assert platform.return_value.dependent_fields.bulk_post_dependent_expense_field_values.call_count == 2
@@ -150,12 +150,16 @@ def test_post_dependent_cost_type(
     ImportSetting.objects.filter(workspace_id=workspace_id).update(import_code_fields=['JOB', 'COST_CODE', 'COST_CATEGORY'])
     CostCategory.objects.filter(workspace_id=workspace_id).update(job_code='123', cost_code_code='456', cost_category_code='789')
 
+    filters = {
+        "workspace_id": workspace_id,
+        "cost_code_name__in": ['CRE Platform', 'Integrations CRE']
+    }
+
     post_dependent_cost_type(
         cost_category_import_log,
         dependent_field_setting=dependent_field_settings,
         platform=platform.return_value,
-        filters=filters,
-        posted_cost_codes=['CRE Platform', 'Integrations CRE']
+        filters=filters
     )
 
     assert platform.return_value.dependent_fields.bulk_post_dependent_expense_field_values.call_count == 4
