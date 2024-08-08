@@ -175,4 +175,4 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
 
         if bulk_update_payload:
             logger.info(f"Updating Cost Categories | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_update_payload)}")
-            CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'job_code', 'updated_at', 'is_imported'], batch_size=50)
+            CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'job_code', 'updated_at'], batch_size=50)
