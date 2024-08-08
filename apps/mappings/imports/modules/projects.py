@@ -10,13 +10,14 @@ class Project(Base):
     Class for Project module
     """
 
-    def __init__(self, workspace_id: int, destination_field: str, sync_after: datetime):
+    def __init__(self, workspace_id: int, destination_field: str, sync_after: datetime, use_code_in_naming: bool = False):
         super().__init__(
             workspace_id=workspace_id,
             source_field="PROJECT",
             destination_field=destination_field,
             platform_class_name="projects",
             sync_after=sync_after,
+            use_code_in_naming=use_code_in_naming
         )
 
     def trigger_import(self):

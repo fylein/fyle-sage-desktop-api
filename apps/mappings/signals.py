@@ -53,6 +53,12 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
         # TODO: sync sage 300 fields before we upload custom field
         try:
             workspace_id = int(instance.workspace_id)
+            import_settings = ImportSetting.objects.filter(workspace_id=workspace_id).first()
+            prepend_code_to_name = False
+
+            if import_settings and instance.destination_field in import_settings.import_code_fields:
+                prepend_code_to_name = True
+
             # Checking is import_log exists or not if not create one
             import_log, is_created = ImportLog.objects.get_or_create(
                 workspace_id=workspace_id,
@@ -81,7 +87,8 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
                 workspace_id=workspace_id,
                 source_field=instance.source_field,
                 destination_field=instance.destination_field,
-                sync_after=last_successful_run_at
+                sync_after=last_successful_run_at,
+                use_code_in_naming=prepend_code_to_name
             )
 
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)

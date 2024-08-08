@@ -11,6 +11,7 @@ from fyle_accounting_mappings.models import (
 )
 from apps.workspaces.models import ExportSetting
 from apps.accounting_exports.models import _group_expenses
+from apps.sage300.models import CostCategory
 
 
 def test_base_model_get_invoice_date(
@@ -103,10 +104,43 @@ def test_get_cost_code_id(
         accounting_export=accounting_export,
         lineitem=Expense.objects.filter(workspace_id=workspace_id).first(),
         dependent_field_setting=DependentFieldSetting.objects.filter(workspace_id=workspace_id).first(),
-        job_id='10081'
+        job_id='10081',
+        prepend_code_in_name=False
     )
 
     assert return_value == 'cost_code_id'
+
+    cost_category = CostCategory.objects.create(
+        workspace_id=workspace_id,
+        job_id='10065',
+        cost_code_id='cost_code_id',
+        cost_category_id='cost_category_id',
+        job_name='Job_Name',
+        cost_code_name='Cost_Code_Name',
+        name='Cost_Category_Name',
+        is_imported=False,
+        job_code='Job_Code',
+        cost_code_code='Cost_Code',
+        cost_category_code='Cost_Category_Code'
+    )
+
+    line_item = Expense.objects.filter(workspace_id=workspace_id).first()
+    dep_setting = DependentFieldSetting.objects.filter(workspace_id=workspace_id).first()
+
+    line_item.custom_properties = {
+        dep_setting.cost_code_field_name: 'Cost_Code Cost_Code_Name'
+    }
+    line_item.save()
+
+    return_value = base_model.get_cost_code_id(
+        accounting_export=accounting_export,
+        lineitem=line_item,
+        dependent_field_setting=dep_setting,
+        job_id='10065',
+        prepend_code_in_name=True
+    )
+
+    assert return_value == cost_category.cost_code_id
 
 
 def test_get_cost_category_id(
@@ -128,10 +162,44 @@ def test_get_cost_category_id(
         lineitem=Expense.objects.filter(workspace_id=workspace_id).first(),
         dependent_field_setting=DependentFieldSetting.objects.filter(workspace_id=workspace_id).first(),
         project_id='10064',
-        cost_code_id='cost_code_id'
+        cost_code_id='cost_code_id',
+        prepend_code_in_name=False
     )
 
     assert return_value == 'cost_category_id'
+
+    cost_category = CostCategory.objects.create(
+        workspace_id=workspace_id,
+        job_id='10065',
+        cost_code_id='cost_code_id',
+        cost_category_id='cost_category_id',
+        job_name='Job_Name',
+        cost_code_name='Cost_Code_Name',
+        name='Cost_Category_Name',
+        is_imported=False,
+        job_code='Job_Code',
+        cost_code_code='Cost_Code',
+        cost_category_code='Cost_Category_Code'
+    )
+
+    line_item = Expense.objects.filter(workspace_id=workspace_id).first()
+    dep_setting = DependentFieldSetting.objects.filter(workspace_id=workspace_id).first()
+
+    line_item.custom_properties = {
+        dep_setting.cost_category_field_name: 'Cost_Category_Code Cost_Category_Name'
+    }
+    line_item.save()
+
+    return_value = base_model.get_cost_category_id(
+        accounting_export=accounting_export,
+        lineitem=line_item,
+        dependent_field_setting=dep_setting,
+        project_id='10065',
+        cost_code_id='cost_code_id',
+        prepend_code_in_name=True
+    )
+
+    assert return_value == cost_category.cost_category_id
 
 
 def test_get_vendor_id(

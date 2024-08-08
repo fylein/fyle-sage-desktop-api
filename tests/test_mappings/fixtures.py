@@ -5718,4 +5718,45 @@ data = {
             ]
         }
     ],
+    "paginated_destination_attributes_view_response_1": {
+        "count": 0,
+        "next": None,
+        "previous": None,
+        "results": []
+    },
+    "paginated_destination_attributes_view_response_2": {
+        "count": 2,
+        "next": None,
+        "previous": None,
+        "results": [
+            {
+                "id": 3,
+                "attribute_type": "JOB",
+                "display_name": "CRE Platform",
+                "value": "CRE Platform",
+                "destination_id": "10065",
+                "auto_created": False,
+                "active": True,
+                "detail": "Sage 300 Project - CRE Platform, Id - 10065",
+                "code": "123",
+                "created_at": "2024-07-22T16:10:19.130448Z",
+                "updated_at": "2024-07-22T16:10:19.130456Z",
+                "workspace": 1
+            },
+            {
+                "id": 4,
+                "attribute_type": "JOB",
+                "display_name": "Integrations CRE",
+                "value": "Integrations CRE",
+                "destination_id": "10082",
+                "auto_created": False,
+                "active": True,
+                "detail": "Sage 300 Project - Integrations CRE, Id - 10082",
+                "code": "123",
+                "created_at": "2024-07-22T16:10:19.130823Z",
+                "updated_at": "2024-07-22T16:10:19.130832Z",
+                "workspace": 1
+            }
+        ]
+    }
 }

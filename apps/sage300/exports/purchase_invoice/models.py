@@ -4,7 +4,7 @@ from fyle_accounting_mappings.models import CategoryMapping, DestinationAttribut
 
 from apps.sage300.exports.base_model import BaseExportModel
 from apps.accounting_exports.models import AccountingExport
-from apps.workspaces.models import AdvancedSetting, ExportSetting
+from apps.workspaces.models import AdvancedSetting, ExportSetting, ImportSetting
 from apps.fyle.models import Expense, DependentFieldSetting
 
 
@@ -125,8 +125,12 @@ class PurchaseInvoiceLineitems(BaseExportModel):
             description = self.get_expense_purpose(accounting_export.workspace_id, lineitem, lineitem.category, advance_setting)
 
             if dependent_field_setting:
-                cost_code_id = self.get_cost_code_id(accounting_export, lineitem, dependent_field_setting, job_id)
-                cost_category_id = self.get_cost_category_id(accounting_export, lineitem, dependent_field_setting, job_id, cost_code_id)
+                import_code_fields = ImportSetting.objects.get(workspace_id=accounting_export.workspace_id).import_code_fields
+                prepend_code_in_cost_code = True if 'COST_CODE' in import_code_fields else False
+                prepend_code_in_cost_category = True if 'COST_CATEGORY' in import_code_fields else False
+
+                cost_code_id = self.get_cost_code_id(accounting_export, lineitem, dependent_field_setting, job_id, prepend_code_in_cost_code)
+                cost_category_id = self.get_cost_category_id(accounting_export, lineitem, dependent_field_setting, job_id, cost_code_id, prepend_code_in_cost_category)
 
                 if cost_code_id and cost_category_id and vendor_id:
                     commitment_item = DestinationAttribute.objects.filter(

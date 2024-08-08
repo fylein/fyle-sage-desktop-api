@@ -2,7 +2,9 @@ from datetime import datetime
 from typing import Optional
 
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum, Value, CharField
+from django.db.models.functions import Concat
+
 from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting, EmployeeMapping
 
 from apps.accounting_exports.models import AccountingExport
@@ -191,31 +193,59 @@ class BaseExportModel(models.Model):
 
         return job_id
 
-    def get_cost_code_id(accounting_export: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, job_id: str):
+    def get_cost_code_id(accounting_export: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, job_id: str, prepend_code_in_name: bool = False):
         cost_code_id = None
 
         selected_cost_code = lineitem.custom_properties.get(dependent_field_setting.cost_code_field_name, None)
-        cost_code = CostCategory.objects.filter(
-            workspace_id=accounting_export.workspace_id,
-            cost_code_name=selected_cost_code,
-            job_id=job_id
-        ).first()
+
+        if prepend_code_in_name:
+            cost_code = CostCategory.objects.filter(
+                workspace_id=accounting_export.workspace_id,
+                job_id=job_id,
+                cost_code_code__isnull=False,
+                cost_code_name__isnull=False
+            ).annotate(
+                combined_code_name=Concat('cost_code_code', Value(' '), 'cost_code_name', output_field=CharField())
+            ).filter(
+                combined_code_name=selected_cost_code
+            ).first()
+        else:
+            cost_code = CostCategory.objects.filter(
+                workspace_id=accounting_export.workspace_id,
+                cost_code_name=selected_cost_code,
+                job_id=job_id
+            ).first()
 
         if cost_code:
             cost_code_id = cost_code.cost_code_id
 
         return cost_code_id
 
-    def get_cost_category_id(accounting_export: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, project_id: str, cost_code_id: str):
+    def get_cost_category_id(accounting_export: AccountingExport, lineitem: Expense, dependent_field_setting: DependentFieldSetting, project_id: str, cost_code_id: str, prepend_code_in_name: bool = False):
         cost_category_id = None
 
         selected_cost_category = lineitem.custom_properties.get(dependent_field_setting.cost_category_field_name, None)
-        cost_category = CostCategory.objects.filter(
-            workspace_id=accounting_export.workspace_id,
-            cost_code_id=cost_code_id,
-            job_id=project_id,
-            name=selected_cost_category
-        ).first()
+
+        if prepend_code_in_name:
+            cost_category = CostCategory.objects.filter(
+                workspace_id=accounting_export.workspace_id,
+                job_id=project_id,
+                cost_code_id=cost_code_id,
+                cost_category_code__isnull=False,
+                name__isnull=False
+            ).annotate(
+                combined_code_name=Concat('cost_category_code', Value(' '), 'name', output_field=CharField())
+            ).filter(
+                combined_code_name=selected_cost_category
+            ).first()
+
+        else:
+            cost_category = CostCategory.objects.filter(
+                workspace_id=accounting_export.workspace_id,
+                cost_code_id=cost_code_id,
+                job_id=project_id,
+                name=selected_cost_category
+            ).first()
 
         if cost_category:
             cost_category_id = cost_category.cost_category_id
