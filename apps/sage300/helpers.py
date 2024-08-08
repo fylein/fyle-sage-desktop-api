@@ -171,7 +171,6 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
                 cost_category.job_code = value['updated_code']
                 cost_category.job_name = value['updated_value']
                 cost_category.updated_at = datetime.now(timezone.utc)
-                cost_category.is_imported = False
                 bulk_update_payload.append(cost_category)
 
         if bulk_update_payload:
