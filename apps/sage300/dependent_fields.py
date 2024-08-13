@@ -125,8 +125,8 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
         cost_code_names = []
         project_name = prepend_code_to_name(prepend_code_in_name=use_job_code_in_naming, value=project['job_name'], code=project['job_code'])
 
-        for cost_code in project['cost_codes']:
-            if project_name in existing_projects_in_fyle:
+        if project_name in existing_projects_in_fyle:
+            for cost_code in project['cost_codes']:
                 cost_code_name = prepend_code_to_name(prepend_code_in_name=use_cost_code_in_naming, value=cost_code['cost_code_name'], code=cost_code['cost_code_code'])
                 payload.append({
                     'parent_expense_field_id': dependent_field_setting.project_field_id,

@@ -22,6 +22,8 @@ from apps.workspaces.serializers import (
     AdvancedSettingSerializer,
     WorkspaceAdminSerializer
 )
+from apps.mappings.models import ImportLog
+from fyle_accounting_mappings.models import MappingSetting
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -135,5 +137,38 @@ class TriggerExportsView(generics.GenericAPIView):
         export_to_sage300(workspace_id=kwargs['workspace_id'])
 
         return Response(
+            status=status.HTTP_200_OK
+        )
+
+
+class ImportCodeFieldView(generics.GenericAPIView):
+    """
+    Import Code Field View
+    """
+
+    def get(self, request, *args, **kwargs):
+        workspace_id = kwargs['workspace_id']
+
+        import_log_attributes = ImportLog.objects.filter(workspace_id=workspace_id).values_list('attribute_type', flat=True)
+
+        response_data = {
+            'JOB': True,
+            'VENDOR': True,
+            'ACCOUNT': True
+        }
+
+        project_mapping = MappingSetting.objects.filter(workspace_id=workspace_id, destination_field='JOB').first()
+
+        if project_mapping and project_mapping.source_field in import_log_attributes:
+            response_data['JOB'] = False
+
+        if 'MERCHANT' in import_log_attributes:
+            response_data['VENDOR'] = False
+
+        if 'CATEGORY' in import_log_attributes:
+            response_data['ACCOUNT'] = False
+
+        return Response(
+            data=response_data,
             status=status.HTTP_200_OK
         )
