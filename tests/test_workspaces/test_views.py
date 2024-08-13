@@ -499,3 +499,58 @@ def test_ready_view(api_client, test_connection):
     response = api_client.get(url)
 
     assert response.status_code == 200
+
+
+def test_import_code_field_view(db, mocker, create_temp_workspace, api_client, test_connection):
+    """
+    Test ImportCodeFieldView
+    """
+    workspace_id = 1
+    url = reverse('import-code-fields-config', kwargs={'workspace_id': workspace_id})
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+
+    vendor_log = ImportLog.create('MERCHANT', workspace_id)
+    account_log = ImportLog.create('CATEGORY', workspace_id)
+    job_log = ImportLog.create('PROJECT', workspace_id)
+
+    with mocker.patch('django.db.models.signals.post_save.send'):
+        # Create MappingSetting object with the signal mocked
+        MappingSetting.objects.create(
+            workspace_id=workspace_id,
+            source_field='PROJECT',
+            destination_field='JOB',
+            import_to_fyle=True,
+            is_custom=False
+        )
+
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    assert response.data == {
+        'JOB': False,
+        'VENDOR': False,
+        'ACCOUNT': False
+    }
+
+    job_log.delete()
+
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    assert response.data == {
+        'JOB': True,
+        'VENDOR': False,
+        'ACCOUNT': False
+    }
+
+    vendor_log.delete()
+    account_log.delete()
+
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    assert response.data == {
+        'JOB': True,
+        'VENDOR': True,
+        'ACCOUNT': True
+    }
