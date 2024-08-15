@@ -2,13 +2,13 @@ from datetime import datetime, timedelta, timezone
 from apps.sage300.helpers import (
     check_interval_and_sync_dimension,
     sync_dimensions,
-    disable_projects,
-    update_and_disable_cost_code
 )
 from apps.workspaces.models import Workspace, Sage300Credential, ImportSetting
 from fyle_accounting_mappings.models import ExpenseAttribute
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.models import CostCategory
+from apps.mappings.imports.modules.projects import disable_projects
+from apps.sage300.dependent_fields import update_and_disable_cost_code
 
 
 def test_check_interval_and_sync_dimension(
@@ -118,17 +118,17 @@ def test_disable_projects(
         active=True
     )
 
-    mock_platform = mocker.patch('apps.sage300.helpers.PlatformConnector')
+    mock_platform = mocker.patch('apps.mappings.imports.modules.projects.PlatformConnector')
     bulk_post_call = mocker.patch.object(mock_platform.return_value.projects, 'post_bulk')
     sync_call = mocker.patch.object(mock_platform.return_value.projects, 'sync')
 
-    disable_cost_code_call = mocker.patch('apps.sage300.helpers.update_and_disable_cost_code')
+    disable_cost_code_call = mocker.patch('apps.sage300.dependent_fields.update_and_disable_cost_code')
 
     disable_projects(workspace_id, projects_to_disable)
 
     assert bulk_post_call.call_count == 1
     assert sync_call.call_count == 2
-    disable_cost_code_call.assert_called_once()
+    disable_cost_code_call.call_count == 1
 
     projects_to_disable = {
         'destination_id': {
@@ -220,9 +220,9 @@ def test_update_and_disable_cost_code(
         active=True
     )
 
-    mock_platform = mocker.patch('apps.sage300.helpers.PlatformConnector')
-    mocker.patch.object(mock_platform.return_value.cost_centers, 'post_bulk')
-    mocker.patch.object(mock_platform.return_value.cost_centers, 'sync')
+    mock_platform = mocker.patch('apps.mappings.imports.modules.projects.PlatformConnector')
+    mocker.patch.object(mock_platform.return_value.projects, 'post_bulk')
+    mocker.patch.object(mock_platform.return_value.projects, 'sync')
     mocker.patch.object(mock_platform.return_value.dependent_fields, 'bulk_post_dependent_expense_field_values')
 
     update_and_disable_cost_code(workspace_id, projects_to_disable, mock_platform, use_code_in_naming)

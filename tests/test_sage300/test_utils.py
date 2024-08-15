@@ -690,7 +690,7 @@ def test_sync_data_with_generator(sync_instance, mocker):
 
     assert called_args[1] == 'JOB'
     assert called_args[2] == 1
-    assert mock_bulk_create.call_args[1]['attribute_disable_callback_path'] == 'apps.sage300.helpers.disable_projects'  # ATTRIBUTE_CALLBACK_MAP['PROJECT']
+    assert mock_bulk_create.call_args[1]['attribute_disable_callback_path'] == 'apps.mappings.imports.modules.projects.disable_projects'  # ATTRIBUTE_CALLBACK_MAP['PROJECT']
 
 
 def test_sync_data_without_generator(sync_instance, mocker):

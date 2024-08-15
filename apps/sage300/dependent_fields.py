@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 from time import sleep
 from django.contrib.postgres.aggregates import JSONBAgg
@@ -263,3 +263,41 @@ def import_dependent_fields_to_fyle(workspace_id: str):
         logger.info('Invalid Token or Fyle credentials does not exist - %s', workspace_id)
     except Exception as exception:
         logger.error('Exception while importing dependent fields to fyle - %s', exception)
+
+
+def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict, platform: PlatformConnector, use_code_in_naming: bool):
+    """
+    Update the job_name in CostCategory and disable the old cost code in Fyle
+    """
+    dependent_field_setting = DependentFieldSetting.objects.filter(is_import_enabled=True, workspace_id=workspace_id).first()
+
+    if dependent_field_setting:
+        filters = {
+            'job_id__in':list(cost_codes_to_disable.keys()),
+            'workspace_id': workspace_id
+        }
+        cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
+        # This call will disable the cost codes in Fyle that has old project name
+        posted_cost_codes = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters, is_enabled=False)
+
+        logger.info(f"Disabled Cost Codes in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(posted_cost_codes)}")
+
+        # here we are updating the CostCategory with the new project name
+        bulk_update_payload = []
+        for destination_id, value in cost_codes_to_disable.items():
+            updated_job_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=value['updated_value'], code=value['updated_code'])
+
+            cost_categories = CostCategory.objects.filter(
+                workspace_id=workspace_id,
+                job_id=destination_id
+            ).exclude(job_name=updated_job_name)
+
+            for cost_category in cost_categories:
+                cost_category.job_code = value['updated_code']
+                cost_category.job_name = value['updated_value']
+                cost_category.updated_at = datetime.now(timezone.utc)
+                bulk_update_payload.append(cost_category)
+
+        if bulk_update_payload:
+            logger.info(f"Updating Cost Categories | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_update_payload)}")
+            CostCategory.objects.bulk_update(bulk_update_payload, ['job_name', 'job_code', 'updated_at'], batch_size=50)
