@@ -70,8 +70,7 @@ class Category(Base):
         """
         filters = {
             "workspace_id": self.workspace_id,
-            "attribute_type": self.destination_field,
-            "destination_account__isnull": True
+            "attribute_type": self.destination_field
         }
 
         # get all the destination attributes that have category mappings as null

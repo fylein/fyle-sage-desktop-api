@@ -144,7 +144,6 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict, *args, **kwar
         platform.projects.post_bulk(bulk_payload)
     else:
         logger.info(f"No Projects to Disable in Fyle | WORKSPACE_ID: {workspace_id}")
-    print("reached here")
     update_and_disable_cost_code(workspace_id, projects_to_disable, platform, use_code_in_naming)
     platform.projects.sync()
     return bulk_payload
