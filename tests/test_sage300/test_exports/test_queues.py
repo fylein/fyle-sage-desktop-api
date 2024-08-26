@@ -1,6 +1,5 @@
 from datetime import datetime
 from apps.accounting_exports.models import AccountingExport, Error
-from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
 from apps.sage300.exports.purchase_invoice.queues import (
     poll_operation_status,
     check_accounting_export_and_start_import,
@@ -299,7 +298,6 @@ def test_skipping_purchase_invoice(
     accounting_export.exported_at = None
     accounting_export.save()
 
-
     error = Error.objects.filter(workspace_id=workspace_id, accounting_export=accounting_export).delete()
 
     error = Error.objects.create(
@@ -321,12 +319,9 @@ def test_skipping_purchase_invoice(
         True,
         1
     )
-
     accounting_export.refresh_from_db()
-
     assert accounting_export.status == ''
     assert accounting_export.type == 'PURCHASE_INVOICE'
-
 
     Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
 
@@ -336,7 +331,6 @@ def test_skipping_purchase_invoice(
         True,
         1
     )
-
     accounting_export.refresh_from_db()
 
     assert accounting_export.status == 'ENQUEUED'
@@ -359,7 +353,6 @@ def test_skipping_direct_cost(
     accounting_export.status = ''
     accounting_export.exported_at = None
     accounting_export.save()
-
 
     error = Error.objects.filter(workspace_id=workspace_id, accounting_export=accounting_export).delete()
 
@@ -387,7 +380,6 @@ def test_skipping_direct_cost(
 
     assert accounting_export.status == ''
     assert accounting_export.type == 'DIRECT_COST'
-
 
     Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
 
