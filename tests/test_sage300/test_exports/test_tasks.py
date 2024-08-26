@@ -16,7 +16,7 @@ def test_trigger_export_purchase_invoice(db, mocker):
     )
 
     export_purchase_invoice = ExportPurchaseInvoice()
-    export_purchase_invoice.trigger_export(1, [1])
+    export_purchase_invoice.trigger_export(1, [1], False, 0)
 
     assert True
 
@@ -155,7 +155,7 @@ def test_trigger_export_direct_cost(db, mocker):
     )
 
     export_direct_cost = ExportDirectCost()
-    export_direct_cost.trigger_export(1, [1])
+    export_direct_cost.trigger_export(1, [1], False, 0)
 
     assert True
 
