@@ -56,7 +56,6 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
     for index, accounting_export_group in enumerate(accounting_exports):
         error = errors.filter(workspace_id=workspace_id, accounting_export=accounting_export_group, is_resolved=False).first()
         skip_export = validate_failing_export(is_auto_export, interval_hours, error)
-        print('skip exports', skip_export)
         if skip_export:
             logger.info('Skipping expense group %s as it has %s errors', accounting_export_group.id, error.repetition_count)
             continue
