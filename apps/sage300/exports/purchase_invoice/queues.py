@@ -47,8 +47,6 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
         exported_at__isnull=True
     ).all()
 
-    print(len(accounting_exports))
-
     errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, accounting_export_id__in=accounting_export_ids).all()
 
     chain = Chain()
