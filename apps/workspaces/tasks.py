@@ -36,6 +36,9 @@ def run_import_export(workspace_id: int, export_mode = None):
         workspace_id=workspace_id
     )
 
+    interval_hours = advance_settings.interval_hours
+    is_auto_export = advance_settings.schedule_is_enabled
+
     last_exported_at = datetime.now()
     is_expenses_exported = False
 
@@ -59,7 +62,7 @@ def run_import_export(workspace_id: int, export_mode = None):
             if len(accounting_export_ids):
                 is_expenses_exported = True
                 export = export_map[export_settings.reimbursable_expenses_export_type]
-                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids)
+                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours)
 
     # For Credit Card Expenses
     if export_settings.credit_card_expense_export_type:
