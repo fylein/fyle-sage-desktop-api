@@ -76,7 +76,7 @@ def test_get_existing_fyle_attributes(db, create_temp_workspace, add_project_map
     paginated_destination_attribute_values = [attribute.value for attribute in paginated_destination_attributes_without_duplicates]
     existing_fyle_attributes_map = project.get_existing_fyle_attributes(paginated_destination_attribute_values)
 
-    assert existing_fyle_attributes_map == {'123 cre platform': '10065', '123 integrations cre': '10082'}
+    assert existing_fyle_attributes_map == {'123: cre platform': '10065', '123: integrations cre': '10082'}
 
 
 def test_construct_fyle_payload_with_code(db, create_temp_workspace, add_project_mappings, add_cost_category, add_import_settings):

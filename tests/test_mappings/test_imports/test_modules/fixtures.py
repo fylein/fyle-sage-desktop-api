@@ -8190,15 +8190,15 @@ data = {
     ],
     "create_fyle_project_payload_with_code_create_new_case":[
         {
-            'name': '123 CRE Platform',
+            'name': '123: CRE Platform',
             'code': '10065',
-            'description': 'Sage 300 Project - 123 CRE Platform, Id - 10065',
+            'description': 'Sage 300 Project - 123: CRE Platform, Id - 10065',
             'is_enabled': True
         },
         {
-            'name': '123 Integrations CRE',
+            'name': '123: Integrations CRE',
             'code': '10082',
-            'description': 'Sage 300 Project - 123 Integrations CRE, Id - 10082',
+            'description': 'Sage 300 Project - 123: Integrations CRE, Id - 10082',
             'is_enabled': True
         }
     ],
@@ -8214,23 +8214,23 @@ data = {
             'is_enabled': True
         },
         {
-            'name': '123 Sage300',
+            'name': '123: Sage300',
             'code': '10085',
             'is_enabled': True
         }
     ],
     "create_fyle_cost_center_payload_with_code_create_new_case":[
         {
-            "name": "123 CRE Platform",
+            "name": "123: CRE Platform",
             "code": "10065",
             "is_enabled": True,
-            "description": "Cost Center - 123 CRE Platform, Id - 10065"
+            "description": "Cost Center - 123: CRE Platform, Id - 10065"
         },
         {
-            "name": "123 Integrations CRE",
+            "name": "123: Integrations CRE",
             "code": "10082",
             "is_enabled": True,
-            "description": "Cost Center - 123 Integrations CRE, Id - 10082"
+            "description": "Cost Center - 123: Integrations CRE, Id - 10082"
         }
     ]
 }

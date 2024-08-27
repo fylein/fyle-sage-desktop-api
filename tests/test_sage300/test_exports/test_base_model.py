@@ -128,7 +128,7 @@ def test_get_cost_code_id(
     dep_setting = DependentFieldSetting.objects.filter(workspace_id=workspace_id).first()
 
     line_item.custom_properties = {
-        dep_setting.cost_code_field_name: 'Cost_Code Cost_Code_Name'
+        dep_setting.cost_code_field_name: 'Cost_Code: Cost_Code_Name'
     }
     line_item.save()
 
@@ -186,7 +186,7 @@ def test_get_cost_category_id(
     dep_setting = DependentFieldSetting.objects.filter(workspace_id=workspace_id).first()
 
     line_item.custom_properties = {
-        dep_setting.cost_category_field_name: 'Cost_Category_Code Cost_Category_Name'
+        dep_setting.cost_category_field_name: 'Cost_Category_Code: Cost_Category_Name'
     }
     line_item.save()
 

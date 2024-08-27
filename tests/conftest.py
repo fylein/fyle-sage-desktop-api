@@ -381,18 +381,18 @@ def add_project_mappings():
             workspace_id=workspace_id,
             attribute_type='PROJECT',
             display_name='CRE Platform',
-            value='123 CRE Platform',
+            value='123: CRE Platform',
             source_id='10065',
-            detail='Sage 300 Project - 123 CRE Platform, Id - 10065',
+            detail='Sage 300 Project - 123: CRE Platform, Id - 10065',
             active=True
         )
         ExpenseAttribute.objects.create(
             workspace_id=workspace_id,
             attribute_type='PROJECT',
             display_name='Integrations CRE',
-            value='123 Integrations CRE',
+            value='123: Integrations CRE',
             source_id='10082',
-            detail='Sage 300 Project - 123 Integrations CRE, Id - 10082',
+            detail='Sage 300 Project - 123: Integrations CRE, Id - 10082',
             active=True
         )
 

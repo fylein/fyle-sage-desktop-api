@@ -6,7 +6,7 @@ from apps.mappings.models import ImportLog
 def test_prepend_code_to_name():
     # Test case 1: use_code_in_naming is True and attribute_code is not None
     result = prepend_code_to_name(True, "attribute_name", "attribute_code")
-    assert result == "attribute_code attribute_name"
+    assert result == "attribute_code: attribute_name"
 
     # Test case 2: use_code_in_naming is True but attribute_code is None
     result = prepend_code_to_name(True, "attribute_name", None)

@@ -57,18 +57,18 @@ def add_project_mappings():
             workspace_id=workspace_id,
             attribute_type='PROJECT',
             display_name='CRE Platform',
-            value='123 CRE Platform',
+            value='123: CRE Platform',
             source_id='10065',
-            detail='Sage 300 Project - 123 CRE Platform, Id - 10065',
+            detail='Sage 300 Project - 123: CRE Platform, Id - 10065',
             active=True
         )
         ExpenseAttribute.objects.create(
             workspace_id=workspace_id,
             attribute_type='PROJECT',
             display_name='Integrations CRE',
-            value='123 Integrations CRE',
+            value='123: Integrations CRE',
             source_id='10082',
-            detail='Sage 300 Project - 123 Integrations CRE, Id - 10082',
+            detail='Sage 300 Project - 123: Integrations CRE, Id - 10082',
             active=True
         )
 
@@ -144,18 +144,18 @@ def add_cost_center_mappings():
             workspace_id=workspace_id,
             attribute_type='COST_CENTER',
             display_name='CRE Platform',
-            value='123 CRE Platform',
+            value='123: CRE Platform',
             source_id='10065',
-            detail='Sage 300 Cost_Center - 123 CRE Platform, Id - 10065',
+            detail='Sage 300 Cost_Center - 123: CRE Platform, Id - 10065',
             active=True
         )
         ExpenseAttribute.objects.create(
             workspace_id=workspace_id,
             attribute_type='COST_CENTER',
             display_name='Integrations CRE',
-            value='123 Integrations CRE',
+            value='123: Integrations CRE',
             source_id='10082',
-            detail='Sage 300 Cost_Center - 123 Integrations CRE, Id - 10082',
+            detail='Sage 300 Cost_Center - 123: Integrations CRE, Id - 10082',
             active=True
         )
 
@@ -212,18 +212,18 @@ def add_merchant_mappings():
             workspace_id=workspace_id,
             attribute_type='MERCHANT',
             display_name='CRE Platform',
-            value='123 CRE Platform',
+            value='123: CRE Platform',
             source_id='10065',
-            detail='Sage 300 Merchant - 123 CRE Platform, Id - 10065',
+            detail='Sage 300 Merchant - 123: CRE Platform, Id - 10065',
             active=True
         )
         ExpenseAttribute.objects.create(
             workspace_id=workspace_id,
             attribute_type='MERCHANT',
             display_name='Integrations CRE',
-            value='123 Integrations CRE',
+            value='123: Integrations CRE',
             source_id='10082',
-            detail='Sage 300 Merchant - 123 Integrations CRE, Id - 10082',
+            detail='Sage 300 Merchant - 123: Integrations CRE, Id - 10082',
             active=True
         )
 
@@ -345,7 +345,7 @@ def add_expense_destination_attributes_3():
         workspace_id=1,
         attribute_type='CATEGORY',
         display_name='Category',
-        value="123 Sage300",
+        value="123: Sage300",
         source_id='10095',
         detail='Merchant - Platform APIs, Id - 10085',
         active=True

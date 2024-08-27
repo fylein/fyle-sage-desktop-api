@@ -88,7 +88,7 @@ def test_get_existing_fyle_attributes(
     paginated_destination_attribute_values = [attribute.value for attribute in paginated_destination_attributes_without_duplicates]
     existing_fyle_attributes_map = merchant.get_existing_fyle_attributes(paginated_destination_attribute_values)
 
-    assert existing_fyle_attributes_map == {'123 cre platform': '10065', '123 integrations cre': '10082'}
+    assert existing_fyle_attributes_map == {'123: cre platform': '10065', '123: integrations cre': '10082'}
 
 
 def test_construct_fyle_payload_with_code(
@@ -121,7 +121,7 @@ def test_construct_fyle_payload_with_code(
         True
     )
 
-    assert fyle_payload == ['123 CRE Platform', '123 Integrations CRE']
+    assert fyle_payload == ['123: CRE Platform', '123: Integrations CRE']
 
 
 def test_disable_merchants(
@@ -180,7 +180,7 @@ def test_disable_merchants(
         workspace_id=workspace_id,
         attribute_type='MERCHANT',
         display_name='Merchant',
-        value='old_merchant_code old_merchant',
+        value='old_merchant_code: old_merchant',
         source_id='source_id_123',
         active=True
     )
@@ -194,7 +194,7 @@ def test_disable_merchants(
         }
     }
 
-    payload = ['old_merchant_code old_merchant']
+    payload = ['old_merchant_code: old_merchant']
 
     bulk_payload = disable_merchants(workspace_id, merchants_to_disable)
     assert bulk_payload[0] == payload[0]

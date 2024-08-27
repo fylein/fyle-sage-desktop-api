@@ -153,7 +153,7 @@ def test_disable_projects(
         workspace_id=workspace_id,
         attribute_type='PROJECT',
         display_name='Project',
-        value='old_project_code old_project',
+        value='old_project_code: old_project',
         source_id='source_id_123',
         active=True
     )
@@ -168,10 +168,10 @@ def test_disable_projects(
     }
 
     payload = [{
-        'name': 'old_project_code old_project',
+        'name': 'old_project_code: old_project',
         'code': 'destination_id',
         'description': 'Sage 300 Project - {0}, Id - {1}'.format(
-            'old_project_code old_project',
+            'old_project_code: old_project',
             'destination_id'
         ),
         'is_enabled': False,

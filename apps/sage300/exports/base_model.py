@@ -205,7 +205,7 @@ class BaseExportModel(models.Model):
                 cost_code_code__isnull=False,
                 cost_code_name__isnull=False
             ).annotate(
-                combined_code_name=Concat('cost_code_code', Value(' '), 'cost_code_name', output_field=CharField())
+                combined_code_name=Concat('cost_code_code', Value(': '), 'cost_code_name', output_field=CharField())
             ).filter(
                 combined_code_name=selected_cost_code
             ).first()
@@ -234,7 +234,7 @@ class BaseExportModel(models.Model):
                 cost_category_code__isnull=False,
                 name__isnull=False
             ).annotate(
-                combined_code_name=Concat('cost_category_code', Value(' '), 'name', output_field=CharField())
+                combined_code_name=Concat('cost_category_code', Value(': '), 'name', output_field=CharField())
             ).filter(
                 combined_code_name=selected_cost_category
             ).first()
