@@ -141,8 +141,8 @@ def export_to_sage300(workspace_id: int):
     accounting_summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
     advance_settings = AdvancedSetting.objects.filter(workspace_id=workspace_id).first()
 
-    is_auto_export = advance_settings.schedule_is_enabled
-    interval_hours = advance_settings.interval_hours
+    is_auto_export = False
+    interval_hours = 0
 
     # Set the timestamp for the last export
     last_exported_at = datetime.now()

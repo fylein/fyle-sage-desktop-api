@@ -9,7 +9,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.actions import update_accounting_export_summary
-from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
+from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export, validate_failing_export
 from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
 from apps.sage300.utils import SageDesktopConnector
 from apps.workspaces.models import FyleCredential, Sage300Credential
@@ -22,17 +22,6 @@ def import_fyle_dimensions(fyle_credentials: FyleCredential):
 
     platform = PlatformConnector(fyle_credentials)
     platform.import_fyle_dimensions()
-
-
-def validate_failing_export(is_auto_export: bool, interval_hours: int, error: Error):
-    """
-    Validate failing export
-    :param is_auto_export: Is auto export
-    :param interval_hours: Interval hours
-    :param error: Error
-    """
-    # If auto export is enabled and interval hours is set and error repetition count is greater than 100, export only once a day
-    return is_auto_export and interval_hours and error and error.repetition_count > 100 and datetime.now().replace(tzinfo=timezone.utc) - error.updated_at <= timedelta(hours=24)
 
 
 def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str], is_auto_export: bool, interval_hours: int):
