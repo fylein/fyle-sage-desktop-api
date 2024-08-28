@@ -1,7 +1,14 @@
+import logging
 from datetime import datetime
-from typing import List
+from typing import List, Dict
+from apps.workspaces.models import ImportSetting, FyleCredential
 from apps.mappings.imports.modules.base import Base
-from fyle_accounting_mappings.models import DestinationAttribute, CategoryMapping
+from apps.mappings.helpers import prepend_code_to_name
+from fyle_integrations_platform_connector import PlatformConnector
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, CategoryMapping
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 class Category(Base):
@@ -9,13 +16,14 @@ class Category(Base):
     Class for Category module
     """
 
-    def __init__(self, workspace_id: int, destination_field: str, sync_after: datetime):
+    def __init__(self, workspace_id: int, destination_field: str, sync_after: datetime, use_code_in_naming: bool = False):
         super().__init__(
             workspace_id=workspace_id,
             source_field="CATEGORY",
             destination_field=destination_field,
             platform_class_name="categories",
             sync_after=sync_after,
+            use_code_in_naming=use_code_in_naming
         )
 
     def trigger_import(self):
@@ -62,8 +70,7 @@ class Category(Base):
         """
         filters = {
             "workspace_id": self.workspace_id,
-            "attribute_type": self.destination_field,
-            "destination_account__isnull": True
+            "attribute_type": self.destination_field
         }
 
         # get all the destination attributes that have category mappings as null
@@ -81,3 +88,63 @@ class Category(Base):
             self.destination_field,
             self.workspace_id,
         )
+
+
+def disable_categories(workspace_id: int, categories_to_disable: Dict, *args, **kwargs):
+    """
+    categories_to_disable object format:
+    {
+        'destination_id': {
+            'value': 'old_category_name',
+            'updated_value': 'new_category_name',
+            'code': 'old_code',
+            'update_code': 'new_code' ---- if the code is updated else same as code
+        }
+    }
+    """
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+    platform = PlatformConnector(fyle_credentials=fyle_credentials)
+
+    use_code_in_naming = ImportSetting.objects.filter(workspace_id=workspace_id, import_code_fields__contains=['ACCOUNT']).first()
+
+    category_values = []
+    for category_map in categories_to_disable.values():
+        category_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=category_map['value'], code=category_map['code'])
+        category_values.append(category_name)
+
+    filters = {
+        'workspace_id': workspace_id,
+        'attribute_type': 'CATEGORY',
+        'value__in': category_values,
+        'active': True
+    }
+
+    # Expense attribute value map is as follows: {old_category_name: destination_id}
+    expense_attribute_value_map = {}
+    for k, v in categories_to_disable.items():
+        category_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=v['value'], code=v['code'])
+        expense_attribute_value_map[category_name] = k
+
+    expense_attributes = ExpenseAttribute.objects.filter(**filters)
+
+    bulk_payload = []
+    for expense_attribute in expense_attributes:
+        code = expense_attribute_value_map.get(expense_attribute.value, None)
+        if code:
+            payload = {
+                'name': expense_attribute.value,
+                'code': code,
+                'is_enabled': False,
+                'id': expense_attribute.source_id
+            }
+            bulk_payload.append(payload)
+        else:
+            logger.error(f"Category not found in categories_to_disable: {expense_attribute.value}")
+
+    if bulk_payload:
+        logger.info(f"Disabling Category in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(bulk_payload)}")
+        platform.categories.post_bulk(bulk_payload)
+    else:
+        logger.info(f"No Categories to Disable in Fyle | WORKSPACE_ID: {workspace_id}")
+
+    return bulk_payload
