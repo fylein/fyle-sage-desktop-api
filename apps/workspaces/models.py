@@ -71,6 +71,14 @@ CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES = (
 
 EXPORT_MODE_CHOICES = (('MANUAL', 'MANUAL'), ('AUTO', 'AUTO'))
 
+CODE_IMPORT_FIELD_CHOICES = (
+    ('JOB', 'JOB'),
+    ('VENDOR', 'VENDOR'),
+    ('ACCOUNT', 'ACCOUNT'),
+    ('COST_CODE', 'COST_CODE'),
+    ('COST_CATEGORY', 'COST_CATEGORY')
+)
+
 
 def get_default_onboarding_state():
     return 'CONNECTION'
@@ -205,6 +213,11 @@ class ImportSetting(BaseModel):
     import_vendors_as_merchants = BooleanFalseField(help_text='toggle for import of vendors as merchant from sage300')
     add_commitment_details = BooleanFalseField(help_text='Add commitment details')
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model', related_name="import_settings")
+    import_code_fields = ArrayField(
+        base_field=models.CharField(max_length=100, choices=CODE_IMPORT_FIELD_CHOICES),
+        help_text='Array Field to store code-naming preference',
+        blank=True, default=list
+    )
 
     class Meta:
         db_table = 'import_settings'
