@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import List, Dict
 from apps.mappings.imports.modules.base import Base
@@ -11,18 +12,22 @@ from fyle_integrations_platform_connector import PlatformConnector
 from apps.workspaces.models import FyleCredential
 from apps.mappings.constants import FYLE_EXPENSE_SYSTEM_FIELDS
 
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
+
 
 class ExpenseCustomField(Base):
     """
     Class for ExepenseCustomField module
     """
-    def __init__(self, workspace_id: int, source_field: str, destination_field: str, sync_after: datetime):
+    def __init__(self, workspace_id: int, source_field: str, destination_field: str, sync_after: datetime, use_code_in_naming: bool = False):
         super().__init__(
             workspace_id=workspace_id,
             source_field=source_field,
             destination_field=destination_field,
             platform_class_name='expense_custom_fields',
-            sync_after=sync_after
+            sync_after=sync_after,
+            use_code_in_naming=use_code_in_naming
         )
 
     def trigger_import(self):

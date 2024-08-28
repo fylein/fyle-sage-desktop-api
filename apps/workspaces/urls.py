@@ -22,7 +22,8 @@ from apps.workspaces.views import (
     ExportSettingView,
     AdvancedSettingView,
     WorkspaceAdminsView,
-    TriggerExportsView
+    TriggerExportsView,
+    ImportCodeFieldView
 )
 
 
@@ -32,6 +33,7 @@ workspace_app_paths = [
     path('<int:workspace_id>/credentials/sage300/', Sage300CredsView.as_view(), name='sage300-creds'),
     path('<int:workspace_id>/exports/trigger/', TriggerExportsView.as_view(), name='trigger-exports'),
     path('<int:workspace_id>/export_settings/', ExportSettingView.as_view(), name='export-settings'),
+    path('<int:workspace_id>/import_settings/import_code_fields_config/', ImportCodeFieldView.as_view(), name='import-code-fields-config'),
     path('<int:workspace_id>/import_settings/', ImportSettingView.as_view(), name='import-settings'),
     path('<int:workspace_id>/advanced_settings/', AdvancedSettingView.as_view(), name='advanced-settings'),
     path('<int:workspace_id>/admins/', WorkspaceAdminsView.as_view(), name='admin'),

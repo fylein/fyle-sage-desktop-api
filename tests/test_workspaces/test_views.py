@@ -11,7 +11,7 @@ from apps.workspaces.models import (
     ExportSetting,
     AdvancedSetting
 )
-
+from apps.mappings.models import ImportLog
 from tests.helper import dict_compare_keys
 from tests.test_fyle.fixtures import fixtures as data
 
@@ -284,6 +284,46 @@ def test_import_settings(mocker, api_client, test_connection, create_temp_worksp
     )
     assert response.status_code == 400
 
+    # Test with Import Fields put request
+    add_import_code_fields_payload = data['import_code_fields_payload']
+    response = api_client.put(
+        url,
+        data=add_import_code_fields_payload,
+        format='json'
+    )
+
+    assert response.status_code == 200
+    response = json.loads(response.content)
+    assert dict_compare_keys(response, data['add_import_code_fields_response']) == [], 'import settings api returns a diff in the keys'
+
+    # Test with Import Fields put request with data removed
+    add_import_code_fields_payload = data['import_code_fields_payload']
+    # removed "VENDOR" from the import_code_fields
+    add_import_code_fields_payload['import_settings']['import_code_fields'] = ["JOB"]
+    response = api_client.put(
+        url,
+        data=add_import_code_fields_payload,
+        format='json'
+    )
+
+    assert response.status_code == 400
+    response = json.loads(response.content)
+    assert response['non_field_errors'] == ["Cannot change the code fields once they are imported"]
+
+    # Test with categories import without code and then adding code
+    ImportLog.create('CATEGORY', 1)
+
+    add_import_code_fields_payload = data['import_code_fields_payload']
+    add_import_code_fields_payload['import_settings']['import_code_fields'] = ['ACCOUNT', 'JOB', 'VENDOR']
+    response = api_client.put(
+        url,
+        data=add_import_code_fields_payload,
+        format='json'
+    )
+    assert response.status_code == 400
+    response = json.loads(response.content)
+    assert response['non_field_errors'] == ["Cannot change the code fields once they are imported"]
+
 
 def test_advanced_settings(api_client, test_connection):
     '''
@@ -459,3 +499,58 @@ def test_ready_view(api_client, test_connection):
     response = api_client.get(url)
 
     assert response.status_code == 200
+
+
+def test_import_code_field_view(db, mocker, create_temp_workspace, api_client, test_connection):
+    """
+    Test ImportCodeFieldView
+    """
+    workspace_id = 1
+    url = reverse('import-code-fields-config', kwargs={'workspace_id': workspace_id})
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+
+    vendor_log = ImportLog.create('MERCHANT', workspace_id)
+    account_log = ImportLog.create('CATEGORY', workspace_id)
+    job_log = ImportLog.create('PROJECT', workspace_id)
+
+    with mocker.patch('django.db.models.signals.post_save.send'):
+        # Create MappingSetting object with the signal mocked
+        MappingSetting.objects.create(
+            workspace_id=workspace_id,
+            source_field='PROJECT',
+            destination_field='JOB',
+            import_to_fyle=True,
+            is_custom=False
+        )
+
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    assert response.data == {
+        'JOB': False,
+        'VENDOR': False,
+        'ACCOUNT': False
+    }
+
+    job_log.delete()
+
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    assert response.data == {
+        'JOB': True,
+        'VENDOR': False,
+        'ACCOUNT': False
+    }
+
+    vendor_log.delete()
+    account_log.delete()
+
+    response = api_client.get(url)
+
+    assert response.status_code == 200
+    assert response.data == {
+        'JOB': True,
+        'VENDOR': True,
+        'ACCOUNT': True
+    }
