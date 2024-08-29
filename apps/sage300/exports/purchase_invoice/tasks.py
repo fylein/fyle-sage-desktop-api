@@ -27,11 +27,11 @@ class ExportPurchaseInvoice(AccountingDataExporter):
         self.body_model = PurchaseInvoice
         self.lineitem_model = PurchaseInvoiceLineitems
 
-    def trigger_export(self, workspace_id, accounting_export_ids):
+    def trigger_export(self, workspace_id, accounting_export_ids, is_auto_export, interval_hours):
         """
         Trigger the import process for the Project module.
         """
-        check_accounting_export_and_start_import(workspace_id, accounting_export_ids)
+        check_accounting_export_and_start_import(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours)
 
     def __construct_purchase_invoice(self, body: PurchaseInvoice, lineitems: List[PurchaseInvoiceLineitems]) -> Dict:
         """

@@ -1,4 +1,5 @@
-from apps.accounting_exports.models import AccountingExport
+from datetime import datetime
+from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.exports.purchase_invoice.queues import (
     poll_operation_status,
     check_accounting_export_and_start_import,
@@ -157,7 +158,9 @@ def test_check_accounting_export_and_start_import_purchase_invoice(
 
     check_accounting_export_and_start_import(
         accounting_export.workspace_id,
-        [accounting_export.id]
+        [accounting_export.id],
+        False,
+        0
     )
 
     accounting_export.refresh_from_db()
@@ -170,7 +173,9 @@ def test_check_accounting_export_and_start_import_purchase_invoice(
 
     check_accounting_export_and_start_import(
         accounting_export.workspace_id,
-        [accounting_export.id]
+        [accounting_export.id],
+        False,
+        0
     )
 
     accounting_export.refresh_from_db()
@@ -226,7 +231,9 @@ def test_check_accounting_export_and_start_import_direct_cost(
 
     check_accounting_export_and_start_import_direct_cost(
         accounting_export.workspace_id,
-        [accounting_export.id]
+        [accounting_export.id],
+        False,
+        0
     )
 
     accounting_export.refresh_from_db()
@@ -239,7 +246,9 @@ def test_check_accounting_export_and_start_import_direct_cost(
 
     check_accounting_export_and_start_import_direct_cost(
         accounting_export.workspace_id,
-        [accounting_export.id]
+        [accounting_export.id],
+        False,
+        0
     )
 
     accounting_export.refresh_from_db()
@@ -270,3 +279,118 @@ def test_create_schedule_for_polling_direct_cost(
     ).first()
 
     assert schedule is not None
+
+
+def test_skipping_purchase_invoice(
+    db,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_accounting_export_expenses,
+    mocker
+):
+    """
+    Test check_accounting_export_and_start_import for purchase invoice
+    """
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id, type='PURCHASE_INVOICE').first()
+    accounting_export.status = ''
+    accounting_export.exported_at = None
+    accounting_export.save()
+
+    error = Error.objects.filter(workspace_id=workspace_id, accounting_export=accounting_export).delete()
+
+    error = Error.objects.create(
+        workspace_id=workspace_id,
+        type='NETSUITE_ERROR',
+        error_title='NetSuite System Error',
+        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
+        accounting_export=accounting_export,
+        repetition_count=106
+    )
+
+    mocker.patch('apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice')
+    mocker.patch('apps.fyle.helpers.sync_dimensions')
+    mocker.patch('django_q.tasks.Chain.run')
+
+    check_accounting_export_and_start_import(
+        accounting_export.workspace_id,
+        [accounting_export.id],
+        True,
+        1
+    )
+    accounting_export.refresh_from_db()
+    assert accounting_export.status == ''
+    assert accounting_export.type == 'PURCHASE_INVOICE'
+
+    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
+
+    check_accounting_export_and_start_import(
+        accounting_export.workspace_id,
+        [accounting_export.id],
+        True,
+        1
+    )
+    accounting_export.refresh_from_db()
+
+    assert accounting_export.status == 'ENQUEUED'
+    assert accounting_export.type == 'PURCHASE_INVOICE'
+
+
+def test_skipping_direct_cost(
+    db,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_accounting_export_expenses,
+    mocker
+):
+    """
+    Test check_accounting_export_and_start_import for purchase invoice
+    """
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id, type='DIRECT_COST').first()
+    accounting_export.status = ''
+    accounting_export.exported_at = None
+    accounting_export.save()
+
+    error = Error.objects.filter(workspace_id=workspace_id, accounting_export=accounting_export).delete()
+
+    error = Error.objects.create(
+        workspace_id=workspace_id,
+        type='NETSUITE_ERROR',
+        error_title='NetSuite System Error',
+        error_detail='An error occured in a upsert request: Please enter value(s) for: Location',
+        accounting_export=accounting_export,
+        repetition_count=106
+    )
+
+    mocker.patch('apps.sage300.exports.direct_cost.tasks.create_direct_cost')
+    mocker.patch('apps.fyle.helpers.sync_dimensions')
+    mocker.patch('django_q.tasks.Chain.run')
+
+    check_accounting_export_and_start_import(
+        accounting_export.workspace_id,
+        [accounting_export.id],
+        True,
+        1
+    )
+
+    accounting_export.refresh_from_db()
+
+    assert accounting_export.status == ''
+    assert accounting_export.type == 'DIRECT_COST'
+
+    Error.objects.filter(id=error.id).update(updated_at=datetime(2024, 8, 20))
+
+    check_accounting_export_and_start_import(
+        accounting_export.workspace_id,
+        [accounting_export.id],
+        True,
+        1
+    )
+
+    accounting_export.refresh_from_db()
+
+    assert accounting_export.status == 'ENQUEUED'
+    assert accounting_export.type == 'DIRECT_COST'
