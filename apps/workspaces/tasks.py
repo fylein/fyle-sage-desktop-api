@@ -14,6 +14,7 @@ from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredentia
 from fyle_integrations_platform_connector import PlatformConnector
 
 logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
