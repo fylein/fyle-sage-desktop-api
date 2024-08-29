@@ -9,7 +9,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.actions import update_accounting_export_summary
-from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export
+from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export, validate_failing_export
 from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
 from apps.sage300.utils import SageDesktopConnector
 from apps.workspaces.models import FyleCredential, Sage300Credential
@@ -24,7 +24,7 @@ def import_fyle_dimensions(fyle_credentials: FyleCredential):
     platform.import_fyle_dimensions()
 
 
-def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str]):
+def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str], is_auto_export: bool, interval_hours: int):
     """
     Check accounting export group and start export
     """
@@ -36,11 +36,19 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
         exported_at__isnull=True
     ).all()
 
+    errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, accounting_export_id__in=accounting_export_ids).all()
+
     chain = Chain()
 
     chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials)
 
     for index, accounting_export_group in enumerate(accounting_exports):
+        error = errors.filter(workspace_id=workspace_id, accounting_export=accounting_export_group, is_resolved=False).first()
+        skip_export = validate_failing_export(is_auto_export, interval_hours, error)
+        if skip_export:
+            logger.info('Skipping expense group %s as it has %s errors', accounting_export_group.id, error.repetition_count)
+            continue
+
         accounting_export, _ = AccountingExport.objects.get_or_create(
             workspace_id=accounting_export_group.workspace_id,
             id=accounting_export_group.id,

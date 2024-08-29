@@ -467,6 +467,7 @@ def test_trigger_export(
     """
     workspace_id = 1
     AccountingExportSummary.objects.create(workspace_id=workspace_id)
+    AdvancedSetting.objects.create(workspace_id=workspace_id, schedule_is_enabled=False, emails_selected=[], emails_added=[], auto_create_vendor=False, sync_sage_300_to_fyle_payments=False)
 
     url = reverse('trigger-exports', kwargs={'workspace_id': 1})
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))

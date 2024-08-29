@@ -1,4 +1,5 @@
 import itertools
+from datetime import datetime, timedelta, timezone
 
 from fyle_accounting_mappings.models import CategoryMapping, EmployeeMapping, ExpenseAttribute, Mapping
 
@@ -147,3 +148,14 @@ def resolve_errors_for_exported_accounting_export(accounting_export: AccountingE
     :param accounting_export: Accounting Export
     """
     Error.objects.filter(workspace_id=accounting_export.workspace_id, accounting_export=accounting_export, is_resolved=False).update(is_resolved=True)
+
+
+def validate_failing_export(is_auto_export: bool, interval_hours: int, error: Error):
+    """
+    Validate failing export
+    :param is_auto_export: Is auto export
+    :param interval_hours: Interval hours
+    :param error: Error
+    """
+    # If auto export is enabled and interval hours is set and error repetition count is greater than 100, export only once a day
+    return is_auto_export and interval_hours and error and error.repetition_count > 100 and datetime.now().replace(tzinfo=timezone.utc) - error.updated_at <= timedelta(hours=24)
