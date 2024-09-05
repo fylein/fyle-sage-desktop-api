@@ -93,7 +93,7 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict, is_import_to_
 
     """
     if not is_import_to_fyle_enabled or len(projects_to_disable) == 0:
-        logger.info("Skipping disabling merchants in Fyle | WORKSPACE_ID: %s", workspace_id)
+        logger.info("Skipping disabling projects in Fyle | WORKSPACE_ID: %s", workspace_id)
         return
 
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
