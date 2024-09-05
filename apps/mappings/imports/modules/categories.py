@@ -90,7 +90,7 @@ class Category(Base):
         )
 
 
-def disable_categories(workspace_id: int, categories_to_disable: Dict, *args, **kwargs):
+def disable_categories(workspace_id: int, categories_to_disable: Dict, is_import_to_fyle_enabled: bool = False, *args, **kwargs):
     """
     categories_to_disable object format:
     {
@@ -102,6 +102,10 @@ def disable_categories(workspace_id: int, categories_to_disable: Dict, *args, **
         }
     }
     """
+    if not is_import_to_fyle_enabled or len(categories_to_disable) == 0:
+        logger.info("Skipping disabling categories in Fyle | WORKSPACE_ID: %s", workspace_id)
+        return
+
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
@@ -109,6 +113,11 @@ def disable_categories(workspace_id: int, categories_to_disable: Dict, *args, **
 
     category_values = []
     for category_map in categories_to_disable.values():
+        if not use_code_in_naming and category_map['value'] == category_map['updated_value']:
+            continue
+        elif use_code_in_naming and (category_map['value'] == category_map['updated_value'] and category_map['code'] == category_map['update_code']):
+            continue
+
         category_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=category_map['value'], code=category_map['code'])
         category_values.append(category_name)
 
@@ -121,9 +130,9 @@ def disable_categories(workspace_id: int, categories_to_disable: Dict, *args, **
 
     # Expense attribute value map is as follows: {old_category_name: destination_id}
     expense_attribute_value_map = {}
-    for k, v in categories_to_disable.items():
+    for destination_id, v in categories_to_disable.items():
         category_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=v['value'], code=v['code'])
-        expense_attribute_value_map[category_name] = k
+        expense_attribute_value_map[category_name] = destination_id
 
     expense_attributes = ExpenseAttribute.objects.filter(**filters)
 
