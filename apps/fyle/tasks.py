@@ -134,9 +134,13 @@ def update_non_exported_expenses(data: Dict) -> None:
     expense = Expense.objects.filter(workspace_id=workspace.id, expense_id=expense_id).first()
 
     if expense:
-        accounting_export = AccountingExport.objects.filter(workspace_id=workspace.id, expense_id=expense.id).first()
+        accounting_export = AccountingExport.objects.filter(
+            workspace_id=workspace.id,
+            expenses=expense,
+            status__in=['EXPORT_READY', 'FAILED', 'FATAL']
+        ).first()
 
-        if accounting_export and accounting_export.status in ['EXPORT_READY', 'FAILED', 'FATAL']:
+        if accounting_export:
             expense_obj = []
             expense_obj.append(data)
             expense_objects = FyleExpenses().construct_expense_object(expense_obj, expense.workspace_id)
