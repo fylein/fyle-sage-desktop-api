@@ -109,7 +109,7 @@ def disable_projects(workspace_id: int, projects_to_disable: Dict, is_import_to_
     for projects_map in projects_to_disable.values():
         if not use_code_in_naming and projects_map['value'] == projects_map['updated_value']:
             continue
-        elif use_code_in_naming and (projects_map['value'] == projects_map['updated_value'] and projects_map['code'] == projects_map['update_code']):
+        elif use_code_in_naming and (projects_map['value'] == projects_map['updated_value'] and projects_map['code'] == projects_map['updated_code']):
             continue
 
         project_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=projects_map['value'], code=projects_map['code'])

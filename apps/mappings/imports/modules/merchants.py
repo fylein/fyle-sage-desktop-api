@@ -83,7 +83,7 @@ def disable_merchants(workspace_id: int, merchants_to_disable: Dict, is_import_t
             'value': 'old_merchant_name',
             'updated_value': 'new_merchant_name',
             'code': 'old_code',
-            'update_code': 'new_code' ---- if the code is updated else same as code
+            'updated_code': 'new_code' ---- if the code is updated else same as code
         }
     }
     """
@@ -99,7 +99,7 @@ def disable_merchants(workspace_id: int, merchants_to_disable: Dict, is_import_t
     for merchant_map in merchants_to_disable.values():
         if not use_code_in_naming and merchant_map['value'] == merchant_map['updated_value']:
             continue
-        elif use_code_in_naming and (merchant_map['value'] == merchant_map['updated_value'] and merchant_map['code'] == merchant_map['update_code']):
+        elif use_code_in_naming and (merchant_map['value'] == merchant_map['updated_value'] and merchant_map['code'] == merchant_map['updated_code']):
             continue
 
         merchant_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=merchant_map['value'], code=merchant_map['code'])
