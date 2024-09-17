@@ -206,7 +206,7 @@ class SageDesktopConnector:
         vendor_type_mapping = None
 
         is_import_to_fyle_enabled = self.is_imported_enabled('VENDOR', self.workspace_id)
-        logger.info(f'is_import_to_fyle_enabled: {is_import_to_fyle_enabled}')
+
         if not DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='VENDOR_TYPE').exists():
             vendor_types = self.connection.vendors.get_vendor_types()
             self._sync_data(vendor_types, 'VENDOR_TYPE', 'vendor_type', self.workspace_id, ['version'])
