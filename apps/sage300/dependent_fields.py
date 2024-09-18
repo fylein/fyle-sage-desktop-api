@@ -75,7 +75,7 @@ def create_dependent_custom_field_in_fyle(workspace_id: int, fyle_attribute_type
 
 
 @handle_import_exceptions
-def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict, is_enabled: bool = True) -> List[str]:
+def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict, is_enabled: bool = True) -> tuple[List[str], bool]:
     import_settings = ImportSetting.objects.filter(workspace_id=import_log.workspace.id).first()
     use_job_code_in_naming = False
     use_cost_code_in_naming = False
@@ -281,7 +281,7 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
         }
         cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
         # This call will disable the cost codes in Fyle that has old project name
-        posted_cost_codes = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters, is_enabled=False)
+        posted_cost_codes, _ = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters, is_enabled=False)
 
         logger.info(f"Disabled Cost Codes in Fyle | WORKSPACE_ID: {workspace_id} | COUNT: {len(posted_cost_codes)}")
 

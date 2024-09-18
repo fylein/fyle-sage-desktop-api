@@ -65,7 +65,7 @@ class CostCenter(Base):
         return payload
 
 
-def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict, *args, **kwargs):
+def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict, is_import_to_fyle_enabled: bool = False, *args, **kwargs):
     """
     cost_centers_to_disable object format:
     {
@@ -73,10 +73,14 @@ def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict, *args
             'value': 'old_cost_center_name',
             'updated_value': 'new_cost_center_name',
             'code': 'old_code',
-            'update_code': 'new_code' ---- if the code is updated else same as code
+            'updated_code': 'new_code' ---- if the code is updated else same as code
         }
     }
     """
+    if not is_import_to_fyle_enabled or len(cost_centers_to_disable) == 0:
+        logger.info("Skipping disabling cost centers in Fyle | WORKSPACE_ID: %s", workspace_id)
+        return
+
     destination_type = MappingSetting.objects.get(workspace_id=workspace_id, source_field='COST_CENTER').destination_field
     use_code_in_naming = ImportSetting.objects.filter(workspace_id=workspace_id, import_code_fields__contains=[destination_type]).first()
 
@@ -85,6 +89,11 @@ def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict, *args
 
     cost_center_values = []
     for cost_center_map in cost_centers_to_disable.values():
+        if not use_code_in_naming and cost_center_map['value'] == cost_center_map['updated_value']:
+            continue
+        elif use_code_in_naming and (cost_center_map['value'] == cost_center_map['updated_value'] and cost_center_map['code'] == cost_center_map['updated_code']):
+            continue
+
         cost_center_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=cost_center_map['value'], code=cost_center_map['code'])
         cost_center_values.append(cost_center_name)
 
@@ -96,9 +105,9 @@ def disable_cost_centers(workspace_id: int, cost_centers_to_disable: Dict, *args
     }
 
     expense_attribute_value_map = {}
-    for k, v in cost_centers_to_disable.items():
+    for destination_id, v in cost_centers_to_disable.items():
         cost_center_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=v['value'], code=v['code'])
-        expense_attribute_value_map[cost_center_name] = k
+        expense_attribute_value_map[cost_center_name] = destination_id
 
     expense_attributes = ExpenseAttribute.objects.filter(**filters)
 

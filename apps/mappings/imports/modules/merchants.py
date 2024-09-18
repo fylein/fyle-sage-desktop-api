@@ -75,7 +75,7 @@ class Merchant(Base):
         self.sync_expense_attributes(platform)
 
 
-def disable_merchants(workspace_id: int, merchants_to_disable: Dict, *args, **kwargs):
+def disable_merchants(workspace_id: int, merchants_to_disable: Dict, is_import_to_fyle_enabled: bool = False, *args, **kwargs):
     """
     merchants_to_disable object format:
     {
@@ -83,16 +83,25 @@ def disable_merchants(workspace_id: int, merchants_to_disable: Dict, *args, **kw
             'value': 'old_merchant_name',
             'updated_value': 'new_merchant_name',
             'code': 'old_code',
-            'update_code': 'new_code' ---- if the code is updated else same as code
+            'updated_code': 'new_code' ---- if the code is updated else same as code
         }
     }
     """
+    if not is_import_to_fyle_enabled or len(merchants_to_disable) == 0:
+        logger.info("Skipping disabling merchants in Fyle | WORKSPACE_ID: %s", workspace_id)
+        return
+
     fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
     use_code_in_naming = ImportSetting.objects.filter(workspace_id = workspace_id, import_code_fields__contains=['VENDOR']).first()
 
     merchant_values = []
     for merchant_map in merchants_to_disable.values():
+        if not use_code_in_naming and merchant_map['value'] == merchant_map['updated_value']:
+            continue
+        elif use_code_in_naming and (merchant_map['value'] == merchant_map['updated_value'] and merchant_map['code'] == merchant_map['updated_code']):
+            continue
+
         merchant_name = prepend_code_to_name(prepend_code_in_name=use_code_in_naming, value=merchant_map['value'], code=merchant_map['code'])
         merchant_values.append(merchant_name)
 
