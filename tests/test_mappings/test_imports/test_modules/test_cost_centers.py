@@ -118,7 +118,7 @@ def test_disable_cost_centers(
     mock_platform = mocker.patch('apps.mappings.imports.modules.cost_centers.PlatformConnector')
     bulk_post_call = mocker.patch.object(mock_platform.return_value.cost_centers, 'post_bulk')
 
-    disable_cost_centers(workspace_id, cost_centers_to_disable)
+    disable_cost_centers(workspace_id, cost_centers_to_disable, is_import_to_fyle_enabled=True)
 
     assert bulk_post_call.call_count == 1
 
@@ -131,7 +131,7 @@ def test_disable_cost_centers(
         }
     }
 
-    disable_cost_centers(workspace_id, cost_centers_to_disable)
+    disable_cost_centers(workspace_id, cost_centers_to_disable, is_import_to_fyle_enabled=True)
     assert bulk_post_call.call_count == 1
 
     # Test disable projects with code in naming
@@ -167,5 +167,5 @@ def test_disable_cost_centers(
         }
     ]
 
-    bulk_payload = disable_cost_centers(workspace_id, cost_centers_to_disable)
+    bulk_payload = disable_cost_centers(workspace_id, cost_centers_to_disable, is_import_to_fyle_enabled=True)
     assert bulk_payload == payload

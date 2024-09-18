@@ -124,7 +124,7 @@ def test_disable_projects(
 
     disable_cost_code_call = mocker.patch('apps.sage300.dependent_fields.update_and_disable_cost_code')
 
-    disable_projects(workspace_id, projects_to_disable)
+    disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True)
 
     assert bulk_post_call.call_count == 1
     assert sync_call.call_count == 2
@@ -139,10 +139,10 @@ def test_disable_projects(
         }
     }
 
-    disable_projects(workspace_id, projects_to_disable)
+    disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True)
     assert bulk_post_call.call_count == 1
-    assert sync_call.call_count == 4
-    disable_cost_code_call.call_count == 2
+    assert sync_call.call_count == 3
+    disable_cost_code_call.call_count == 1
 
     # Test disable projects with code in naming
     import_settings = ImportSetting.objects.get(workspace_id=workspace_id)
@@ -178,7 +178,7 @@ def test_disable_projects(
         'id': 'source_id_123'
     }]
 
-    assert disable_projects(workspace_id, projects_to_disable) == payload
+    assert disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True) == payload
 
 
 def test_update_and_disable_cost_code(
