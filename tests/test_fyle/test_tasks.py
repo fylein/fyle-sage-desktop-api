@@ -7,6 +7,7 @@ from apps.fyle.tasks import (
 )
 from apps.fyle.models import Expense
 from apps.workspaces.models import Workspace
+from apps.accounting_exports.models import AccountingExport
 
 
 def test_update_non_exported_expenses(db, create_temp_workspace, mocker, api_client):
@@ -29,6 +30,14 @@ def test_update_non_exported_expenses(db, create_temp_workspace, mocker, api_cli
     expense_created.accounting_export_summary = {}
     expense_created.save()
 
+    accounting_export, _ = AccountingExport.objects.update_or_create(
+        workspace_id=1,
+        type='PURCHASE_INVOICE',
+        status='EXPORT_READY'
+    )
+    accounting_export.expenses.add(expense_created)
+    accounting_export.save()
+
     workspace = Workspace.objects.filter(id=1).first()
     workspace.org_id = org_id
     workspace.save()
@@ -40,7 +49,8 @@ def test_update_non_exported_expenses(db, create_temp_workspace, mocker, api_cli
     expense = Expense.objects.get(expense_id='txhJLOSKs1iN', org_id=org_id)
     assert expense.category == 'ABN Withholding'
 
-    expense.accounting_export_summary = {"synced": True, "state": "COMPLETE"}
+    accounting_export.status = 'COMPLETE'
+    accounting_export.save()
     expense.category = 'Old Category'
     expense.save()
 

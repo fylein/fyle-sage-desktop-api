@@ -1,7 +1,7 @@
 import logging
 from django.utils.module_loading import import_string
-from fyle_accounting_mappings.models import DestinationAttribute
-from apps.workspaces.models import Sage300Credential
+from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
+from apps.workspaces.models import Sage300Credential, ImportSetting
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from apps.sage300.models import CostCategory
 from apps.mappings.models import Version
@@ -9,6 +9,14 @@ from apps.mappings.exceptions import handle_import_exceptions
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
+
+
+ATTRIBUTE_CALLBACK_MAP = {
+    'PROJECT': 'apps.mappings.imports.modules.projects.disable_projects',
+    'CATEGORY': 'apps.mappings.imports.modules.categories.disable_categories',
+    'MERCHANT': 'apps.mappings.imports.modules.merchants.disable_merchants',
+    'COST_CENTER': 'apps.mappings.imports.modules.cost_centers.disable_cost_centers'
+}
 
 
 class SageDesktopConnector:
@@ -33,7 +41,7 @@ class SageDesktopConnector:
 
         self.workspace_id = workspace_id
 
-    def _create_destination_attribute(self, attribute_type, display_name, value, destination_id, active, detail):
+    def _create_destination_attribute(self, attribute_type, display_name, value, destination_id, active, detail, code):
         """
         Create a destination attribute object
         :param attribute_type: Type of the attribute
@@ -50,7 +58,8 @@ class SageDesktopConnector:
             'value': value,
             'destination_id': destination_id,
             'active': active,
-            'detail': detail
+            'detail': detail,
+            'code': code
         }
 
     def _update_latest_version(self, attribute_type: str):
@@ -88,7 +97,8 @@ class SageDesktopConnector:
                 " ".join(item.name.split()),
                 item.id,
                 item.is_active,
-                detail
+                detail,
+                item.code if hasattr(item, 'code') else None
             )
 
     def _get_attribute_class(self, attribute_type: str):
@@ -121,7 +131,7 @@ class SageDesktopConnector:
         logger.info(f'Deleting {vendor_count} credit card vendors from workspace_id {self.workspace_id}')
         credit_card_vendor.delete()
 
-    def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_generator: bool = True, vendor_type_mapping = None):
+    def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_generator: bool = True, vendor_type_mapping = None, is_import_to_fyle_enabled: bool = False):
         """
         Synchronize data from Sage Desktop SDK to your application
         :param data: Data to synchronize
@@ -130,6 +140,7 @@ class SageDesktopConnector:
         :param workspace_id: ID of the workspace
         :param field_names: Names of fields to include in detail
         """
+        source_type = self.get_source_type(attribute_type, workspace_id)
 
         if is_generator:
             for data in data_gen:
@@ -142,14 +153,14 @@ class SageDesktopConnector:
                         if destination_attr:
                             destination_attributes.append(destination_attr)
 
-                    if attribute_type == 'JOB':
-                        project_disable_callback_path = 'apps.sage300.helpers.disable_projects'
+                    if source_type in ATTRIBUTE_CALLBACK_MAP.keys():
                         DestinationAttribute.bulk_create_or_update_destination_attributes(
                             destination_attributes,
                             attribute_type,
                             workspace_id,
                             True,
-                            project_disable_callback_path=project_disable_callback_path
+                            attribute_disable_callback_path=ATTRIBUTE_CALLBACK_MAP[source_type],
+                            is_import_to_fyle_enabled=is_import_to_fyle_enabled
                         )
                     else:
                         DestinationAttribute.bulk_create_or_update_destination_attributes(
@@ -175,7 +186,10 @@ class SageDesktopConnector:
         """
         version = Version.objects.get(workspace_id=self.workspace_id).account
         accounts = self.connection.accounts.get_all(version=version)
-        self._sync_data(accounts, 'ACCOUNT', 'accounts', self.workspace_id, ['code', 'version'])
+
+        is_import_to_fyle_enabled = self.is_imported_enabled('ACCOUNT', self.workspace_id)
+
+        self._sync_data(accounts, 'ACCOUNT', 'accounts', self.workspace_id, ['code', 'version'], is_import_to_fyle_enabled=is_import_to_fyle_enabled)
         return []
 
     def sync_vendors(self):
@@ -191,6 +205,8 @@ class SageDesktopConnector:
         vendor_types = None
         vendor_type_mapping = None
 
+        is_import_to_fyle_enabled = self.is_imported_enabled('VENDOR', self.workspace_id)
+
         if not DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='VENDOR_TYPE').exists():
             vendor_types = self.connection.vendors.get_vendor_types()
             self._sync_data(vendor_types, 'VENDOR_TYPE', 'vendor_type', self.workspace_id, ['version'])
@@ -198,7 +214,7 @@ class SageDesktopConnector:
         vendor_types = DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='VENDOR_TYPE').values('destination_id', 'value').distinct()
         vendor_type_mapping = {vendor_type['destination_id']: vendor_type['value'] for vendor_type in vendor_types}
 
-        self._sync_data(vendors, 'VENDOR', 'vendor', self.workspace_id, field_names, vendor_type_mapping=vendor_type_mapping)
+        self._sync_data(vendors, 'VENDOR', 'vendor', self.workspace_id, field_names, vendor_type_mapping=vendor_type_mapping, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
         return []
 
     def sync_jobs(self):
@@ -210,7 +226,10 @@ class SageDesktopConnector:
         field_names = [
             'code', 'status', 'version', 'account_prefix_id', 'created_on_utc'
         ]
-        self._sync_data(jobs, 'JOB', 'job', self.workspace_id, field_names)
+
+        is_import_to_fyle_enabled = self.is_imported_enabled('JOB', self.workspace_id)
+
+        self._sync_data(jobs, 'JOB', 'job', self.workspace_id, field_names, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
         return []
 
     def sync_standard_cost_codes(self):
@@ -288,3 +307,47 @@ class SageDesktopConnector:
                 CostCategory.bulk_create_or_update(categories, self.workspace_id)
                 version.cost_category = latest_version
                 version.save()
+
+    def get_source_type(self, attribute_type, workspace_id):
+        """
+        Get the source type to fetch the disable callback function
+        :return: Source type
+        """
+        source_type = None
+        mapping_setting = MappingSetting.objects.filter(workspace_id=workspace_id, destination_field=attribute_type).first()
+        if mapping_setting:
+            if attribute_type == 'VENDOR':
+                source_type = 'MERCHANT'
+            elif mapping_setting.is_custom:
+                source_type = 'CUSTOM'
+            else:
+                source_type = mapping_setting.source_field
+        elif attribute_type == 'ACCOUNT':
+            source_type = 'CATEGORY'
+
+        return source_type
+
+    def is_imported_enabled(self, attribute_type, workspace_id):
+        """
+        Check if import is enabled for the attribute type
+        :param attribute_type: Type of the attribute
+        :return: Whether import is enabled
+        """
+        is_import_to_fyle_enabled = False
+
+        import_settings = ImportSetting.objects.filter(workspace_id=self.workspace_id).first()
+        if not import_settings:
+            return is_import_to_fyle_enabled
+
+        if attribute_type == 'ACCOUNT' and import_settings.import_categories:
+            is_import_to_fyle_enabled = True
+
+        elif attribute_type == 'VENDOR' and import_settings.import_vendors_as_merchants:
+            is_import_to_fyle_enabled = True
+
+        elif attribute_type == 'JOB':
+            mapping_setting = MappingSetting.objects.filter(workspace_id=workspace_id, destination_field='JOB').first()
+            if mapping_setting and mapping_setting.import_to_fyle:
+                is_import_to_fyle_enabled = True
+
+        return is_import_to_fyle_enabled
