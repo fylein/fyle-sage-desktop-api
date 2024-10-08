@@ -1,4 +1,5 @@
 
+import logging
 import requests
 import json
 from typing import List, Dict, Generator
@@ -14,6 +15,7 @@ from sage_desktop_sdk.exceptions import (
     InternalServerError
 )
 
+logger = logging.getLogger(__name__)
 
 class Client:
     """
@@ -120,6 +122,8 @@ class Client:
 
                 data = json.loads(response.text)
 
+                logger.debug('Response for get request for url: %s, %s', request_url, response.text)
+
                 if not data:
                     break
 
@@ -131,6 +135,7 @@ class Client:
                     break
 
             except requests.exceptions.HTTPError as err:
+                logger.info('Response for get request for url: %s, %s', url, err.response.text)
                 if err.response.status_code == 400:
                     raise WrongParamsError('Some of the parameters are wrong', response.text)
 
@@ -162,9 +167,11 @@ class Client:
         response = requests.get(url=request_url, headers=api_headers)
 
         if response.status_code == 200:
+            logger.debug('Response for get request for url: %s, %s', request_url, response.text)
             data = json.loads(response.text)
             return data
 
+        logger.info('Response for get request for url: %s, %s', url, response.text)
         if response.status_code == 400:
             raise WrongParamsError('Some of the parameters are wrong', response.text)
 
@@ -196,9 +203,11 @@ class Client:
         response = requests.get(url=request_url, headers=api_headers)
 
         if response.status_code == 200:
+            logger.debug('Response for get request for url: %s, %s', request_url, response.text)
             data = json.loads(response.text)
             return data
 
+        logger.info('Response for get request for url: %s, %s', url, response.text)
         if response.status_code == 400:
             raise WrongParamsError('Some of the parameters are wrong', response.text)
 
@@ -228,10 +237,13 @@ class Client:
         }
 
         response = requests.post(url=request_url, headers=api_headers, data=data)
+        logger.debug('Payload for post request: %s', data)
 
         if response.status_code == 200:
+            logger.debug('Response for post request: %s', response.text)
             return json.loads(response.text)
 
+        logger.info('Response for post request: %s', response.text)
         if response.status_code == 400:
             raise WrongParamsError('Some of the parameters are wrong', json.loads(response.text))
 
