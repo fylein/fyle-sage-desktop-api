@@ -99,6 +99,7 @@ class Expense(BaseForeignWorkspaceModel):
     spent_at = CustomDateTimeField(help_text='Expense spent at')
     approved_at = CustomDateTimeField(help_text='Expense approved at')
     posted_at = CustomDateTimeField(help_text='Date when the money is taken from the bank')
+    is_posted_at_null = models.BooleanField(default=False, help_text='Flag check if posted at is null or not')
     is_skipped = models.BooleanField(null=True, default=False, help_text='Expense is skipped or not')
     expense_created_at = CustomDateTimeField(help_text='Expense created at')
     expense_updated_at = CustomDateTimeField(help_text='Expense created at')
