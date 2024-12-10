@@ -200,6 +200,20 @@ BEGIN
   WHERE w.id = _workspace_id;
   GET DIAGNOSTICS rcount = ROW_COUNT;
   RAISE NOTICE 'Deleted % workspaces', rcount;
+
+  _org_id := (SELECT fyle_org_id FROM workspaces WHERE id = _workspace_id);
+
+  RAISE NOTICE E'\n\n\n\n\n\n\n\n\nSwitch to prod db and run the below queries to delete dependent fields
+
+
+rollback;
+begin;
+
+delete from platform_schema.dependent_expense_field_mappings where expense_field_id in (select id from platform_schema.expense_fields where org_id =''%'' and type=''DEPENDENT_SELECT'');
+
+delete from platform_schema.expense_fields where org_id = ''%'' and type = ''DEPENDENT_SELECT'';\n\n\n\n\n\n\n\n\n\n\n', _org_id, _org_id;
+
+
 RETURN;
 END
 $$ LANGUAGE plpgsql;
