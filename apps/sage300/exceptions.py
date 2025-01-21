@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-def handle_sage300_error(exception, accounting_export: AccountingExport, export_type: str, workspace_id: int):
-    logger.info('Error while creating %s %s for workspace_id %s', export_type, exception.response, workspace_id)
+def handle_sage300_error(exception, accounting_export: AccountingExport, export_type: str):
+    logger.info('Error while creating %s %s for workspace_id %s', export_type, exception.response, accounting_export.workspace_id)
 
     sage300_error = exception.response
     error_msg = 'Failed to create {0}'.format(export_type)
@@ -50,7 +50,7 @@ def handle_sage300_exceptions():
                 accounting_export.save()
 
             except WrongParamsError as exception:
-                handle_sage300_error(exception, accounting_export, 'Purchase Invoice', accounting_export.workspace_id)
+                handle_sage300_error(exception, accounting_export, 'Purchase Invoice')
 
             except BulkError as exception:
                 logger.info(exception.response)
