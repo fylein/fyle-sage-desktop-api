@@ -54,4 +54,4 @@ def sync_dimensions(sage300_credential: Sage300Credential, workspace_id: int) ->
             sync()
         except Exception as exception:
             # Log any exceptions that occur during synchronization
-            logger.info(exception)
+            logger.info('Error while syncing %s: %s for workspace_id %s', dimension, exception, workspace_id)

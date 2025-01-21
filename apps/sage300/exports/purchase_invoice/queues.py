@@ -46,7 +46,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
         error = errors.filter(workspace_id=workspace_id, accounting_export=accounting_export_group, is_resolved=False).first()
         skip_export = validate_failing_export(is_auto_export, interval_hours, error)
         if skip_export:
-            logger.info('Skipping expense group %s as it has %s errors', accounting_export_group.id, error.repetition_count)
+            logger.info('Skipping expense group %s as it has %s errors for workspace_id %s', accounting_export_group.id, error.repetition_count, workspace_id)
             continue
 
         accounting_export, _ = AccountingExport.objects.get_or_create(
@@ -125,17 +125,17 @@ def poll_operation_status(workspace_id: int, last_export: bool):
 
         # Get the operation status for the current export_id from Sage 300
         operation_status = sage300_connection.connection.operation_status.get(export_id=export_id)
-        logger.info('operation status for export id %s: %s', export_id, operation_status)
+        logger.info('operation status for export id %s: %s for workspace_id %s', export_id, operation_status, workspace_id)
 
         # Check if the operation is disabled
         if operation_status['CompletedOn']:
             # Retrieve Sage 300 errors for the current export
             document = sage300_connection.connection.documents.get(accounting_export.export_id)
-            logger.info('expense for export id %s: %s', export_id, document)
+            logger.info('expense for export id %s: %s for workspace_id %s', export_id, document, workspace_id)
 
             if str(document['CurrentState']) != '9':
                 sage300_errors = sage300_connection.connection.event_failures.get(accounting_export.export_id)
-                logger.info('export failed with errors: %s', sage300_errors)
+                logger.info('export failed with errors: %s for workspace_id %s', sage300_errors, workspace_id)
                 # Update the accounting export object with Sage 300 errors and status
                 accounting_export.sage300_errors = sage300_errors
                 accounting_export.status = 'FAILED'

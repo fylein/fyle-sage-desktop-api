@@ -21,7 +21,7 @@ def test_handle_sage300_error(
 
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
 
-    handle_sage300_error(exception, accounting_export, export_type)
+    handle_sage300_error(exception, accounting_export, export_type, 1)
 
     error = Error.objects.filter(workspace_id=workspace_id, accounting_export=accounting_export).first()
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
