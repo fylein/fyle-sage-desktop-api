@@ -90,7 +90,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
         sage300_connection = SageDesktopConnector(sage300_credentials, accounting_export.workspace_id)
 
         # Post the purchase invoice to Sage 300
-        logger.info('purchase invoice payload %s', purchase_invoice_payload)
+        logger.info('purchase invoice payload %s for workspace_id %s', purchase_invoice_payload, accounting_export.workspace_id)
 
         created_purchase_invoice_id = sage300_connection.connection.documents.post_document(purchase_invoice_payload)
         accounting_export.export_id = created_purchase_invoice_id
