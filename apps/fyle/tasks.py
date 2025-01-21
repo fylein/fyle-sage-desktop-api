@@ -77,7 +77,7 @@ def import_expenses(workspace_id, accounting_export: AccountingExport, source_ac
         state=getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state"),
         settled_at=last_synced_at if getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'PAYMENT_PROCESSING' else None,
         approved_at=last_synced_at if getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'APPROVED' else None,
-        filter_credit_expenses=(fund_source_key == 'CCC'),
+        filter_credit_expenses=False,
         last_paid_at=last_synced_at if getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'PAID' else None
     )
 
