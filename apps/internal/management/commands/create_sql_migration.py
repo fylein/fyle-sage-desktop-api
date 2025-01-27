@@ -3,8 +3,12 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.apps import apps
 from django.db.migrations import loader
+
+
 class Command(BaseCommand):
+
     help = 'Generate a migration file for running SQL files'
+
     def add_arguments(self, parser):
         parser.add_argument(
             'sql_files',
@@ -16,6 +20,7 @@ class Command(BaseCommand):
             default='internal',
             help='The Django app to create the migration for',
         )
+
     def get_latest_migration(self, app_name):
         """Get the latest migration name using Django's migration loader."""
         migration_loader = loader.MigrationLoader(None)
@@ -26,6 +31,7 @@ class Command(BaseCommand):
         if app_migrations:
             return sorted(app_migrations)[-1]
         return None
+
     def handle(self, *args, **options):
         app_name = options['app']
         sql_files = options['sql_files']

@@ -1,6 +1,8 @@
 import os
 from django.db import migrations
 from django.db.utils import ProgrammingError
+
+
 def safe_run_sql(sql_files):
     """
     Safely create migrations.RunSQL operations from a list of SQL file paths.
