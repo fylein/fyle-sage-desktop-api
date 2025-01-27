@@ -57,7 +57,8 @@ INSTALLED_APPS = [
     'apps.fyle',
     'apps.sage300',
     'apps.accounting_exports',
-    'apps.mappings'
+    'apps.mappings',
+    'apps.internal'
 ]
 
 MIDDLEWARE = [
