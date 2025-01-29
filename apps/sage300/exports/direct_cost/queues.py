@@ -125,7 +125,7 @@ def poll_operation_status(workspace_id: int, last_export: bool):
             # Retrieve Sage 300 errors for the current export
 
             document = sage300_connection.connection.documents.get(accounting_export.export_id)
-            if document['CurrentState'] != '9':
+            if str(document['CurrentState']) != '9':
                 sage300_errors = sage300_connection.connection.event_failures.get(accounting_export.export_id)
                 # Update the accounting export object with Sage 300 errors and status
                 accounting_export.sage300_errors = sage300_errors
@@ -152,15 +152,15 @@ def poll_operation_status(workspace_id: int, last_export: bool):
 
                 direct_cost_instance.delete()
 
-        else:
-            accounting_export.status = 'COMPLETE'
-            accounting_export.sage300_errors = None
-            detail = accounting_export.detail
-            detail['operation_status'] = operation_status
-            accounting_export.detail = detail
-            accounting_export.exported_at = datetime.now()
-            accounting_export.save()
-            resolve_errors_for_exported_accounting_export(accounting_export)
+            else:
+                accounting_export.status = 'COMPLETE'
+                accounting_export.sage300_errors = None
+                detail = accounting_export.detail
+                detail['operation_status'] = operation_status
+                accounting_export.detail = detail
+                accounting_export.exported_at = datetime.now()
+                accounting_export.save()
+                resolve_errors_for_exported_accounting_export(accounting_export)
 
     if last_export:
         update_accounting_export_summary(workspace_id=workspace_id)
