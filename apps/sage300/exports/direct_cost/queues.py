@@ -3,6 +3,7 @@ from typing import List
 import logging
 
 from django.db.models import Q
+from apps.sage300.exports.direct_cost.models import DirectCost
 from django_q.models import Schedule
 from django_q.tasks import Chain
 
@@ -146,18 +147,20 @@ def poll_operation_status(workspace_id: int, last_export: bool):
 
                 error.increase_repetition_count_by_one()
 
-                # Continue to the next iteration
-                continue
+                # delete direct cost from db
+                direct_cost_instance = DirectCost.objects.filter(workspace_id=workspace_id, accounting_export_id=accounting_export.id)
 
-        accounting_export.status = 'COMPLETE'
-        accounting_export.sage300_errors = None
-        detail = accounting_export.detail
-        detail['operation_status'] = operation_status
-        accounting_export.detail = detail
-        accounting_export.exported_at = datetime.now()
-        accounting_export.save()
+                direct_cost_instance.delete()
 
-        resolve_errors_for_exported_accounting_export(accounting_export)
+        else:
+            accounting_export.status = 'COMPLETE'
+            accounting_export.sage300_errors = None
+            detail = accounting_export.detail
+            detail['operation_status'] = operation_status
+            accounting_export.detail = detail
+            accounting_export.exported_at = datetime.now()
+            accounting_export.save()
+            resolve_errors_for_exported_accounting_export(accounting_export)
 
     if last_export:
         update_accounting_export_summary(workspace_id=workspace_id)

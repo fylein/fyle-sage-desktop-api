@@ -155,9 +155,6 @@ def poll_operation_status(workspace_id: int, last_export: bool):
 
                 error.increase_repetition_count_by_one()
 
-                # Save the updated accounting export
-                accounting_export.save()
-
                 # delete purchase invoice from db
                 purchase_invoice_instance = PurchaseInvoice.objects.filter(workspace_id=workspace_id, accounting_export_id=accounting_export.id)
                 purchase_invoice_lineitems_instance = PurchaseInvoiceLineitems.objects.filter(workspace_id=workspace_id, purchase_invoice_id__in=purchase_invoice_instance.values_list('id', flat=True))
