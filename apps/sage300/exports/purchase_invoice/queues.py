@@ -155,9 +155,6 @@ def poll_operation_status(workspace_id: int, last_export: bool):
 
                 error.increase_repetition_count_by_one()
 
-                # Save the updated accounting export
-                accounting_export.save()
-
                 # delete purchase invoice from db
                 purchase_invoice_instance = PurchaseInvoice.objects.filter(workspace_id=workspace_id, accounting_export_id=accounting_export.id)
                 purchase_invoice_lineitems_instance = PurchaseInvoiceLineitems.objects.filter(workspace_id=workspace_id, purchase_invoice_id__in=purchase_invoice_instance.values_list('id', flat=True))
@@ -165,17 +162,15 @@ def poll_operation_status(workspace_id: int, last_export: bool):
                 purchase_invoice_lineitems_instance.delete()
                 purchase_invoice_instance.delete()
 
-                # Continue to the next iteration
-                continue
-
-        accounting_export.status = 'COMPLETE'
-        accounting_export.sage300_errors = None
-        detail = accounting_export.detail
-        detail['operation_status'] = operation_status
-        accounting_export.detail = detail
-        accounting_export.exported_at = datetime.now()
-        accounting_export.save()
-        resolve_errors_for_exported_accounting_export(accounting_export)
+            else:
+                accounting_export.status = 'COMPLETE'
+                accounting_export.sage300_errors = None
+                detail = accounting_export.detail
+                detail['operation_status'] = operation_status
+                accounting_export.detail = detail
+                accounting_export.exported_at = datetime.now()
+                accounting_export.save()
+                resolve_errors_for_exported_accounting_export(accounting_export)
 
     if last_export:
         update_accounting_export_summary(workspace_id=workspace_id)
