@@ -1,12 +1,20 @@
+from datetime import datetime
+import json
+import logging
 from typing import Dict, List
+from django.conf import settings
 from django.db.models import Q
 
+from apps.fyle.helpers import post_request
 from apps.mappings.imports.schedules import schedule_or_delete_fyle_import_tasks
-from apps.workspaces.models import ImportSetting
+from apps.workspaces.models import FyleCredential, ImportSetting, Workspace
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.workspaces.models import AdvancedSetting
 from apps.workspaces.tasks import schedule_sync
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 class ImportSettingsTrigger:
@@ -68,3 +76,26 @@ class AdvancedSettingsTriggers:
             email_added=advance_settings.emails_added,
             emails_selected=advance_settings.emails_selected
         )
+
+    @staticmethod
+    def post_to_integration_settings(workspace_id: int, active: bool):
+        """
+        Post to integration settings
+        """
+        refresh_token = FyleCredential.objects.get(workspace_id=workspace_id).refresh_token
+        url = '{}/integrations/'.format(settings.INTEGRATIONS_SETTINGS_API)
+        payload = {
+            'tpa_id': settings.FYLE_CLIENT_ID,
+            'tpa_name': 'Fyle Sage 300 Integration',
+            'type': 'ACCOUNTING',
+            'is_active': active,
+            'connected_at': datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        }
+
+        try:
+            post_request(url, json.dumps(payload), refresh_token)
+            org_id = Workspace.objects.get(id=workspace_id).org_id
+            logger.info(f'New integration record: Fyle Sage 300 Integration (ACCOUNTING) | {workspace_id = } | {org_id = }')
+
+        except Exception as error:
+            logger.error(error)
