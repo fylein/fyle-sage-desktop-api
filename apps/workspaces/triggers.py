@@ -1,5 +1,4 @@
 from datetime import datetime
-import json
 import logging
 from typing import Dict, List
 from django.conf import settings

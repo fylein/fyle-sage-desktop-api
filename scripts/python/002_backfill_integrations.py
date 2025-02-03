@@ -21,8 +21,6 @@ for workspace in workspaces:
         )
 
 logger.info(
-f"""
-Completed backfill. Total: {workspaces.count()}
-Processed: {processed}, Failed: {failed}
-"""
+    f"Completed backfill. Total: {workspaces.count()}\n"
+    f"Processed: {processed}, Failed: {failed}"
 )
