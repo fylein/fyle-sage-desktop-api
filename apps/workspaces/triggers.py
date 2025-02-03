@@ -93,7 +93,7 @@ class AdvancedSettingsTriggers:
         }
 
         try:
-            post_request(url, json.dumps(payload), refresh_token)
+            post_request(url, payload, refresh_token)
             org_id = Workspace.objects.get(id=workspace_id).org_id
             logger.info(f'New integration record: Fyle Sage 300 Integration (ACCOUNTING) | {workspace_id = } | {org_id = }')
 
