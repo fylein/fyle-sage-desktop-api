@@ -1,16 +1,16 @@
 import json
-import requests
 from typing import List
+
+import requests
 from django.conf import settings
 from django.db.models import Q
-
 from fyle_integrations_platform_connector import PlatformConnector
 from rest_framework.exceptions import ValidationError
 
-from apps.workspaces.models import Workspace, FyleCredential, ExportSetting
 from apps.accounting_exports.models import AccountingExport
-from apps.fyle.models import ExpenseFilter
 from apps.fyle.constants import DEFAULT_FYLE_CONDITIONS
+from apps.fyle.models import ExpenseFilter
+from apps.workspaces.models import ExportSetting, FyleCredential, Workspace
 
 
 def construct_expense_filter(expense_filter):
@@ -123,7 +123,7 @@ def post_request(url, body, refresh_token=None):
     response = requests.post(
         url,
         headers=api_headers,
-        data=body
+        data=json.dumps(body)
     )
 
     if response.status_code in (200, 201):
@@ -177,7 +177,7 @@ def get_access_token(refresh_token: str) -> str:
         'client_secret': settings.FYLE_CLIENT_SECRET
     }
 
-    return post_request(settings.FYLE_TOKEN_URI, body=json.dumps(api_data))['access_token']
+    return post_request(settings.FYLE_TOKEN_URI, body=api_data)['access_token']
 
 
 def get_cluster_domain(refresh_token: str) -> str:
