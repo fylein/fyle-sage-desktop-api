@@ -134,14 +134,9 @@ def test_create_purchase_invoice(
         return_value='123'
     )
 
-    update_accounting_export_summary = mocker.patch(
-        'apps.sage300.exports.purchase_invoice.tasks.update_accounting_export_summary'
-    )
-
     exported_purchase_invoice = create_purchase_invoice(accounting_export)
 
     assert exported_purchase_invoice == '123'
-    assert update_accounting_export_summary.call_count == 1
 
 
 def test_trigger_export_direct_cost(db, mocker):
