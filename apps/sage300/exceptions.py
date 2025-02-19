@@ -2,6 +2,8 @@
 import logging
 import traceback
 
+from django_q.models import Schedule
+
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.actions import update_accounting_export_summary
 from apps.workspaces.models import FyleCredential, Sage300Credential
@@ -68,7 +70,9 @@ def handle_sage300_exceptions():
                 accounting_export.save()
                 logger.error('Something unexpected happened workspace_id: %s %s', accounting_export.workspace_id, accounting_export.detail)
 
-            update_accounting_export_summary(accounting_export.workspace_id)
+            schedule = Schedule.objects.filter(args=accounting_export.workspace_id, func='apps.sage300.exports.purchase_invoice.queues.poll_operation_status').first()
+            if not schedule:
+                update_accounting_export_summary(accounting_export.workspace_id)
 
         return wrapper
 

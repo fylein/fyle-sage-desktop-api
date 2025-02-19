@@ -1,18 +1,17 @@
+import logging
 from datetime import datetime
 from typing import List
-import logging
 
 from django.db.models import Q
-from apps.sage300.exports.direct_cost.models import DirectCost
 from django_q.models import Schedule
 from django_q.tasks import Chain
 
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.actions import update_accounting_export_summary
+from apps.sage300.exports.direct_cost.models import DirectCost
 from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export, validate_failing_export
 from apps.sage300.utils import SageDesktopConnector
 from apps.workspaces.models import FyleCredential, Sage300Credential
-
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -56,12 +55,12 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
             accounting_export.status = 'ENQUEUED'
             accounting_export.save()
 
+        chain.append('apps.sage300.exports.direct_cost.tasks.create_direct_cost', accounting_export)
+
         last_export = False
         if accounting_exports.count() == index + 1:
             last_export = True
-
-        chain.append('apps.sage300.exports.direct_cost.tasks.create_direct_cost', accounting_export, last_export)
-        chain.append('apps.sage300.exports.direct_cost.queues.create_schedule_for_polling', workspace_id, last_export)
+            chain.append('apps.sage300.exports.direct_cost.queues.create_schedule_for_polling', workspace_id, last_export)
 
     if chain.length() > 1:
         chain.run()
@@ -103,6 +102,7 @@ def poll_operation_status(workspace_id: int, last_export: bool):
     if not accounting_exports:
         schedule = Schedule.objects.filter(args=workspace_id, func='apps.sage300.exports.direct_cost.queues.poll_operation_status').first()
         if schedule:
+            update_accounting_export_summary(workspace_id=workspace_id)
             schedule.delete()
 
         return
@@ -161,6 +161,3 @@ def poll_operation_status(workspace_id: int, last_export: bool):
                 accounting_export.exported_at = datetime.now()
                 accounting_export.save()
                 resolve_errors_for_exported_accounting_export(accounting_export)
-
-    if last_export:
-        update_accounting_export_summary(workspace_id=workspace_id)
