@@ -134,7 +134,7 @@ def test_create_purchase_invoice(
         return_value='123'
     )
 
-    exported_purchase_invoice = create_purchase_invoice(accounting_export)
+    exported_purchase_invoice = create_purchase_invoice(accounting_export, False)
 
     assert exported_purchase_invoice == '123'
 
@@ -247,6 +247,6 @@ def test_create_direct_cost(
         return_value='123'
     )
 
-    exported_direct_cost = create_direct_cost(accounting_export)
+    exported_direct_cost = create_direct_cost(accounting_export, False)
 
     assert exported_direct_cost == '123'
