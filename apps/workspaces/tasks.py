@@ -31,8 +31,8 @@ def run_import_export(workspace_id: int, export_mode = None):
 
     export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
     advance_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
-    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
-    if not accounting_export:
+    accounting_summary = AccountingExportSummary.objects.filter(workspace_id=workspace_id).first()
+    if not accounting_summary:
         accounting_summary, _ = AccountingExportSummary.objects.update_or_create(
             workspace_id=workspace_id
         )
