@@ -101,7 +101,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
 
 
 @handle_sage300_exceptions()
-def create_purchase_invoice(accounting_export: AccountingExport):
+def create_purchase_invoice(accounting_export: AccountingExport, _: bool):
     """
     Helper function to create and export a purchase invoice.
     """
