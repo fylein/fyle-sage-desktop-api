@@ -4,14 +4,13 @@ from typing import List
 
 from django.conf import settings
 from django_q.models import Schedule
+from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
 from apps.fyle.queue import queue_import_credit_card_expenses, queue_import_reimbursable_expenses
 from apps.sage300.exports.direct_cost.tasks import ExportDirectCost
 from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
 from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential
-
-from fyle_integrations_platform_connector import PlatformConnector
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +31,11 @@ def run_import_export(workspace_id: int, export_mode = None):
 
     export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
     advance_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
-    accounting_summary, _ = AccountingExportSummary.objects.update_or_create(
-        workspace_id=workspace_id
-    )
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+    if not accounting_export:
+        accounting_summary, _ = AccountingExportSummary.objects.update_or_create(
+            workspace_id=workspace_id
+        )
 
     interval_hours = advance_settings.interval_hours
     is_auto_export = advance_settings.schedule_is_enabled
