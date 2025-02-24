@@ -2,17 +2,17 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.urls import reverse
+from django_q.models import Schedule
 
+from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
+from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential
 from apps.workspaces.tasks import (
+    async_create_admin_subcriptions,
     async_update_fyle_credentials,
+    export_to_sage300,
     run_import_export,
     schedule_sync,
-    export_to_sage300,
-    async_create_admin_subcriptions
 )
-from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
-from apps.workspaces.models import FyleCredential, AdvancedSetting, ExportSetting
-from django_q.models import Schedule
 
 
 def test_async_update_fyle_credentials(
@@ -43,6 +43,7 @@ def test_run_import_export_with_reimbursable_expense(
     add_accounting_export_expenses
 ):
     workspace_id = 1
+    AccountingExportSummary.objects.create(workspace_id=workspace_id)
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
 
     advanced_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
@@ -93,6 +94,7 @@ def test_run_import_export_with_credit_card_expense(
     add_accounting_export_expenses
 ):
     workspace_id = 1
+    AccountingExportSummary.objects.create(workspace_id=workspace_id)
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
 
     advanced_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
