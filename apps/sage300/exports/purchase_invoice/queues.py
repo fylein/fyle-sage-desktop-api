@@ -62,18 +62,20 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
             accounting_export.status = 'ENQUEUED'
             accounting_export.save()
 
-        last_export = False
+        is_last_export = False
         if accounting_exports.count() == index + 1:
-            last_export = True
+            is_last_export = True
 
-        chain.append('apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice', accounting_export, last_export)
-        chain.append('apps.sage300.exports.purchase_invoice.queues.create_schedule_for_polling', workspace_id, last_export)
+        chain.append('apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice', accounting_export, is_last_export)
+
+        if is_last_export:
+            chain.append('apps.sage300.exports.purchase_invoice.queues.create_schedule_for_polling', workspace_id)
 
     if chain.length() > 1:
         chain.run()
 
 
-def create_schedule_for_polling(workspace_id: int, last_export: bool):
+def create_schedule_for_polling(workspace_id: int):
     """
     Create Schedule for running operation status polling
 
@@ -83,7 +85,7 @@ def create_schedule_for_polling(workspace_id: int, last_export: bool):
 
     Schedule.objects.update_or_create(
         func='apps.sage300.exports.purchase_invoice.queues.poll_operation_status',
-        args='{},{}'.format(workspace_id, last_export),
+        args='{}'.format(workspace_id),
         defaults={
             'schedule_type': Schedule.MINUTES,
             'minutes': 5,
@@ -92,7 +94,7 @@ def create_schedule_for_polling(workspace_id: int, last_export: bool):
     )
 
 
-def poll_operation_status(workspace_id: int, last_export: bool):
+def poll_operation_status(workspace_id: int):
     """
     Polls the operation status for queued accounting exports and updates their status accordingly.
 
@@ -109,6 +111,7 @@ def poll_operation_status(workspace_id: int, last_export: bool):
     if not accounting_exports:
         schedule = Schedule.objects.filter(args=workspace_id, func='apps.sage300.exports.purchase_invoice.queues.poll_operation_status').first()
         if schedule:
+            update_accounting_export_summary(workspace_id=workspace_id)
             schedule.delete()
 
         return
@@ -171,6 +174,3 @@ def poll_operation_status(workspace_id: int, last_export: bool):
                 accounting_export.exported_at = datetime.now()
                 accounting_export.save()
                 resolve_errors_for_exported_accounting_export(accounting_export)
-
-    if last_export:
-        update_accounting_export_summary(workspace_id=workspace_id)
