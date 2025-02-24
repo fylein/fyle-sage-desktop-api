@@ -1,16 +1,18 @@
 from datetime import datetime
-from apps.accounting_exports.models import AccountingExport, Error
-from apps.sage300.exports.purchase_invoice.queues import (
-    poll_operation_status,
-    check_accounting_export_and_start_import,
-    create_schedule_for_polling
-)
-from apps.sage300.exports.direct_cost.queues import (
-    poll_operation_status as poll_operation_status_direct_cost,
-    create_schedule_for_polling as create_schedule_for_polling_direct_cost,
-    check_accounting_export_and_start_import as check_accounting_export_and_start_import_direct_cost
-)
+
 from django_q.models import Schedule
+
+from apps.accounting_exports.models import AccountingExport, Error
+from apps.sage300.exports.direct_cost.queues import (
+    check_accounting_export_and_start_import as check_accounting_export_and_start_import_direct_cost,
+)
+from apps.sage300.exports.direct_cost.queues import create_schedule_for_polling as create_schedule_for_polling_direct_cost
+from apps.sage300.exports.direct_cost.queues import poll_operation_status as poll_operation_status_direct_cost
+from apps.sage300.exports.purchase_invoice.queues import (
+    check_accounting_export_and_start_import,
+    create_schedule_for_polling,
+    poll_operation_status,
+)
 
 
 def test_poll_operation_status_purchase_invoice(
@@ -56,7 +58,7 @@ def test_poll_operation_status_purchase_invoice(
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
     assert accounting_export.status == 'EXPORT_QUEUED'
 
-    poll_operation_status(workspace_id=1, last_export=False)
+    poll_operation_status(workspace_id=1)
 
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
     assert accounting_export.status == 'COMPLETE'
@@ -67,7 +69,7 @@ def test_poll_operation_status_purchase_invoice(
     accounting_export.status = 'EXPORT_QUEUED'
     accounting_export.save()
 
-    poll_operation_status(workspace_id=1, last_export=False)
+    poll_operation_status(workspace_id=1)
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE')
     assert accounting_export.count() == 1
     assert accounting_export.first().status == 'FAILED'
@@ -116,7 +118,7 @@ def test_direct_cost_poll_operation_status(
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='DIRECT_COST').first()
     assert accounting_export.status == 'EXPORT_QUEUED'
 
-    poll_operation_status_direct_cost(workspace_id=1, last_export=False)
+    poll_operation_status_direct_cost(workspace_id=1)
 
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='DIRECT_COST').first()
     assert accounting_export.status == 'COMPLETE'
@@ -128,7 +130,7 @@ def test_direct_cost_poll_operation_status(
     accounting_export.status = 'EXPORT_QUEUED'
     accounting_export.save()
 
-    poll_operation_status_direct_cost(workspace_id=1, last_export=False)
+    poll_operation_status_direct_cost(workspace_id=1)
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='DIRECT_COST')
 
     assert accounting_export.count() == 1
@@ -190,19 +192,19 @@ def test_create_schedule_for_polling_purchase_invoice(
     """
     Test create_schedule_for_polling
     """
-    create_schedule_for_polling(workspace_id=1, last_export=False)
-    create_schedule_for_polling(workspace_id=1, last_export=True)
+    create_schedule_for_polling(workspace_id=1)
+    create_schedule_for_polling(workspace_id=1)
 
     schedule = Schedule.objects.filter(
         func='apps.sage300.exports.purchase_invoice.queues.poll_operation_status',
-        args='1,False'
+        args='1'
     ).first()
 
     assert schedule is not None
 
     schedule = Schedule.objects.filter(
         func='apps.sage300.exports.purchase_invoice.queues.poll_operation_status',
-        args='1,True'
+        args='1'
     ).first()
 
     assert schedule is not None
@@ -263,19 +265,19 @@ def test_create_schedule_for_polling_direct_cost(
     """
     Test create_schedule_for_polling
     """
-    create_schedule_for_polling_direct_cost(workspace_id=1, last_export=False)
-    create_schedule_for_polling_direct_cost(workspace_id=1, last_export=True)
+    create_schedule_for_polling_direct_cost(workspace_id=1)
+    create_schedule_for_polling_direct_cost(workspace_id=1)
 
     schedule = Schedule.objects.filter(
         func='apps.sage300.exports.direct_cost.queues.poll_operation_status',
-        args='1,False'
+        args='1'
     ).first()
 
     assert schedule is not None
 
     schedule = Schedule.objects.filter(
         func='apps.sage300.exports.direct_cost.queues.poll_operation_status',
-        args='1,True'
+        args='1'
     ).first()
 
     assert schedule is not None

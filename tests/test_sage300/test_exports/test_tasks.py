@@ -1,8 +1,8 @@
-from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice, create_purchase_invoice
-from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
 from apps.accounting_exports.models import AccountingExport
 from apps.sage300.exports.direct_cost.models import DirectCost
 from apps.sage300.exports.direct_cost.tasks import ExportDirectCost, create_direct_cost
+from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
+from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice, create_purchase_invoice
 
 
 def test_trigger_export_purchase_invoice(db, mocker):
@@ -134,14 +134,9 @@ def test_create_purchase_invoice(
         return_value='123'
     )
 
-    update_accounting_export_summary = mocker.patch(
-        'apps.sage300.exports.purchase_invoice.tasks.update_accounting_export_summary'
-    )
-
-    exported_purchase_invoice = create_purchase_invoice(accounting_export, True)
+    exported_purchase_invoice = create_purchase_invoice(accounting_export, False)
 
     assert exported_purchase_invoice == '123'
-    assert update_accounting_export_summary.call_count == 1
 
 
 def test_trigger_export_direct_cost(db, mocker):
@@ -252,6 +247,6 @@ def test_create_direct_cost(
         return_value='123'
     )
 
-    exported_direct_cost = create_direct_cost(accounting_export)
+    exported_direct_cost = create_direct_cost(accounting_export, False)
 
     assert exported_direct_cost == '123'

@@ -1,12 +1,12 @@
 from typing import Dict
 
-from apps.sage300.exports.accounting_export import AccountingDataExporter
 from apps.accounting_exports.models import AccountingExport
-from apps.workspaces.models import Sage300Credential
-from apps.sage300.utils import SageDesktopConnector
-from apps.sage300.exports.direct_cost.queues import check_accounting_export_and_start_import
 from apps.sage300.exceptions import handle_sage300_exceptions
+from apps.sage300.exports.accounting_export import AccountingDataExporter
 from apps.sage300.exports.direct_cost.models import DirectCost
+from apps.sage300.exports.direct_cost.queues import check_accounting_export_and_start_import
+from apps.sage300.utils import SageDesktopConnector
+from apps.workspaces.models import Sage300Credential
 
 
 class ExportDirectCost(AccountingDataExporter):
@@ -73,7 +73,7 @@ class ExportDirectCost(AccountingDataExporter):
 
 
 @handle_sage300_exceptions()
-def create_direct_cost(accounting_export: AccountingExport):
+def create_direct_cost(accounting_export: AccountingExport, _: bool):
     """
     Helper function to create and export a direct cost.
     """
