@@ -426,6 +426,7 @@ class AdvancedSettingSerializer(serializers.ModelSerializer):
             workspace.onboarding_state = 'COMPLETE'
             workspace.save()
             async_task('apps.workspaces.tasks.async_create_admin_subcriptions', workspace.id)
+            AdvancedSettingsTriggers.post_to_integration_settings(workspace_id, True)
 
         return advanced_setting
 
