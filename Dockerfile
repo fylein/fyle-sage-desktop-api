@@ -20,9 +20,14 @@ WORKDIR /fyle-sage-desktop-api
 RUN flake8 .
 
 #================================================================
+# Set default GID if not provided during build
+#================================================================
+ARG SERVICE_GID=1001
+
+#================================================================
 # Setup non-root user and permissions
 #================================================================
-RUN groupadd -r -g 1001 sage_desktop_service && \
+RUN groupadd -r -g ${SERVICE_GID} sage_desktop_service && \
     useradd -r -g sage_desktop_service sage_desktop_user && \
     chown -R sage_desktop_user:sage_desktop_service /fyle-sage-desktop-api
 
