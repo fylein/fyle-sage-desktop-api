@@ -40,7 +40,7 @@ def get_filtered_expenses(workspace: int, expense_objects: list, expense_filters
         id__in=expenses_object_ids,
         accountingexport__isnull=True,
         org_id=workspace.org_id
-    ).update(is_skipped=True)
+    ).update(is_skipped=True, updated_at=datetime.now())
 
     filtered_expenses = Expense.objects.filter(
         is_skipped=False,

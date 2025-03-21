@@ -121,7 +121,8 @@ class CostCategory(BaseForeignWorkspaceModel):
                     workspace_id=workspace_id,
                     job_code=job_mapping.get(category.job_id)['code'],
                     cost_code_code=cost_code_mapping.get(category.cost_code_id)['code'],
-                    cost_category_code=cost_category_code
+                    cost_category_code=cost_category_code,
+                    updated_at=datetime.now()
                 )
 
                 if category.id not in existing_cost_type_record_numbers:
@@ -147,7 +148,7 @@ class CostCategory(BaseForeignWorkspaceModel):
                 cost_category_to_be_updated, fields=[
                     'job_id', 'job_name', 'cost_code_id', 'cost_code_name',
                     'name', 'status', 'cost_category_id',
-                    'job_code', 'cost_code_code', 'cost_category_code'
+                    'job_code', 'cost_code_code', 'cost_category_code', 'updated_at'
                 ],
                 batch_size=2000
             )
