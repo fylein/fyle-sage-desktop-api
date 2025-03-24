@@ -19,6 +19,21 @@ WORKDIR /fyle-sage-desktop-api
 # Do linting checks
 RUN flake8 .
 
+#================================================================
+# Set default GID if not provided during build
+#================================================================
+ARG SERVICE_GID=1001
+
+#================================================================
+# Setup non-root user and permissions
+#================================================================
+RUN groupadd -r -g ${SERVICE_GID} sage_desktop_service && \
+    useradd -r -g sage_desktop_service sage_desktop_user && \
+    chown -R sage_desktop_user:sage_desktop_service /fyle-sage-desktop-api
+
+# Switch to non-root user
+USER sage_desktop_user
+
 # Expose development port
 EXPOSE 8000
 
