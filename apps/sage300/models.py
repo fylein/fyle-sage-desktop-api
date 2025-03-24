@@ -122,7 +122,7 @@ class CostCategory(BaseForeignWorkspaceModel):
                     job_code=job_mapping.get(category.job_id)['code'],
                     cost_code_code=cost_code_mapping.get(category.cost_code_id)['code'],
                     cost_category_code=cost_category_code,
-                    updated_at=datetime.now()
+                    updated_at=datetime.now(timezone.utc)
                 )
 
                 if category.id not in existing_cost_type_record_numbers:

@@ -130,7 +130,7 @@ def resolve_post_category_mapping_errors(sender, instance: CategoryMapping, **kw
     """
     Error.objects.filter(expense_attribute_id=instance.source_category).update(
         is_resolved=True,
-        updated_at=datetime.now()
+        updated_at=datetime.now(timezone.utc)
     )
 
 
@@ -141,5 +141,5 @@ def resolve_post_employee_mapping_errors(sender, instance: EmployeeMapping, **kw
     """
     Error.objects.filter(expense_attribute_id=instance.source_employee).update(
         is_resolved=True,
-        updated_at=datetime.now()
+        updated_at=datetime.now(timezone.utc)
     )
