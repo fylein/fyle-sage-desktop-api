@@ -23,7 +23,7 @@ def test_bulk_create_or_update(
         "JobId": "10082",
         "CostCodeId": "10081",
         "Name": "Test Category 2",
-        "IsActive": False
+        "IsActive": True
     }]
 
     categories_generator = categories_gen_data
