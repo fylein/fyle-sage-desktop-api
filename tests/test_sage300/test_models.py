@@ -31,7 +31,7 @@ def test_bulk_create_or_update(
     CostCategory.bulk_create_or_update(categories_generator, workspace_id)
 
     created_categories = CostCategory.objects.all()
-    assert len(created_categories) == 1
+    assert len(created_categories) == 2
 
     for category_data in categories_gen_data:
         category = CostCategory.objects.get(cost_category_id=category_data['Id'])
@@ -44,7 +44,7 @@ def test_bulk_create_or_update(
     categories_gen_data = [{
         "Id": 3,
         "JobId": "10065",
-        "CostCodeId": "10065",
+        "CostCodeId": "10081",
         "Name": "Test Category 2",
         "IsActive": True,
         "Code": "456",
@@ -58,7 +58,7 @@ def test_bulk_create_or_update(
     CostCategory.bulk_create_or_update(categories_generator, workspace_id)
 
     created_categories = CostCategory.objects.all()
-    assert len(created_categories) == 2
+    assert len(created_categories) == 3
 
     for category_data in categories_gen_data:
         category = CostCategory.objects.get(cost_category_id=category_data['Id'])
