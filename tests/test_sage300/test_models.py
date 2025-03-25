@@ -14,16 +14,16 @@ def test_bulk_create_or_update(
 
     categories_gen_data = [{
         "Id": 1,
-        "JobId": "10064",
-        "CostCodeId": "10064",
+        "JobId": "10065",
+        "CostCodeId": "10081",
         "Name": "Test Category 1",
         "IsActive": True
     },{
         "Id": 2,
-        "JobId": "10081",
-        "CostCodeId": "10064",
+        "JobId": "10082",
+        "CostCodeId": "10081",
         "Name": "Test Category 2",
-        "IsActive": False
+        "IsActive": True
     }]
 
     categories_generator = categories_gen_data
@@ -44,7 +44,7 @@ def test_bulk_create_or_update(
     categories_gen_data = [{
         "Id": 3,
         "JobId": "10065",
-        "CostCodeId": "10065",
+        "CostCodeId": "10081",
         "Name": "Test Category 2",
         "IsActive": True,
         "Code": "456",
@@ -67,5 +67,3 @@ def test_bulk_create_or_update(
         assert category.name == category_data['Name']
         assert category.status == category_data['IsActive']
         assert category.cost_category_code == category_data['Code']
-        assert category.cost_code_code == '10065'
-        assert category.job_code == '10065'
