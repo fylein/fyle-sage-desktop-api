@@ -14,14 +14,14 @@ def test_bulk_create_or_update(
 
     categories_gen_data = [{
         "Id": 1,
-        "JobId": "10064",
-        "CostCodeId": "10064",
+        "JobId": "10065",
+        "CostCodeId": "10081",
         "Name": "Test Category 1",
         "IsActive": True
     },{
         "Id": 2,
-        "JobId": "10081",
-        "CostCodeId": "10064",
+        "JobId": "10082",
+        "CostCodeId": "10081",
         "Name": "Test Category 2",
         "IsActive": False
     }]
