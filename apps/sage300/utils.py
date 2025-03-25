@@ -131,7 +131,7 @@ class SageDesktopConnector:
         logger.info(f'Deleting {vendor_count} credit card vendors from workspace_id {self.workspace_id}')
         credit_card_vendor.delete()
 
-    def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_generator: bool = True, vendor_type_mapping = None, is_import_to_fyle_enabled: bool = False):
+    def _sync_data(self, data_gen, attribute_type, display_name, workspace_id, field_names, is_generator: bool = True, vendor_type_mapping = None, is_import_to_fyle_enabled: bool = False, distinct_job_ids: list = None):
         """
         Synchronize data from Sage Desktop SDK to your application
         :param data: Data to synchronize
@@ -149,6 +149,11 @@ class SageDesktopConnector:
                     for _item in items:
                         attribute_class = self._get_attribute_class(attribute_type)
                         item = import_string(f'sage_desktop_sdk.core.schema.read_only.{attribute_class}').from_dict(_item)
+                        if (
+                            (attribute_type == 'COST_CODE' and item.job_id not in distinct_job_ids)
+                            or (attribute_type in ['COST_CODE', 'JOB'] and not item.is_active)
+                        ):
+                            continue
                         destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names, vendor_type_mapping)
                         if destination_attr:
                             destination_attributes.append(destination_attr)
@@ -289,8 +294,14 @@ class SageDesktopConnector:
         """
         version = Version.objects.get(workspace_id=self.workspace_id).cost_code
         cost_codes = self.connection.cost_codes.get_all_costcodes(version=version)
+        distinct_job_ids = DestinationAttribute.objects.filter(
+            workspace_id=self.workspace_id,
+            attribute_type='JOB',
+            active=True
+        ).values_list('destination_id', flat=True).distinct()
+
         field_names = ['code', 'version', 'job_id']
-        self._sync_data(cost_codes, 'COST_CODE', 'cost_code', self.workspace_id, field_names)
+        self._sync_data(cost_codes, 'COST_CODE', 'cost_code', self.workspace_id, field_names, distinct_job_ids=distinct_job_ids)
         return []
 
     @handle_import_exceptions
