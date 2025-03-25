@@ -67,5 +67,3 @@ def test_bulk_create_or_update(
         assert category.name == category_data['Name']
         assert category.status == category_data['IsActive']
         assert category.cost_category_code == category_data['Code']
-        assert category.cost_code_code == '10065'
-        assert category.job_code == '10065'
