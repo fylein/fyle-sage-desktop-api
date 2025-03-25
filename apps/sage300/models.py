@@ -105,10 +105,10 @@ class CostCategory(BaseForeignWorkspaceModel):
             }
 
         for category in list_of_categories:
-            job_name = job_mapping.get(category.job_id)['job_name']
-            cost_code_name = cost_code_mapping.get(category.cost_code_id)['cost_code_name']
+            job_name = job_mapping.get(category.job_id, {}).get('job_name')
+            cost_code_name = cost_code_mapping.get(category.cost_code_id, {}).get('cost_code_name')
             cost_category_code = " ".join(category.code.split()) if category.code is not None else None
-            if job_name and cost_code_name:
+            if job_name and cost_code_name and category.is_active:
                 jobs_to_be_updated.add(category.job_id)
                 category_object = CostCategory(
                     job_id=category.job_id,
@@ -135,9 +135,6 @@ class CostCategory(BaseForeignWorkspaceModel):
                 ):
                     category_object.id = primary_key_map[category.id]['id']
                     cost_category_to_be_updated.append(category_object)
-
-            else:
-                logger.error(f"Job name with job_id {category.job_id} or cost code name with cost_code_id {category.cost_code_id} not found in workspace {workspace_id}")
 
         if cost_category_to_be_created:
             CostCategory.objects.bulk_create(cost_category_to_be_created, batch_size=2000)
