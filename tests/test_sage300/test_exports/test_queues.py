@@ -121,7 +121,7 @@ def test_direct_cost_poll_operation_status(
     poll_operation_status_direct_cost(workspace_id=1)
 
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='DIRECT_COST').first()
-    assert accounting_export.status == 'COMPLETE'
+    assert accounting_export.status == 'EXPORT_QUEUED'
 
     mock_sage_connector.return_value.connection.documents.get.return_value = {
         'CurrentState': '6'

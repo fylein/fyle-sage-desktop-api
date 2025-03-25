@@ -73,6 +73,9 @@ class SageDesktopConnector:
             workspace_id=self.workspace_id
         ).order_by('-detail__version').first()
 
+        if not latest_version:
+            return
+
         Version.objects.update_or_create(
             workspace_id=self.workspace_id,
             defaults={
