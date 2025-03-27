@@ -147,7 +147,7 @@ def resolve_errors_for_exported_accounting_export(accounting_export: AccountingE
     Resolve errors for exported accounting export
     :param accounting_export: Accounting Export
     """
-    Error.objects.filter(workspace_id=accounting_export.workspace_id, accounting_export=accounting_export, is_resolved=False).update(is_resolved=True)
+    Error.objects.filter(workspace_id=accounting_export.workspace_id, accounting_export=accounting_export, is_resolved=False).update(is_resolved=True, updated_at=datetime.now(timezone.utc))
 
 
 def validate_failing_export(is_auto_export: bool, interval_hours: int, error: Error):
