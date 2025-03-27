@@ -141,7 +141,7 @@ class Base:
         if errored_attribute_ids:
             mapped_attribute_ids = self.__get_mapped_attributes_ids(errored_attribute_ids)
             if mapped_attribute_ids:
-                Error.objects.filter(expense_attribute_id__in=mapped_attribute_ids).update(is_resolved=True)
+                Error.objects.filter(expense_attribute_id__in=mapped_attribute_ids).update(is_resolved=True, updated_at=datetime.now(timezone.utc))
 
     @handle_import_exceptions
     def import_destination_attribute_to_fyle(self, import_log: ImportLog):
