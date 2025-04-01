@@ -8,8 +8,9 @@ services:
         CI: ENABLED
     entrypoint: bash run.sh
     restart: unless-stopped
+    user: root
     volumes:
-    - api-volume:/fyle-sage-desktop-api
+    - ./:/fyle-sage-desktop-api
     depends_on:
     - db
     environment: 
@@ -47,5 +48,4 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
-  api-volume:
   data:
