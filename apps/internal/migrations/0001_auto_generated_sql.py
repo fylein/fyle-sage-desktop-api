@@ -42,8 +42,8 @@ sql_files = [
     'fyle-integrations-db-migrations/sage300/views/alerts/django_queue_fatal_tasks_view.sql',
     'fyle-integrations-db-migrations/sage300/views/alerts/django_queue_in_progress_tasks_view.sql',
 
-    # Sage300 Triggers
-    'fyle-integrations-db-migrations/sage300/triggers/update_logs.sql'
+    'fyle-integrations-db-migrations/common/global_shared/helpers/add-replication-identity.sql',
+    'fyle-integrations-db-migrations/sage300/helpers/add-tables-to-publication.sql'
 
 ]
 
