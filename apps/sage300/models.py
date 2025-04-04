@@ -110,6 +110,9 @@ class CostCategory(BaseForeignWorkspaceModel):
             cost_category_code = " ".join(category.code.split()) if category.code is not None else None
             if job_name and cost_code_name and category.is_active:
                 jobs_to_be_updated.add(category.job_id)
+                if not category.name:
+                    logger.info(f"Cost Category with id {category.id} has no name in workspace: {workspace_id}")
+                    continue
                 category_object = CostCategory(
                     job_id=category.job_id,
                     job_name=job_name,
