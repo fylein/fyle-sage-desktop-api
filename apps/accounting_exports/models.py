@@ -6,6 +6,8 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Count
 from fyle_accounting_mappings.models import ExpenseAttribute
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+from fyle_accounting_library.fyle_platform.constants import IMPORTED_FROM_CHOICES
 
 from apps.fyle.models import Expense
 from apps.workspaces.models import BaseForeignWorkspaceModel, BaseModel, ExportSetting
@@ -100,12 +102,13 @@ class AccountingExport(BaseForeignWorkspaceModel):
     sage300_errors = CustomJsonField(help_text='Sage 300 Errors')
     export_id = StringNullField(help_text='id of the exported expense')
     exported_at = CustomDateTimeField(help_text='time of export')
+    triggered_by = StringOptionsField(max_length=255, help_text="Triggered by", choices=IMPORTED_FROM_CHOICES)
 
     class Meta:
         db_table = 'accounting_exports'
 
     @staticmethod
-    def create_accounting_export(expense_objects: List[Expense], fund_source: str, workspace_id):
+    def create_accounting_export(expense_objects: List[Expense], fund_source: str, workspace_id, triggered_by: ExpenseImportSourceEnum):
         """
         Group expenses by report_id and fund_source, format date fields, and create AccountingExport objects.
         """
@@ -145,7 +148,8 @@ class AccountingExport(BaseForeignWorkspaceModel):
                 workspace_id=workspace_id,
                 fund_source=accounting_export['fund_source'],
                 description=accounting_export,
-                status='EXPORT_READY'
+                status='EXPORT_READY',
+                triggered_by=triggered_by
             )
 
             # Add related expenses to the AccountingExport object

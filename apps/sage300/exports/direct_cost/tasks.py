@@ -1,5 +1,7 @@
 from typing import Dict
 
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
 from apps.accounting_exports.models import AccountingExport
 from apps.sage300.exceptions import handle_sage300_exceptions
 from apps.sage300.exports.accounting_export import AccountingDataExporter
@@ -19,11 +21,11 @@ class ExportDirectCost(AccountingDataExporter):
         super().__init__()  # Call the constructor of the parent class
         self.body_model = DirectCost
 
-    def trigger_export(self, workspace_id, accounting_export_ids, is_auto_export, interval_hours):
+    def trigger_export(self, workspace_id, accounting_export_ids, is_auto_export, interval_hours, triggered_by: ExpenseImportSourceEnum):
         """
         Trigger the import process for the Project module.
         """
-        check_accounting_export_and_start_import(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours)
+        check_accounting_export_and_start_import(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by)
 
     def __construct_direct_cost(self, body: DirectCost) -> Dict:
         """

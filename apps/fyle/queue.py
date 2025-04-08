@@ -6,6 +6,10 @@ All the tasks which are queued into django-q
 import logging
 from django_q.tasks import async_task
 
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum, RoutingKeyEnum
+from fyle_accounting_library.rabbitmq.connector import RabbitMQConnection
+from fyle_accounting_library.rabbitmq.data_class import RabbitMQData
+
 from apps.fyle.tasks import (
     import_credit_card_expenses,
     import_reimbursable_expenses
@@ -18,7 +22,7 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-def queue_import_reimbursable_expenses(workspace_id: int, synchronous: bool = False):
+def queue_import_reimbursable_expenses(workspace_id: int, synchronous: bool = False, imported_from: ExpenseImportSourceEnum = None):
     """
     Queue Import of Reimbursable Expenses from Fyle
     :param workspace_id: Workspace id
@@ -39,10 +43,10 @@ def queue_import_reimbursable_expenses(workspace_id: int, synchronous: bool = Fa
         )
         return
 
-    import_reimbursable_expenses(workspace_id, accounting_export)
+    import_reimbursable_expenses(workspace_id, accounting_export, imported_from)
 
 
-def queue_import_credit_card_expenses(workspace_id: int, synchronous: bool = False):
+def queue_import_credit_card_expenses(workspace_id: int, synchronous: bool = False, imported_from: ExpenseImportSourceEnum = None):
     """
     Queue Import of Credit Card Expenses from Fyle
     :param workspace_id: Workspace id
@@ -63,7 +67,7 @@ def queue_import_credit_card_expenses(workspace_id: int, synchronous: bool = Fal
         )
         return
 
-    import_credit_card_expenses(workspace_id, accounting_export)
+    import_credit_card_expenses(workspace_id, accounting_export, imported_from)
 
 
 def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
@@ -72,13 +76,36 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
     :param body: body
     :return: None
     """
-    if body.get('action') == 'ACCOUNTING_EXPORT_INITIATED' and body.get('data'):
+    rabbitmq = RabbitMQConnection.get_instance('sage_desktop_exchange')
+    if body.get('action') in ('ADMIN_APPROVED', 'APPROVED', 'STATE_CHANGE_PAYMENT_PROCESSING', 'PAID') and body.get('data'):
+        report_id = body['data']['id']
+        org_id = body['data']['org_id']
+        state = body['data']['state']
+        assert_valid_request(workspace_id=workspace_id, fyle_org_id=org_id)
+
+        payload = {
+            'data': {
+                'workspace_id': workspace_id,
+                'report_id': report_id,
+                'org_id': org_id,
+                'is_state_change_event': True,
+                'report_state': state,
+                'imported_from': ExpenseImportSourceEnum.WEBHOOK,
+            },
+            'workspace_id': workspace_id
+        }
+        data = RabbitMQData(
+            new=payload
+        )
+        rabbitmq.publish(RoutingKeyEnum.EXPORT, data)
+
+    elif body.get('action') == 'ACCOUNTING_EXPORT_INITIATED' and body.get('data'):
         org_id = body['data']['org_id']
 
         assert_valid_request(workspace_id=workspace_id, org_id=org_id)
         workspace = Workspace.objects.get(org_id=org_id)
-        queue_import_reimbursable_expenses(workspace_id=workspace.id)
-        queue_import_credit_card_expenses(workspace_id=workspace.id)
+        queue_import_reimbursable_expenses(workspace_id=workspace.id, imported_from=ExpenseImportSourceEnum.DIRECT_EXPORT)
+        queue_import_credit_card_expenses(workspace_id=workspace.id, imported_from=ExpenseImportSourceEnum.DIRECT_EXPORT)
         async_task('apps.workspaces.tasks.export_to_sage300', workspace.id)
 
     elif body.get('action') == 'UPDATED_AFTER_APPROVAL' and body.get('data') and body.get('resource') == 'EXPENSE':
