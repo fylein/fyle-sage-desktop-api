@@ -825,3 +825,16 @@ def add_direct_cost_objects(
         accounting_export=accounting_export,
         advance_setting=AdvancedSetting.objects.get(workspace_id=1)
     )
+
+
+@pytest.fixture(autouse=True)
+def mock_rabbitmq():
+    """
+    Mock RabbitMQ
+    """
+    with mock.patch('apps.fyle.queue.RabbitMQConnection.get_instance') as mock_rabbitmq:
+        mock_instance = mock.Mock()
+        mock_instance.publish.return_value = None
+        mock_instance.connect.return_value = None
+        mock_rabbitmq.return_value = mock_instance
+        yield mock_rabbitmq

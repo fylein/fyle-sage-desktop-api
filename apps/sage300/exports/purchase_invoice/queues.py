@@ -6,6 +6,7 @@ from django.db.models import Q
 from django_q.models import Schedule
 from django_q.tasks import Chain
 from fyle_integrations_platform_connector import PlatformConnector
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.actions import update_accounting_export_summary
@@ -24,7 +25,7 @@ def import_fyle_dimensions(fyle_credentials: FyleCredential):
     platform.import_fyle_dimensions()
 
 
-def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str], is_auto_export: bool, interval_hours: int):
+def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str], is_auto_export: bool, interval_hours: int, triggered_by: ExpenseImportSourceEnum):
     """
     Check accounting export group and start export
     """
@@ -54,12 +55,15 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
             id=accounting_export_group.id,
             defaults={
                 'status': 'ENQUEUED',
-                'type': 'PURCHASE_INVOICE'
+                'type': 'PURCHASE_INVOICE',
+                'triggered_by': triggered_by
             }
         )
 
         if accounting_export.status not in ['IN_PROGRESS', 'ENQUEUED']:
             accounting_export.status = 'ENQUEUED'
+            if accounting_export.triggered_by != triggered_by:
+                accounting_export.triggered_by = triggered_by
             accounting_export.save()
 
         is_last_export = False

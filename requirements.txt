@@ -24,8 +24,8 @@ fyle==0.37.0
 
 # Reusable Fyle Packages
 fyle-rest-auth==1.8.2
-fyle-accounting-mappings==1.35.0
-fyle-integrations-platform-connector==1.39.3
+fyle-accounting-mappings==1.41.4
+fyle-integrations-platform-connector==1.41.1
 
 
 # Postgres Dependincies
@@ -46,3 +46,6 @@ pytest-mock==3.14.0
 # Sendgrid for sending emails_selected
 sendgrid==6.11.0
 sentry-sdk==2.19.2
+
+# PGevents for consumer
+git+https://github.com/fylein/pgevents.git@main#egg=pgevents

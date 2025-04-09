@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'fyle_rest_auth',
     'django_filters',
     'fyle_accounting_mappings',
+    'fyle_accounting_library.fyle_platform',
+    'fyle_accounting_library.rabbitmq',
 
     # User Created Apps
     'apps.users',
@@ -151,6 +153,11 @@ LOGGING = {
         'django.request': {
             'handlers': ['request_logs'],
             'propagate': False
+        },
+        'workers': {
+            'handlers': ['debug_logs'],
+            'level': 'INFO',
+            'propagate': True
         },
         'fyle_sage_desktop_api': {
             'handlers': ['debug_logs'],

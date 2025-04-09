@@ -4,6 +4,7 @@ from rest_framework.views import status
 from rest_framework.response import Response
 
 from django_filters.rest_framework import DjangoFilterBackend
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from sage_desktop_api.utils import LookupFieldMixin
 from apps.fyle.serializers import (
@@ -111,10 +112,10 @@ class AccountingExportSyncView(generics.CreateAPIView):
 
         export_settings = ExportSetting.objects.get(workspace_id=kwargs['workspace_id'])
         if export_settings.reimbursable_expenses_export_type:
-            queue_import_reimbursable_expenses(kwargs['workspace_id'], synchronous=True)
+            queue_import_reimbursable_expenses(kwargs['workspace_id'], synchronous=True, imported_from=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         if export_settings.credit_card_expense_export_type:
-            queue_import_credit_card_expenses(kwargs['workspace_id'], synchronous=True)
+            queue_import_credit_card_expenses(kwargs['workspace_id'], synchronous=True, imported_from=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         return Response(
             status=status.HTTP_200_OK

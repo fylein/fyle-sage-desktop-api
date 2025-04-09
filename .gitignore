@@ -165,3 +165,7 @@ fyle_integrations_platform_connector/
 fyle_accounting_mappings/
 
 customer_dry_run.py
+./fyle
+fyle_accounting_library/
+common/
+consumer/

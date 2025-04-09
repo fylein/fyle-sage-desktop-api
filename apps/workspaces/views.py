@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import generics
 from rest_framework.views import Response, status
 
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
 from fyle_rest_auth.utils import AuthUtils
 
 from sage_desktop_api.utils import assert_valid
@@ -134,7 +136,7 @@ class TriggerExportsView(generics.GenericAPIView):
     """
 
     def post(self, request, *args, **kwargs):
-        export_to_sage300(workspace_id=kwargs['workspace_id'])
+        export_to_sage300(workspace_id=kwargs['workspace_id'], triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         return Response(
             status=status.HTTP_200_OK
