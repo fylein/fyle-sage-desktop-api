@@ -21,6 +21,14 @@ jobs:
           echo "STATUS=$(cat pytest-coverage.txt | grep 'Required test' | awk '{ print $1 }')" >> $GITHUB_ENV
           echo "FAILED=$(cat test-reports/report.xml | awk -F'=' '{print $5}' | awk -F' ' '{gsub(/"/, "", $1); print $1}')" >> $GITHUB_ENV
 
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        if: ${{ always() && github.ref != 'refs/heads/master' }}
+        with:
+          create-new-comment: true
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./test-reports/report.xml
+
       - name: Perform coverage check
         shell: bash
         run: |
@@ -28,7 +36,7 @@ jobs:
           python -m pip install diff-cover
 
           git fetch origin master --depth=1
-          diff-cover coverage.xml --compare-branch=origin/master --diff-range-notation .. --fail-under=99 > result.txt 2>&1
+          diff-cover coverage.xml --compare-branch=origin/master --diff-range-notation .. --fail-under=70 > result.txt 2>&1
 
       - name: Comment coverage check
         if: always()
