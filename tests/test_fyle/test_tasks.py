@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from apps.fyle.tasks import (
-    update_non_exported_expenses
+    update_non_exported_expenses, import_expenses
 )
 from apps.fyle.models import Expense
 from apps.workspaces.models import Workspace
@@ -70,3 +70,20 @@ def test_update_non_exported_expenses(db, create_temp_workspace, mocker, api_cli
     url = reverse('webhook-callback', kwargs={'workspace_id': 2})
     response = api_client.post(url, data=payload, format='json')
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_import_expenses(db, create_temp_workspace, add_accounting_export_expenses, add_export_settings, add_fyle_credentials, mocker, api_client, test_connection):
+    """
+    Test import_expenses
+    """
+    expenses_mock = mocker.patch(
+        'fyle_integrations_platform_connector.apis.Expenses.get',
+        return_value=data['expenses']
+    )
+
+    accounting_export = AccountingExport.objects.filter(workspace_id=1).first()
+    import_expenses(1, accounting_export_id=accounting_export.id, is_state_change_event=True, report_state='APPROVED', fund_source_key='PERSONAL')
+
+    import_expenses(1, accounting_export_id=accounting_export.id, fund_source_key='PERSONAL')
+
+    import_expenses(1, accounting_export_id=accounting_export.id, is_state_change_event=True, report_state='PAYMENT_PROCESSING', fund_source_key='PERSONAL')
