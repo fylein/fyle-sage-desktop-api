@@ -193,7 +193,7 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.default_vendor_id == '123'
 
 
-def test_import_settings(mocker, api_client, test_connection, create_temp_workspace, add_fyle_credentials):
+def test_import_settings(mocker, api_client, test_connection, create_temp_workspace, add_sage300_creds, add_fyle_credentials):
     mocker.patch(
         'fyle_integrations_platform_connector.apis.ExpenseCustomFields.get_by_id',
         return_value={
@@ -201,6 +201,10 @@ def test_import_settings(mocker, api_client, test_connection, create_temp_worksp
             'updated_at': '2020-06-11T13:14:55.201598+00:00',
             'is_mandatory': False
         }
+    )
+    mocker.patch(
+        'apps.sage300.utils.SageDesktopConnector.__init__',
+        return_value=None
     )
     mocker.patch(
         'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',

@@ -79,6 +79,11 @@ def test_run_post_mapping_settings_triggers(
     add_export_settings
 ):
     mocker.patch(
+        'apps.sage300.utils.SageDesktopConnector.__init__',
+        return_value=None
+    )
+
+    mocker.patch(
         'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
         return_value=[]
     )
@@ -129,7 +134,7 @@ def test_run_post_mapping_settings_triggers(
 
     mapping_setting = MappingSetting(
         source_field='SAMPLEs',
-        destination_field='SAMPLEs',
+        destination_field='JOB',
         workspace_id=workspace_id,
         import_to_fyle=True,
         is_custom=True
@@ -155,7 +160,7 @@ def test_run_post_mapping_settings_triggers(
 
     mapping_setting = MappingSetting(
         source_field='LOLOOO',
-        destination_field='HEHEHE',
+        destination_field='JOB',
         workspace_id=workspace_id,
         import_to_fyle=True,
         is_custom=False
@@ -182,6 +187,11 @@ def test_run_pre_mapping_settings_triggers(
     add_export_settings
 ):
     mocker.patch(
+        'apps.sage300.utils.SageDesktopConnector.__init__',
+        return_value=None
+    )
+
+    mocker.patch(
         'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
         return_value=[]
     )
@@ -198,7 +208,7 @@ def test_run_pre_mapping_settings_triggers(
     try:
         mapping_setting = MappingSetting.objects.create(
             source_field='CUSTOM_INTENTS',
-            destination_field='CUSTOM_INTENTS',
+            destination_field='JOB',
             workspace_id=workspace_id,
             import_to_fyle=True,
             is_custom=True
