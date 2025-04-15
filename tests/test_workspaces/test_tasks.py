@@ -4,6 +4,8 @@ from django.conf import settings
 from django.urls import reverse
 from django_q.models import Schedule
 
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
 from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential
 from apps.workspaces.tasks import (
@@ -254,7 +256,7 @@ def test_export_to_sage300(
         'trigger_export'
     )
 
-    export_to_sage300(workspace_id=workspace_id)
+    export_to_sage300(workspace_id=workspace_id, triggered_by=ExpenseImportSourceEnum.DIRECT_EXPORT)
 
     accounting_summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
 
@@ -270,7 +272,7 @@ def test_export_to_sage300(
     export_settings.reimbursable_expenses_export_type = 'PURCHASE_INVOICE'
     export_settings.save()
 
-    export_to_sage300(workspace_id=workspace_id)
+    export_to_sage300(workspace_id=workspace_id, triggered_by=ExpenseImportSourceEnum.DIRECT_EXPORT)
 
     accounting_summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
 

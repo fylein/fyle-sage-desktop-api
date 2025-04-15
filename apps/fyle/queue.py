@@ -15,7 +15,6 @@ from apps.fyle.tasks import (
     import_reimbursable_expenses
 )
 from apps.accounting_exports.models import AccountingExport
-from apps.workspaces.models import Workspace
 from apps.fyle.helpers import assert_valid_request
 
 logger = logging.getLogger(__name__)
