@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, List
 from time import sleep
+
 from django.contrib.postgres.aggregates import JSONBAgg
 from django.contrib.postgres.fields import JSONField
 from django.db.models import F, Func, Value
@@ -13,8 +14,8 @@ from fyle.platform.exceptions import InvalidTokenError as FyleInvalidTokenError
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.models import CostCategory
 from apps.fyle.helpers import connect_to_platform
-from apps.mappings.models import ImportLog
-from apps.mappings.exceptions import handle_import_exceptions
+from fyle_integrations_imports.models import ImportLog
+from apps.mappings.exceptions import handle_import_exceptions_v2
 from apps.workspaces.models import ImportSetting
 from apps.mappings.helpers import prepend_code_to_name
 
@@ -74,7 +75,7 @@ def create_dependent_custom_field_in_fyle(workspace_id: int, fyle_attribute_type
     return platform.expense_custom_fields.post(expense_custom_field_payload)
 
 
-@handle_import_exceptions
+@handle_import_exceptions_v2
 def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict, is_enabled: bool = True) -> tuple[List[str], bool]:
     import_settings = ImportSetting.objects.filter(workspace_id=import_log.workspace.id).first()
     use_job_code_in_naming = False
@@ -157,7 +158,7 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     return posted_cost_codes, is_errored
 
 
-@handle_import_exceptions
+@handle_import_exceptions_v2
 def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict):
     import_settings = ImportSetting.objects.filter(workspace_id=import_log.workspace.id).first()
     use_cost_code_in_naming = False

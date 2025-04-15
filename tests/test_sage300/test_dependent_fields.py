@@ -6,7 +6,7 @@ from apps.sage300.dependent_fields import (
     import_dependent_fields_to_fyle
 )
 from apps.fyle.models import DependentFieldSetting
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 from apps.sage300.models import CostCategory
 from apps.workspaces.models import ImportSetting
 

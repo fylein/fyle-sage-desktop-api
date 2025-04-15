@@ -4,7 +4,7 @@ from apps.sage300.utils import SageDesktopConnector, Sage300Credential
 from fyle_accounting_mappings.models import DestinationAttribute
 from apps.mappings.models import Version
 from apps.workspaces.models import Workspace
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 from sage_desktop_sdk.core.schema.read_only import CommitmentItem
 
 
@@ -690,7 +690,7 @@ def test_sync_data_with_generator(sync_instance, mocker):
 
     assert called_args[1] == 'JOB'
     assert called_args[2] == 1
-    assert mock_bulk_create.call_args[1]['attribute_disable_callback_path'] == 'apps.mappings.imports.modules.projects.disable_projects'  # ATTRIBUTE_CALLBACK_MAP['PROJECT']
+    assert mock_bulk_create.call_args[1]['attribute_disable_callback_path'] == 'fyle_integrations_imports.modules.projects.disable_projects'  # ATTRIBUTE_CALLBACK_MAP['PROJECT']
 
 
 def test_sync_data_without_generator(sync_instance, mocker):

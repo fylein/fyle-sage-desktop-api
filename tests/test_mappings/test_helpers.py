@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from apps.mappings.helpers import prepend_code_to_name, is_job_sync_allowed
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 
 
 def test_prepend_code_to_name():
