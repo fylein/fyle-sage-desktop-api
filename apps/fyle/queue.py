@@ -39,7 +39,7 @@ def queue_import_reimbursable_expenses(workspace_id: int, synchronous: bool = Fa
     if not synchronous:
         async_task(
             'apps.fyle.tasks.import_reimbursable_expenses',
-            workspace_id, accounting_export,
+            workspace_id, accounting_export, imported_from
         )
         return
 
@@ -63,7 +63,7 @@ def queue_import_credit_card_expenses(workspace_id: int, synchronous: bool = Fal
     if not synchronous:
         async_task(
             'apps.fyle.tasks.import_credit_card_expenses',
-            workspace_id, accounting_export,
+            workspace_id, accounting_export, imported_from
         )
         return
 
@@ -81,13 +81,12 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
         report_id = body['data']['id']
         org_id = body['data']['org_id']
         state = body['data']['state']
-        assert_valid_request(workspace_id=workspace_id, fyle_org_id=org_id)
+        assert_valid_request(workspace_id=workspace_id, org_id=org_id)
 
         payload = {
             'data': {
                 'workspace_id': workspace_id,
                 'report_id': report_id,
-                'org_id': org_id,
                 'is_state_change_event': True,
                 'report_state': state,
                 'imported_from': ExpenseImportSourceEnum.WEBHOOK,
@@ -100,13 +99,8 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
         rabbitmq.publish(RoutingKeyEnum.EXPORT, data)
 
     elif body.get('action') == 'ACCOUNTING_EXPORT_INITIATED' and body.get('data'):
-        org_id = body['data']['org_id']
-
-        assert_valid_request(workspace_id=workspace_id, org_id=org_id)
-        workspace = Workspace.objects.get(org_id=org_id)
-        queue_import_reimbursable_expenses(workspace_id=workspace.id, imported_from=ExpenseImportSourceEnum.DIRECT_EXPORT)
-        queue_import_credit_card_expenses(workspace_id=workspace.id, imported_from=ExpenseImportSourceEnum.DIRECT_EXPORT)
-        async_task('apps.workspaces.tasks.export_to_sage300', workspace.id)
+        # No direct export for Sage 300
+        pass
 
     elif body.get('action') == 'UPDATED_AFTER_APPROVAL' and body.get('data') and body.get('resource') == 'EXPENSE':
         org_id = body['data']['org_id']

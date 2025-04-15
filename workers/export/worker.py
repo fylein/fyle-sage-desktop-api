@@ -6,6 +6,8 @@ from .actions import handle_exports
 
 from fyle_accounting_library.fyle_platform.enums import RoutingKeyEnum
 from fyle_accounting_library.rabbitmq.models import FailedEvent
+from fyle_accounting_library.rabbitmq.data_class import RabbitMQData
+
 from consumer.event_consumer import EventConsumer
 from common.qconnector import RabbitMQConnector
 from common.event import BaseEvent
@@ -32,13 +34,6 @@ class ExportWorker(EventConsumer):
         try:
             logger.info('Processing task for workspace - %s with routing key - %s and payload - %s with delivery tag - %s', payload_dict['workspace_id'], routing_key, payload_dict, delivery_tag)
 
-            # We're gonna retry failed events since this queue is primarily webhook calls from Fyle, if this is a scheduled export, it doesn't necessarily needs to be retried
-            retry_count = payload_dict.get('retry_count', 0)
-            if retry_count >= 2:
-                logger.error('Task failed after %s retries, dropping task', retry_count)
-                self.qconnector.reject_message(delivery_tag, requeue=False)
-                return
-
             handle_exports(payload_dict['data'])
             self.qconnector.acknowledge_message(delivery_tag)
             logger.info('Task processed successfully for workspace - %s with routing key - %s and delivery tag - %s', payload_dict['workspace_id'], routing_key, delivery_tag)
@@ -61,8 +56,15 @@ class ExportWorker(EventConsumer):
         )
 
         if payload_dict['retry_count'] < 2:
-            self.qconnector.reject_message(delivery_tag, requeue=True)
+            logger.info('Publishing new message with incremented retry count')
+            data = RabbitMQData(
+                new=payload_dict
+            )
+            self.qconnector.publish(RoutingKeyEnum.EXPORT, data.to_json())
+
+            self.qconnector.reject_message(delivery_tag, requeue=False)
         else:
+            logger.info('Max retries reached, dropping message')
             self.qconnector.reject_message(delivery_tag, requeue=False)
 
     def shutdown(self, _: int, __: int) -> None:

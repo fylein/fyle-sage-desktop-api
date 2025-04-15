@@ -54,7 +54,7 @@ def get_filtered_expenses(workspace: int, expense_objects: list, expense_filters
     return filtered_expenses
 
 
-def import_expenses(workspace_id, accounting_export: AccountingExport = None, source_account_type: str = None, fund_source_key: str = None, is_state_change_event: bool = False, report_state: str = None, imported_from: ExpenseImportSourceEnum = None, accounting_export_id: int = None):
+def import_expenses(workspace_id, accounting_export: AccountingExport = None, source_account_type: str = None, fund_source_key: str = None, is_state_change_event: bool = False, report_state: str = None, imported_from: ExpenseImportSourceEnum = None, accounting_export_id: int = None, report_id: str = None):
     """
     Common logic for importing expenses from Fyle
     :param accounting_export: Task log object
@@ -103,7 +103,7 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
 
     source_account_type_query_param = None
     if is_state_change_event:
-        source_account_types = get_source_account_types_based_on_export_modules(export_settings.reimbursable_expenses_export_type, export_settings.credit_card_expenses_export_type)
+        source_account_types = get_source_account_types_based_on_export_modules(export_settings.reimbursable_expenses_export_type, export_settings.credit_card_expense_export_type)
         source_account_type_query_param = source_account_types
     else:
         source_account_type_query_param = [source_account_type]
@@ -118,7 +118,8 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
         approved_at=approved_at_query_param,
         filter_credit_expenses=False,
         last_paid_at=last_paid_at_query_param,
-        import_states=import_states_query_param
+        import_states=import_states_query_param,
+        report_id=report_id if report_id else None
     )
 
     if is_state_change_event:
@@ -136,13 +137,8 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
             if expense_filters:
                 expense_objects = get_filtered_expenses(workspace, expense_objects, expense_filters)
 
-            reimbursable_expense_objects = expense_objects.filter(
-                fund_source='PERSONAL'
-            )
-
-            credit_card_expense_objects = expense_objects.filter(
-                fund_source='CCC'
-            )
+            reimbursable_expense_objects = list(filter(lambda expense: expense.fund_source == 'PERSONAL', expense_objects))
+            credit_card_expense_objects = list(filter(lambda expense: expense.fund_source == 'CCC', expense_objects))
 
             if reimbursable_expense_objects:
                 AccountingExport.create_accounting_export(
@@ -172,7 +168,7 @@ def import_reimbursable_expenses(workspace_id, accounting_export: AccountingExpo
     :param accounting_export: Accounting Export object
     :param workspace_id: workspace id
     """
-    import_expenses(workspace_id, accounting_export, 'PERSONAL_CASH_ACCOUNT', 'PERSONAL', imported_from)
+    import_expenses(workspace_id=workspace_id, accounting_export=accounting_export, source_account_type='PERSONAL_CASH_ACCOUNT', fund_source_key='PERSONAL', imported_from=imported_from)
 
 
 @handle_exceptions
@@ -182,7 +178,7 @@ def import_credit_card_expenses(workspace_id, accounting_export: AccountingExpor
     :param accounting_export: AccountingExport object
     :param workspace_id: workspace id
     """
-    import_expenses(workspace_id, accounting_export, 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT', 'CCC', imported_from)
+    import_expenses(workspace_id=workspace_id, accounting_export=accounting_export, source_account_type='PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT', fund_source_key='CCC', imported_from=imported_from)
 
 
 def update_non_exported_expenses(data: Dict) -> None:

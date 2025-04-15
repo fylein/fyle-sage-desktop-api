@@ -10,6 +10,8 @@ django.setup()
 
 
 # flake8: noqa
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
 from apps.fyle.tasks import import_expenses
 from apps.accounting_exports.models import AccountingExport
 
@@ -23,7 +25,8 @@ def handle_exports(data: Dict) -> None:
         workspace_id=data['workspace_id'],
         type='FETCHING_EXPENSES',
         defaults={
-            'status': 'ENQUEUED'
+            'status': 'ENQUEUED',
+            'triggered_by': ExpenseImportSourceEnum.WEBHOOK
         }
     )
     data['accounting_export_id'] = accounting_export.id
