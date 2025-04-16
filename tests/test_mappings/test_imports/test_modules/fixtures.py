@@ -535,26 +535,26 @@ data = {
         {
             "name": "Direct Mail Campaign",
             "code": "10064",
-            "description": "Sage 300 Project - Direct Mail Campaign, Id - 10064",
+            "description": "Project - Direct Mail Campaign, Id - 10064",
             "is_enabled": True,
         },
         {
             "name": "Platform APIs",
             "code": "10081",
-            "description": "Sage 300 Project - Platform APIs, Id - 10081",
+            "description": "Project - Platform APIs, Id - 10081",
             "is_enabled": True,
         },
     ],
     "create_fyle_project_payload_create_disable_case": [
         {
             "code": "10064",
-            "description": "Sage 300 Project - Direct Mail Campaign, Id - 10064",
+            "description": "Project - Direct Mail Campaign, Id - 10064",
             "is_enabled": True,
             "name": "Direct Mail Campaign",
         },
         {
             "code": "10081",
-            "description": "Sage 300 Project - Platform APIs, Id - 10081",
+            "description": "Project - Platform APIs, Id - 10081",
             "is_enabled": False,
             "name": "Platform APIs",
         },
@@ -563,14 +563,14 @@ data = {
         {
             "name": "Direct Mail Campaign",
             "code": "10064",
-            "description": "Sage 300 Project - Direct Mail Campaign, Id - 10064",
+            "description": "Project - Direct Mail Campaign, Id - 10064",
             "is_enabled": False,
             "id": "10064",
         },
         {
             "name": "Platform APIs",
             "code": "10081",
-            "description": "Sage 300 Project - Platform APIs, Id - 10081",
+            "description": "Project - Platform APIs, Id - 10081",
             "is_enabled": False,
             "id": "10081",
         },
@@ -8192,13 +8192,13 @@ data = {
         {
             'name': '123: CRE Platform',
             'code': '10065',
-            'description': 'Sage 300 Project - 123: CRE Platform, Id - 10065',
+            'description': 'Project - 123: CRE Platform, Id - 10065',
             'is_enabled': True
         },
         {
             'name': '123: Integrations CRE',
             'code': '10082',
-            'description': 'Sage 300 Project - 123: Integrations CRE, Id - 10082',
+            'description': 'Project - 123: Integrations CRE, Id - 10082',
             'is_enabled': True
         }
     ],

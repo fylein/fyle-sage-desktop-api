@@ -500,7 +500,7 @@ fixtures = {
         "mapping_settings": [
             {
                 "source_field": "CLASS",
-                "destination_field": "CUSTOMER",
+                "destination_field": "VENDOR",
                 "import_to_fyle": True,
                 "is_custom": True,
                 "source_placeholder": "class",

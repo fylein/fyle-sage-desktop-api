@@ -1,14 +1,16 @@
-from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
 from fyle_accounting_mappings.models import DestinationAttribute
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
+from fyle_integrations_imports.modules.expense_custom_fields import ExpenseCustomField
 
 
-def test_construct_custom_field_placeholder():
+def test_construct_custom_field_placeholder(mocker):
     expense_custom_fields = ExpenseCustomField(
         workspace_id=1,
         source_field="Vendor",
-        destination_field="Vendor",
-        sync_after="2024-01-01T00:00:00Z"
+        destination_field="VENDOR",
+        sync_after="2024-01-01T00:00:00Z",
+        sdk_connection=mocker.Mock(),
+        destination_sync_methods=['vendors'],
     )
 
     source_placeholder = "Source Placeholder"
@@ -55,11 +57,13 @@ def test_construct_fyle_expense_custom_field_payload(
         workspace_id=1,
         source_field="CUSTOM",
         destination_field="CUSTOM",
-        sync_after="2024-01-01T00:00:00Z"
+        sync_after="2024-01-01T00:00:00Z",
+        sdk_connection=mocker.Mock(),
+        destination_sync_methods=['vendors'],
     )
 
     sage300_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='CUSTOM')
-    platform = mocker.patch('apps.mappings.imports.modules.expense_custom_fields.PlatformConnector')
+    platform = mocker.patch('fyle_integrations_imports.modules.expense_custom_fields.PlatformConnector')
 
     mocker.patch.object(
         platform.return_value.expense_custom_fields,
@@ -87,10 +91,12 @@ def test_construct_payload_and_import_to_fyle(
         workspace_id=1,
         source_field="CUSTOM",
         destination_field="CUSTOM",
-        sync_after="2024-01-01T00:00:00Z"
+        sync_after="2024-01-01T00:00:00Z",
+        sdk_connection=mocker.Mock(),
+        destination_sync_methods=['vendors'],
     )
 
-    platform = mocker.patch('apps.mappings.imports.modules.expense_custom_fields.PlatformConnector')
+    platform = mocker.patch('fyle_integrations_imports.modules.expense_custom_fields.PlatformConnector')
     mocker.patch.object(
         expense_custom_fields,
         'post_to_fyle_and_sync',
@@ -120,10 +126,12 @@ def test_import_destination_attribute_to_fyle(
         workspace_id=1,
         source_field="CUSTOM",
         destination_field="CUSTOM",
-        sync_after="2024-01-01T00:00:00Z"
+        sync_after="2024-01-01T00:00:00Z",
+        sdk_connection=mocker.Mock(),
+        destination_sync_methods=['vendors'],
     )
 
-    mocker.patch('apps.mappings.imports.modules.expense_custom_fields.PlatformConnector')
+    mocker.patch('fyle_integrations_imports.modules.expense_custom_fields.PlatformConnector')
 
     mocker.patch.object(
         expense_custom_fields,
@@ -163,10 +171,12 @@ def test_post_to_fyle_and_sync(
         workspace_id=1,
         source_field="CUSTOM",
         destination_field="CUSTOM",
-        sync_after="2024-01-01T00:00:00Z"
+        sync_after="2024-01-01T00:00:00Z",
+        sdk_connection=mocker.Mock(),
+        destination_sync_methods=['vendors'],
     )
 
-    platform = mocker.patch('apps.mappings.imports.modules.expense_custom_fields.PlatformConnector')
+    platform = mocker.patch('fyle_integrations_imports.modules.expense_custom_fields.PlatformConnector')
     mocker.patch.object(
         platform.return_value,
         'post'

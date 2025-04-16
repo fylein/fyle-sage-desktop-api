@@ -11,9 +11,11 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
 import sys
+from logging.config import dictConfig
 
 import dj_database_url
 
+from sage_desktop_api.logging_middleware import WorkerIDFilter
 from sage_desktop_api.sentry import Sentry
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -52,6 +54,7 @@ INSTALLED_APPS = [
     'fyle_accounting_mappings',
     'fyle_accounting_library.fyle_platform',
     'fyle_accounting_library.rabbitmq',
+    'fyle_integrations_imports',
 
     # User Created Apps
     'apps.users',
@@ -122,68 +125,50 @@ SERVICE_NAME = os.environ.get('SERVICE_NAME')
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': True,
+    'disable_existing_loggers': False,
     'formatters': {
+        'standard': {
+            'format': '{levelname} %s {asctime} {name} {worker_id} {message}' % SERVICE_NAME, 'style': '{'
+        },
         'verbose': {
-            'format': '{levelname} %s {asctime} {module} {message} ' % SERVICE_NAME,
-            'style': '{',
+            'format': '{levelname} %s {asctime} {module} {message} ' % SERVICE_NAME, 'style': '{'
         },
         'requests': {
-            'format': 'request {levelname} %s {asctime} {message}' % SERVICE_NAME,
-            'style': '{'
+            'format': 'request {levelname} %s {asctime} {message}' % SERVICE_NAME, 'style': '{'
         }
     },
+    'filters': {
+        'worker_id': {
+            '()': WorkerIDFilter,
+        },
+    },
     'handlers': {
-        'debug_logs': {
+        'console': {
             'class': 'logging.StreamHandler',
-            'stream': sys.stdout,
-            'formatter': 'verbose'
+            'formatter': 'standard',
+            'filters': ['worker_id'],
         },
         'request_logs': {
             'class': 'logging.StreamHandler',
             'stream': sys.stdout,
             'formatter': 'requests'
         },
+        'debug_logs': {
+            'class': 'logging.StreamHandler',
+            'stream': sys.stdout,
+            'formatter': 'verbose'
+        }
     },
     'loggers': {
-        'django': {
-            'handlers': ['request_logs'],
-            'propagate': True,
-        },
-        'django.request': {
-            'handlers': ['request_logs'],
-            'propagate': False
-        },
-        'workers': {
-            'handlers': ['debug_logs'],
+        '': {
+            'handlers': ['console'],
             'level': 'INFO',
-            'propagate': True
         },
-        'fyle_sage_desktop_api': {
-            'handlers': ['debug_logs'],
-            'level': 'ERROR',
-            'propagate': False
-        },
-        'apps': {
-            'handlers': ['debug_logs'],
-            'level': 'ERROR',
-            'propagate': False
-        },
-         'django_q': {
-            'handlers': ['debug_logs'],
-            'propagate': True,
-        },
-        'fyle_integrations_platform_connector': {
-            'handlers': ['debug_logs'],
-            'propagate': True,
-        },
-        'gunicorn': {
-            'handlers': ['request_logs'],
-            'level': 'INFO',
-            'propagate': False
-        }
-    }
+        'django.request': {'handlers': ['request_logs'], 'propagate': False}
+    },
 }
+
+dictConfig(LOGGING)
 
 CACHES = {
     'default': {

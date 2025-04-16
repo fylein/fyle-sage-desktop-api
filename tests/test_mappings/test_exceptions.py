@@ -1,8 +1,8 @@
 from apps.mappings.exceptions import (
-    handle_import_exceptions
+    handle_import_exceptions_v2
 )
 from sage_desktop_sdk.exceptions import InvalidUserCredentials
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 from fyle.platform.exceptions import (
     WrongParamsError,
     RetryException,
@@ -11,7 +11,7 @@ from fyle.platform.exceptions import (
 )
 
 
-def test_handle_import_exceptions(
+def test_handle_import_exceptions_v2(
     db,
     create_temp_workspace,
     create_expense_attribute
@@ -24,7 +24,7 @@ def test_handle_import_exceptions(
         status='IN_PROGRESS'
     )
 
-    @handle_import_exceptions
+    @handle_import_exceptions_v2
     def test_func(expense_attribute_instance, import_log):
         raise WrongParamsError('Wrong Params Error')
 
@@ -36,7 +36,7 @@ def test_handle_import_exceptions(
     import_log.status = 'IN_PROGRESS'
     import_log.save()
 
-    @handle_import_exceptions
+    @handle_import_exceptions_v2
     def test_func(expense_attribute_instance, import_log):
         raise InvalidUserCredentials('Invalid Token')
 
@@ -48,7 +48,7 @@ def test_handle_import_exceptions(
     import_log.status = 'IN_PROGRESS'
     import_log.save()
 
-    @handle_import_exceptions
+    @handle_import_exceptions_v2
     def test_func(expense_attribute_instance, import_log):
         raise RetryException('Retry Exception')
 
@@ -60,7 +60,7 @@ def test_handle_import_exceptions(
     import_log.status = 'IN_PROGRESS'
     import_log.save()
 
-    @handle_import_exceptions
+    @handle_import_exceptions_v2
     def test_func(expense_attribute_instance, import_log):
         raise InternalServerError('Internal Server Error')
 
@@ -72,7 +72,7 @@ def test_handle_import_exceptions(
     import_log.status = 'IN_PROGRESS'
     import_log.save()
 
-    @handle_import_exceptions
+    @handle_import_exceptions_v2
     def test_func(expense_attribute_instance, import_log):
         raise Exception('Exception')
 
@@ -84,7 +84,7 @@ def test_handle_import_exceptions(
     import_log.status = 'IN_PROGRESS'
     import_log.save()
 
-    @handle_import_exceptions
+    @handle_import_exceptions_v2
     def test_func(expense_attribute_instance, import_log):
         raise FyleInvalidTokenError('Invalid Token for fyle')
 

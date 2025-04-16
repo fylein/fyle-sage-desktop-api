@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from apps.mappings.helpers import prepend_code_to_name, is_job_sync_allowed
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 
 
 def test_prepend_code_to_name():
@@ -22,7 +22,7 @@ def test_prepend_code_to_name():
 
 
 def test_is_job_sync_allowed(db, create_temp_workspace):
-    import_log = ImportLog.create('PROJECT', 1)
+    import_log = ImportLog.update_or_create_in_progress_import_log('PROJECT', 1)
 
     # Test case 1: import_log is None
     result = is_job_sync_allowed(None)

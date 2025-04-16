@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Dict, List
 from time import sleep
+
 from django.contrib.postgres.aggregates import JSONBAgg
 from django.contrib.postgres.fields import JSONField
 from django.db.models import F, Func, Value
@@ -13,8 +14,8 @@ from fyle.platform.exceptions import InvalidTokenError as FyleInvalidTokenError
 from apps.fyle.models import DependentFieldSetting
 from apps.sage300.models import CostCategory
 from apps.fyle.helpers import connect_to_platform
-from apps.mappings.models import ImportLog
-from apps.mappings.exceptions import handle_import_exceptions
+from fyle_integrations_imports.models import ImportLog
+from apps.mappings.exceptions import handle_import_exceptions_v2
 from apps.workspaces.models import ImportSetting
 from apps.mappings.helpers import prepend_code_to_name
 
@@ -74,7 +75,7 @@ def create_dependent_custom_field_in_fyle(workspace_id: int, fyle_attribute_type
     return platform.expense_custom_fields.post(expense_custom_field_payload)
 
 
-@handle_import_exceptions
+@handle_import_exceptions_v2
 def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict, is_enabled: bool = True) -> tuple[List[str], bool]:
     import_settings = ImportSetting.objects.filter(workspace_id=import_log.workspace.id).first()
     use_job_code_in_naming = False
@@ -157,7 +158,7 @@ def post_dependent_cost_code(import_log: ImportLog, dependent_field_setting: Dep
     return posted_cost_codes, is_errored
 
 
-@handle_import_exceptions
+@handle_import_exceptions_v2
 def post_dependent_cost_type(import_log: ImportLog, dependent_field_setting: DependentFieldSetting, platform: PlatformConnector, filters: Dict):
     import_settings = ImportSetting.objects.filter(workspace_id=import_log.workspace.id).first()
     use_cost_code_in_naming = False
@@ -279,7 +280,7 @@ def update_and_disable_cost_code(workspace_id: int, cost_codes_to_disable: Dict,
             'job_id__in':list(cost_codes_to_disable.keys()),
             'workspace_id': workspace_id
         }
-        cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
+        cost_code_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CODE', workspace_id)
         # This call will disable the cost codes in Fyle that has old project name
         posted_cost_codes, _ = post_dependent_cost_code(cost_code_import_log, dependent_field_setting, platform, filters, is_enabled=False)
 
