@@ -76,7 +76,7 @@ def test_import_expenses(db, create_temp_workspace, add_accounting_export_expens
     """
     Test import_expenses
     """
-    expenses_mock = mocker.patch(
+    mocker.patch(
         'fyle_integrations_platform_connector.apis.Expenses.get',
         return_value=data['expenses']
     )
