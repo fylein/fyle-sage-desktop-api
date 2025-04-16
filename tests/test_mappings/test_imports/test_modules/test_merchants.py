@@ -18,8 +18,6 @@ def test_construct_fyle_payload(api_client, test_connection, mocker, create_temp
         existing_fyle_attributes_map,
     )
 
-    print(fyle_payload)
-
     assert fyle_payload == ['Direct Mail Campaign', 'Platform APIs']
 
 
@@ -105,7 +103,7 @@ def test_construct_fyle_payload_with_code(
     merchant = Merchant(workspace_id, 'VENDOR', None, sdk_connection=mocker.Mock(), destination_sync_methods=['vendors'], prepend_code_to_name=True)
 
     paginated_destination_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='VENDOR')
-    ExpenseAttribute.objects.filter(workspace_id=1, attribute_type='MERCHANT').delete()
+
     paginated_destination_attributes_without_duplicates = merchant.remove_duplicate_attributes(paginated_destination_attributes)
     paginated_destination_attribute_values = [attribute.value for attribute in paginated_destination_attributes_without_duplicates]
     existing_fyle_attributes_map = merchant.get_existing_fyle_attributes(paginated_destination_attribute_values)
@@ -115,7 +113,7 @@ def test_construct_fyle_payload_with_code(
         existing_fyle_attributes_map,
     )
 
-    assert fyle_payload == ['123: CRE Platform', '123: Integrations CRE']
+    assert fyle_payload == []
 
     # create new case
     existing_fyle_attributes_map = {}

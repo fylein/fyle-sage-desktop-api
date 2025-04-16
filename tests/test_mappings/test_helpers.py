@@ -22,7 +22,7 @@ def test_prepend_code_to_name():
 
 
 def test_is_job_sync_allowed(db, create_temp_workspace):
-    import_log = ImportLog.create('PROJECT', 1)
+    import_log = ImportLog.update_or_create_in_progress_import_log('PROJECT', 1)
 
     # Test case 1: import_log is None
     result = is_job_sync_allowed(None)

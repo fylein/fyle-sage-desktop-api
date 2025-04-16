@@ -120,8 +120,8 @@ def sync_dependent_fields(workspace_id: int) -> None:
     :param workspace_id: Workspace ID
     :return: None
     """
-    cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
-    cost_category_import_log = ImportLog.create('COST_CATEGORY', workspace_id)
+    cost_code_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CODE', workspace_id)
+    cost_category_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CATEGORY', workspace_id)
     sync_sage300_attributes('JOB', workspace_id)
     sync_sage300_attributes('COST_CODE', workspace_id, cost_code_import_log)
     sync_sage300_attributes('COST_CATEGORY', workspace_id, cost_category_import_log)

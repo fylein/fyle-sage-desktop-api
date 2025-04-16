@@ -460,7 +460,7 @@ def test_sync_cost_categories(
         workspace_id=workspace_id
     )
 
-    cost_category_import_log = ImportLog.create('COST_CATEGORY', workspace_id)
+    cost_category_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CATEGORY', workspace_id)
 
     mock_category = [{
         "Id": 1,
@@ -510,7 +510,7 @@ def test_sync_cost_codes(
         workspace_id=workspace_id
     )
 
-    cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
+    cost_code_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CODE', workspace_id)
 
     Version.objects.update_or_create(
         workspace_id=workspace_id,

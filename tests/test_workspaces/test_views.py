@@ -315,7 +315,7 @@ def test_import_settings(mocker, api_client, test_connection, create_temp_worksp
     assert response['non_field_errors'] == ["Cannot change the code fields once they are imported"]
 
     # Test with categories import without code and then adding code
-    ImportLog.create('CATEGORY', 1)
+    ImportLog.update_or_create_in_progress_import_log('CATEGORY', 1)
 
     add_import_code_fields_payload = data['import_code_fields_payload']
     add_import_code_fields_payload['import_settings']['import_code_fields'] = ['ACCOUNT', 'JOB', 'VENDOR']
@@ -514,9 +514,9 @@ def test_import_code_field_view(db, mocker, create_temp_workspace, api_client, t
     url = reverse('import-code-fields-config', kwargs={'workspace_id': workspace_id})
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
 
-    vendor_log = ImportLog.create('MERCHANT', workspace_id)
-    account_log = ImportLog.create('CATEGORY', workspace_id)
-    job_log = ImportLog.create('PROJECT', workspace_id)
+    vendor_log = ImportLog.update_or_create_in_progress_import_log('MERCHANT', workspace_id)
+    account_log = ImportLog.update_or_create_in_progress_import_log('CATEGORY', workspace_id)
+    job_log = ImportLog.update_or_create_in_progress_import_log('PROJECT', workspace_id)
 
     with mocker.patch('django.db.models.signals.post_save.send'):
         # Create MappingSetting object with the signal mocked
