@@ -1,22 +1,25 @@
 import logging
 from datetime import timedelta, datetime, timezone
+
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from rest_framework.exceptions import ValidationError
-from fyle_accounting_mappings.models import MappingSetting, CategoryMapping, EmployeeMapping
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle.platform.exceptions import WrongParamsError
+from fyle_accounting_mappings.models import MappingSetting, CategoryMapping, EmployeeMapping
 
-from apps.mappings.imports.schedules import schedule_or_delete_fyle_import_tasks
-from apps.workspaces.models import ImportSetting
+from fyle_integrations_imports.models import ImportLog
+from fyle_integrations_imports.modules.expense_custom_fields import ExpenseCustomField
+
+from apps.mappings.constants import SYNC_METHODS
+from apps.sage300.utils import SageDesktopConnector
+from apps.mappings.schedules import schedule_or_delete_fyle_import_tasks
 from apps.accounting_exports.models import Error
-from apps.mappings.models import ImportLog
-from apps.workspaces.models import FyleCredential
-from apps.mappings.imports.modules.expense_custom_fields import ExpenseCustomField
-
+from apps.workspaces.models import ImportSetting, Sage300Credential, FyleCredential
 
 logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 @receiver(post_save, sender=MappingSetting)
@@ -28,13 +31,7 @@ def run_post_mapping_settings_triggers(sender, instance: MappingSetting, **kwarg
     """
     import_settings = ImportSetting.objects.filter(workspace_id=instance.workspace_id).first()
 
-    if instance.source_field == 'PROJECT':
-        schedule_or_delete_fyle_import_tasks(import_settings, instance)
-
-    if instance.source_field == 'COST_CENTER':
-        schedule_or_delete_fyle_import_tasks(import_settings, instance)
-
-    if instance.is_custom:
+    if instance.is_custom or instance.source_field in ['PROJECT', 'COST_CENTER']:
         schedule_or_delete_fyle_import_tasks(import_settings, instance)
 
 
@@ -82,13 +79,18 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
                     last_successful_run_at = offset_aware_time_difference
                     import_log.save()
 
+            sage_300_credentials = Sage300Credential.objects.get(workspace_id=workspace_id)
+            sage_300_connection = SageDesktopConnector(credentials_object=sage_300_credentials, workspace_id=workspace_id)
+
             # Creating the expense_custom_field object with the correct last_successful_run_at value
             expense_custom_field = ExpenseCustomField(
                 workspace_id=workspace_id,
                 source_field=instance.source_field,
                 destination_field=instance.destination_field,
                 sync_after=last_successful_run_at,
-                use_code_in_naming=prepend_code_to_name
+                prepend_code_to_name=prepend_code_to_name,
+                sdk_connection=sage_300_connection,
+                destination_sync_methods=[SYNC_METHODS[instance.destination_field]]
             )
 
             fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)

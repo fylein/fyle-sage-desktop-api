@@ -1,6 +1,6 @@
 from fyle_integrations_platform_connector import PlatformConnector
 
-from apps.mappings.imports.modules.base import Base
+from fyle_integrations_imports.modules.base import Base
 from apps.workspaces.models import FyleCredential
 
 
@@ -10,6 +10,8 @@ def get_base_class_instance(
     destination_field: str = "COST_CENTER",
     platform_class_name: str = "cost_centers",
     sync_after: str = None,
+    destination_sync_methods: list = None,
+    sdk_connection: str = 'sdk_connection'
 ):
 
     base = Base(
@@ -18,6 +20,8 @@ def get_base_class_instance(
         destination_field=destination_field,
         platform_class_name=platform_class_name,
         sync_after=sync_after,
+        sdk_connection=sdk_connection,
+        destination_sync_methods=destination_sync_methods
     )
 
     return base

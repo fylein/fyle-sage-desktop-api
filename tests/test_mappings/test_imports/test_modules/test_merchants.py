@@ -1,22 +1,21 @@
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 from apps.workspaces.models import ImportSetting
-from apps.mappings.imports.modules.merchants import Merchant, disable_merchants
+from fyle_integrations_imports.modules.merchants import Merchant, disable_merchants
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
 
 
 def test_construct_fyle_payload(api_client, test_connection, mocker, create_temp_workspace, add_sage300_creds, add_fyle_credentials, add_merchant_mappings):
-    merchant = Merchant(1, 'MERCHANT', None)
+    workspace_id = 1
+    merchant = Merchant(workspace_id, 'MERCHANT', None, sdk_connection=mocker.Mock(), destination_sync_methods=['vendors'])
 
     # create new case
     paginated_destination_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='MERCHANT')
 
     existing_fyle_attributes_map = {}
-    is_auto_sync_status_allowed = merchant.get_auto_sync_permission()
 
     fyle_payload = merchant.construct_fyle_payload(
         paginated_destination_attributes,
         existing_fyle_attributes_map,
-        is_auto_sync_status_allowed
     )
 
     assert fyle_payload == ['Direct Mail Campaign', 'Platform APIs']
@@ -30,10 +29,10 @@ def test_import_destination_attribute_to_fyle(
 ):
     workspace_id = 1
 
-    merchant = Merchant(workspace_id, 'MERCHANT', None)
+    merchant = Merchant(workspace_id, 'MERCHANT', None, sdk_connection=mocker.Mock(), destination_sync_methods=['vendors'])
 
     mocker.patch(
-        'apps.mappings.imports.modules.merchants.PlatformConnector'
+        'fyle_integrations_imports.modules.merchants.PlatformConnector'
     )
 
     mocker.patch.object(
@@ -68,11 +67,13 @@ def test_import_destination_attribute_to_fyle(
 
 def test_get_existing_fyle_attributes(
     db,
+    mocker,
     create_temp_workspace,
     add_merchant_mappings,
     add_import_settings
 ):
-    merchant = Merchant(1, 'VENDOR', None)
+    workspace_id = 1
+    merchant = Merchant(workspace_id, 'VENDOR', None, sdk_connection=mocker.Mock(), destination_sync_methods=['vendors'])
 
     paginated_destination_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='VENDOR')
     paginated_destination_attributes_without_duplicates = merchant.remove_duplicate_attributes(paginated_destination_attributes)
@@ -82,7 +83,7 @@ def test_get_existing_fyle_attributes(
     assert existing_fyle_attributes_map == {}
 
     # with code prepending
-    merchant.use_code_in_naming = True
+    merchant = Merchant(workspace_id, 'VENDOR', None, sdk_connection=mocker.Mock(), destination_sync_methods=['vendors'], prepend_code_to_name=True)
     paginated_destination_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='VENDOR', code__isnull=False)
     paginated_destination_attributes_without_duplicates = merchant.remove_duplicate_attributes(paginated_destination_attributes)
     paginated_destination_attribute_values = [attribute.value for attribute in paginated_destination_attributes_without_duplicates]
@@ -93,22 +94,23 @@ def test_get_existing_fyle_attributes(
 
 def test_construct_fyle_payload_with_code(
     db,
+    mocker,
     create_temp_workspace,
     add_merchant_mappings,
     add_import_settings
 ):
-    merchant = Merchant(1, 'VENDOR', None, True)
+    workspace_id = 1
+    merchant = Merchant(workspace_id, 'VENDOR', None, sdk_connection=mocker.Mock(), destination_sync_methods=['vendors'], prepend_code_to_name=True)
 
     paginated_destination_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='VENDOR')
+
     paginated_destination_attributes_without_duplicates = merchant.remove_duplicate_attributes(paginated_destination_attributes)
     paginated_destination_attribute_values = [attribute.value for attribute in paginated_destination_attributes_without_duplicates]
     existing_fyle_attributes_map = merchant.get_existing_fyle_attributes(paginated_destination_attribute_values)
-
     # already exists
     fyle_payload = merchant.construct_fyle_payload(
         paginated_destination_attributes,
         existing_fyle_attributes_map,
-        True
     )
 
     assert fyle_payload == []
@@ -118,7 +120,6 @@ def test_construct_fyle_payload_with_code(
     fyle_payload = merchant.construct_fyle_payload(
         paginated_destination_attributes,
         existing_fyle_attributes_map,
-        True
     )
 
     assert fyle_payload == ['123: CRE Platform', '123: Integrations CRE']
@@ -152,7 +153,7 @@ def test_disable_merchants(
         active=True
     )
 
-    mock_platform = mocker.patch('apps.mappings.imports.modules.merchants.PlatformConnector')
+    mock_platform = mocker.patch('fyle_integrations_imports.modules.merchants.PlatformConnector')
     bulk_post_call = mocker.patch.object(mock_platform.return_value.merchants, 'post')
 
     disable_merchants(workspace_id, merchants_to_disable, is_import_to_fyle_enabled=True)

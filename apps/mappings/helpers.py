@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 
 
 def prepend_code_to_name(prepend_code_in_name: bool, value: str, code: str = None) -> str:

@@ -43,3 +43,9 @@ FYLE_EXPENSE_SYSTEM_FIELDS = [
     'paid date',
     'expense created date'
 ]
+
+SYNC_METHODS = {
+    'ACCOUNT': 'accounts',
+    'VENDOR': 'vendors',
+    'JOB': 'jobs'
+}

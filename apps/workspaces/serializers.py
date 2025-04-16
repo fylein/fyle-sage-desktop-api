@@ -1,19 +1,18 @@
-"""
-Workspace Serializers
-"""
 import logging
 
-from django.conf import settings
+from django.db.models import Q
+from django.db import transaction
 from django.core.cache import cache
+from django.conf import settings
 from django_q.tasks import async_task
-
 from rest_framework import serializers
-from fyle_accounting_mappings.models import MappingSetting
+
 from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
-from fyle_accounting_mappings.models import ExpenseAttribute
-from django.db import transaction
-from django.db.models import Q
+from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
+
+
+from fyle_integrations_imports.models import ImportLog
 
 from apps.fyle.models import DependentFieldSetting
 from sage_desktop_api.utils import assert_valid
@@ -34,7 +33,7 @@ from apps.workspaces.models import (
     AdvancedSetting
 )
 from apps.accounting_exports.models import AccountingExportSummary
-from apps.mappings.models import Version, ImportLog
+from apps.mappings.models import Version
 from apps.users.models import User
 from apps.fyle.helpers import get_cluster_domain
 from apps.workspaces.triggers import ImportSettingsTrigger, AdvancedSettingsTriggers
