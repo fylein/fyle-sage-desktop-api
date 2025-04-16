@@ -75,6 +75,7 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
     :param body: body
     :return: None
     """
+    logger.info('Received webhook callback for workspace_id: {}, payload: {}'.format(workspace_id, body))
     rabbitmq = RabbitMQConnection.get_instance('sage_desktop_exchange')
     if body.get('action') in ('ADMIN_APPROVED', 'APPROVED', 'STATE_CHANGE_PAYMENT_PROCESSING', 'PAID') and body.get('data'):
         report_id = body['data']['id']
@@ -103,6 +104,5 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
 
     elif body.get('action') == 'UPDATED_AFTER_APPROVAL' and body.get('data') and body.get('resource') == 'EXPENSE':
         org_id = body['data']['org_id']
-        logger.info("| Updating non-exported expenses through webhook | Content: {{WORKSPACE_ID: {} Payload: {}}}".format(workspace_id, body.get('data')))
         assert_valid_request(workspace_id=workspace_id, org_id=org_id)
         async_task('apps.fyle.tasks.update_non_exported_expenses', body['data'])

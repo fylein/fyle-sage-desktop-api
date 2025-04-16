@@ -20,7 +20,7 @@ class StringNullField(models.CharField):
         kwargs['max_length'] = kwargs.get('max_length', 255)
         kwargs['null'] = True  # Allow the field to be nullable
         kwargs['help_text'] = kwargs.get('help_text', 'string field with null True')
-        super(StringNullField, self).__init__(choices=choices, *args, **kwargs)
+        super(StringNullField, self).__init__(*args, choices=choices, **kwargs)
 
 
 class IntegerNullField(models.IntegerField):
