@@ -11,7 +11,7 @@ from apps.workspaces.models import (
     ExportSetting,
     AdvancedSetting
 )
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 from tests.helper import dict_compare_keys
 from tests.test_fyle.fixtures import fixtures as data
 
@@ -193,7 +193,7 @@ def test_export_settings(api_client, test_connection):
     assert export_settings.default_vendor_id == '123'
 
 
-def test_import_settings(mocker, api_client, test_connection, create_temp_workspace, add_fyle_credentials):
+def test_import_settings(mocker, api_client, test_connection, create_temp_workspace, add_sage300_creds, add_fyle_credentials):
     mocker.patch(
         'fyle_integrations_platform_connector.apis.ExpenseCustomFields.get_by_id',
         return_value={
@@ -201,6 +201,10 @@ def test_import_settings(mocker, api_client, test_connection, create_temp_worksp
             'updated_at': '2020-06-11T13:14:55.201598+00:00',
             'is_mandatory': False
         }
+    )
+    mocker.patch(
+        'apps.sage300.utils.SageDesktopConnector.__init__',
+        return_value=None
     )
     mocker.patch(
         'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
@@ -258,11 +262,11 @@ def test_import_settings(mocker, api_client, test_connection, create_temp_worksp
     assert mapping.import_to_fyle == True
 
     schedule = Schedule.objects.filter(
-        func='apps.mappings.imports.queues.chain_import_fields_to_fyle',
+        func='apps.mappings.tasks.construct_tasks_and_chain_import_fields_to_fyle',
         args='{}'.format(1),
     ).first()
 
-    assert schedule.func == 'apps.mappings.imports.queues.chain_import_fields_to_fyle'
+    assert schedule.func == 'apps.mappings.tasks.construct_tasks_and_chain_import_fields_to_fyle'
     assert schedule.args == '1'
 
     invalid_configurations = data['import_settings_payload']
@@ -311,7 +315,7 @@ def test_import_settings(mocker, api_client, test_connection, create_temp_worksp
     assert response['non_field_errors'] == ["Cannot change the code fields once they are imported"]
 
     # Test with categories import without code and then adding code
-    ImportLog.create('CATEGORY', 1)
+    ImportLog.update_or_create_in_progress_import_log('CATEGORY', 1)
 
     add_import_code_fields_payload = data['import_code_fields_payload']
     add_import_code_fields_payload['import_settings']['import_code_fields'] = ['ACCOUNT', 'JOB', 'VENDOR']
@@ -510,9 +514,9 @@ def test_import_code_field_view(db, mocker, create_temp_workspace, api_client, t
     url = reverse('import-code-fields-config', kwargs={'workspace_id': workspace_id})
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
 
-    vendor_log = ImportLog.create('MERCHANT', workspace_id)
-    account_log = ImportLog.create('CATEGORY', workspace_id)
-    job_log = ImportLog.create('PROJECT', workspace_id)
+    vendor_log = ImportLog.update_or_create_in_progress_import_log('MERCHANT', workspace_id)
+    account_log = ImportLog.update_or_create_in_progress_import_log('CATEGORY', workspace_id)
+    job_log = ImportLog.update_or_create_in_progress_import_log('PROJECT', workspace_id)
 
     with mocker.patch('django.db.models.signals.post_save.send'):
         # Create MappingSetting object with the signal mocked

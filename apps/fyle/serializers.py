@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from apps.workspaces.models import Workspace, FyleCredential
 from apps.fyle.models import ExpenseFilter, DependentFieldSetting
 from apps.fyle.helpers import get_expense_fields
-from apps.mappings.imports.queues import chain_import_fields_to_fyle
+from apps.mappings.tasks import construct_tasks_and_chain_import_fields_to_fyle
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -39,7 +39,7 @@ class ImportFyleAttributesSerializer(serializers.Serializer):
             platform = PlatformConnector(fyle_credentials)
 
             if refresh:
-                chain_import_fields_to_fyle(workspace_id=workspace_id)
+                construct_tasks_and_chain_import_fields_to_fyle(workspace_id=workspace_id)
                 platform.import_fyle_dimensions()
                 workspace.source_synced_at = datetime.now()
                 workspace.save(update_fields=['source_synced_at'])

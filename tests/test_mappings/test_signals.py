@@ -17,7 +17,7 @@ from fyle_accounting_mappings.models import (
 
 from apps.workspaces.models import ImportSetting
 from apps.accounting_exports.models import Error
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 from .fixtures import data as fyle_data
 
 
@@ -79,6 +79,11 @@ def test_run_post_mapping_settings_triggers(
     add_export_settings
 ):
     mocker.patch(
+        'apps.sage300.utils.SageDesktopConnector.__init__',
+        return_value=None
+    )
+
+    mocker.patch(
         'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
         return_value=[]
     )
@@ -103,11 +108,11 @@ def test_run_post_mapping_settings_triggers(
     mapping_setting.save()
 
     schedule = Schedule.objects.filter(
-        func='apps.mappings.imports.queues.chain_import_fields_to_fyle',
+        func='apps.mappings.tasks.construct_tasks_and_chain_import_fields_to_fyle',
         args='{}'.format(workspace_id),
     ).first()
 
-    assert schedule.func == 'apps.mappings.imports.queues.chain_import_fields_to_fyle'
+    assert schedule.func == 'apps.mappings.tasks.construct_tasks_and_chain_import_fields_to_fyle'
     assert schedule.args == '1'
 
     mapping_setting = MappingSetting(
@@ -120,16 +125,16 @@ def test_run_post_mapping_settings_triggers(
     mapping_setting.save()
 
     schedule = Schedule.objects.filter(
-        func='apps.mappings.imports.queues.chain_import_fields_to_fyle',
+        func='apps.mappings.tasks.construct_tasks_and_chain_import_fields_to_fyle',
         args='{}'.format(workspace_id),
     ).first()
 
-    assert schedule.func == 'apps.mappings.imports.queues.chain_import_fields_to_fyle'
+    assert schedule.func == 'apps.mappings.tasks.construct_tasks_and_chain_import_fields_to_fyle'
     assert schedule.args == '1'
 
     mapping_setting = MappingSetting(
         source_field='SAMPLEs',
-        destination_field='SAMPLEs',
+        destination_field='JOB',
         workspace_id=workspace_id,
         import_to_fyle=True,
         is_custom=True
@@ -137,11 +142,11 @@ def test_run_post_mapping_settings_triggers(
     mapping_setting.save()
 
     schedule = Schedule.objects.filter(
-        func='apps.mappings.imports.queues.chain_import_fields_to_fyle',
+        func='apps.mappings.tasks.construct_tasks_and_chain_import_fields_to_fyle',
         args='{}'.format(workspace_id),
     ).first()
 
-    assert schedule.func == 'apps.mappings.imports.queues.chain_import_fields_to_fyle'
+    assert schedule.func == 'apps.mappings.tasks.construct_tasks_and_chain_import_fields_to_fyle'
     assert schedule.args == '1'
 
     mapping_setting = MappingSetting.objects.filter(
@@ -155,7 +160,7 @@ def test_run_post_mapping_settings_triggers(
 
     mapping_setting = MappingSetting(
         source_field='LOLOOO',
-        destination_field='HEHEHE',
+        destination_field='JOB',
         workspace_id=workspace_id,
         import_to_fyle=True,
         is_custom=False
@@ -182,6 +187,11 @@ def test_run_pre_mapping_settings_triggers(
     add_export_settings
 ):
     mocker.patch(
+        'apps.sage300.utils.SageDesktopConnector.__init__',
+        return_value=None
+    )
+
+    mocker.patch(
         'fyle_integrations_platform_connector.apis.ExpenseCustomFields.post',
         return_value=[]
     )
@@ -198,7 +208,7 @@ def test_run_pre_mapping_settings_triggers(
     try:
         mapping_setting = MappingSetting.objects.create(
             source_field='CUSTOM_INTENTS',
-            destination_field='CUSTOM_INTENTS',
+            destination_field='JOB',
             workspace_id=workspace_id,
             import_to_fyle=True,
             is_custom=True
