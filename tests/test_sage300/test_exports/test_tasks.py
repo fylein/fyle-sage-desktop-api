@@ -1,3 +1,5 @@
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
 from apps.accounting_exports.models import AccountingExport
 from apps.sage300.exports.direct_cost.models import DirectCost
 from apps.sage300.exports.direct_cost.tasks import ExportDirectCost, create_direct_cost
@@ -16,7 +18,7 @@ def test_trigger_export_purchase_invoice(db, mocker):
     )
 
     export_purchase_invoice = ExportPurchaseInvoice()
-    export_purchase_invoice.trigger_export(1, [1], False, 0)
+    export_purchase_invoice.trigger_export(1, [1], False, 0, ExpenseImportSourceEnum.DIRECT_EXPORT)
 
     assert True
 
@@ -150,7 +152,7 @@ def test_trigger_export_direct_cost(db, mocker):
     )
 
     export_direct_cost = ExportDirectCost()
-    export_direct_cost.trigger_export(1, [1], False, 0)
+    export_direct_cost.trigger_export(1, [1], False, 0, ExpenseImportSourceEnum.DIRECT_EXPORT)
 
     assert True
 

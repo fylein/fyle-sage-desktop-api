@@ -2,6 +2,8 @@ from datetime import datetime
 
 from django_q.models import Schedule
 
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.exports.direct_cost.queues import (
     check_accounting_export_and_start_import as check_accounting_export_and_start_import_direct_cost,
@@ -162,7 +164,8 @@ def test_check_accounting_export_and_start_import_purchase_invoice(
         accounting_export.workspace_id,
         [accounting_export.id],
         False,
-        0
+        0,
+        ExpenseImportSourceEnum.DIRECT_EXPORT
     )
 
     accounting_export.refresh_from_db()
@@ -177,7 +180,8 @@ def test_check_accounting_export_and_start_import_purchase_invoice(
         accounting_export.workspace_id,
         [accounting_export.id],
         False,
-        0
+        0,
+        ExpenseImportSourceEnum.DIRECT_EXPORT
     )
 
     accounting_export.refresh_from_db()
@@ -235,7 +239,8 @@ def test_check_accounting_export_and_start_import_direct_cost(
         accounting_export.workspace_id,
         [accounting_export.id],
         False,
-        0
+        0,
+        ExpenseImportSourceEnum.DIRECT_EXPORT
     )
 
     accounting_export.refresh_from_db()
@@ -250,7 +255,8 @@ def test_check_accounting_export_and_start_import_direct_cost(
         accounting_export.workspace_id,
         [accounting_export.id],
         False,
-        0
+        0,
+        ExpenseImportSourceEnum.DIRECT_EXPORT
     )
 
     accounting_export.refresh_from_db()
@@ -319,7 +325,8 @@ def test_skipping_purchase_invoice(
         accounting_export.workspace_id,
         [accounting_export.id],
         True,
-        1
+        1,
+        ExpenseImportSourceEnum.DIRECT_EXPORT
     )
     accounting_export.refresh_from_db()
     assert accounting_export.status == ''
@@ -331,7 +338,8 @@ def test_skipping_purchase_invoice(
         accounting_export.workspace_id,
         [accounting_export.id],
         True,
-        1
+        1,
+        ExpenseImportSourceEnum.DIRECT_EXPORT
     )
     accounting_export.refresh_from_db()
 
@@ -375,7 +383,8 @@ def test_skipping_direct_cost(
         accounting_export.workspace_id,
         [accounting_export.id],
         True,
-        1
+        1,
+        ExpenseImportSourceEnum.DIRECT_EXPORT
     )
 
     accounting_export.refresh_from_db()
@@ -389,7 +398,8 @@ def test_skipping_direct_cost(
         accounting_export.workspace_id,
         [accounting_export.id],
         True,
-        1
+        1,
+        ExpenseImportSourceEnum.DIRECT_EXPORT
     )
 
     accounting_export.refresh_from_db()

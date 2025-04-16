@@ -332,7 +332,8 @@ fixtures = {
                 "exported_at":"None",
                 "workspace":1,
                 "export_id": 123,
-                "expenses":[]
+                "expenses":[],
+                "triggered_by": None
             },
             {
                 "id":1,
@@ -349,7 +350,8 @@ fixtures = {
                 "exported_at":"None",
                 "export_id": 123,
                 "workspace":1,
-                "expenses":[]
+                "expenses":[],
+                "triggered_by": None
             }
         ]
     },
