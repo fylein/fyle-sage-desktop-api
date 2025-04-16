@@ -1,5 +1,4 @@
 from fyle_accounting_mappings.models import MappingSetting
-from fyle_integrations_imports.models import ImportLog
 from apps.mappings.tasks import sync_dependent_fields, sync_sage300_attributes, construct_tasks_and_chain_import_fields_to_fyle
 
 
