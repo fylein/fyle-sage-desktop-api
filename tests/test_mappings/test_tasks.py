@@ -1,3 +1,4 @@
+from apps.workspaces.models import ImportSetting
 from fyle_accounting_mappings.models import MappingSetting
 from apps.mappings.tasks import sync_dependent_fields, sync_sage300_attributes, construct_tasks_and_chain_import_fields_to_fyle
 
@@ -54,6 +55,10 @@ def test_construct_tasks_and_chain_import_fields_to_fyle(db, mocker, create_temp
     Test construct tasks and chain import fields to fyle
     """
     workspace_id = 1
+    ImportSetting.objects.filter(workspace_id=workspace_id).update(
+        import_categories=True,
+        import_vendors_as_merchants=True
+    )
     MappingSetting.objects.create(
         source_field='PROJECT',
         destination_field='JOB',
