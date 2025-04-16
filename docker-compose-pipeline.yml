@@ -13,6 +13,7 @@ services:
     - ./:/fyle-sage-desktop-api
     depends_on:
     - db
+    - rabbitmq
     environment: 
       SECRET_KEY: thisisthedjangosecretkey
       ALLOWED_HOSTS: "*"
@@ -37,6 +38,7 @@ services:
       DB_PORT: 5432
       SD_API_KEY: 23234
       SD_API_SECRET: 12312
+      RABBITMQ_URL: amqp://admin:password@rabbitmq:5673/?heartbeat=0
   db:
     image: "postgres:15"
     environment: 
@@ -47,5 +49,15 @@ services:
       - data:/var/lib/postgresql/data/
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
+  rabbitmq:
+    image: rabbitmq:3.8.9-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+    ports:
+      - '5673:5673'
+    volumes:
+      - rabbitmq-data:/data/
 volumes:
   data:
+  rabbitmq-data:

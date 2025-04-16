@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
 import sys
+from logging.config import dictConfig
 
 import dj_database_url
 
@@ -50,6 +51,8 @@ INSTALLED_APPS = [
     'fyle_rest_auth',
     'django_filters',
     'fyle_accounting_mappings',
+    'fyle_accounting_library.fyle_platform',
+    'fyle_accounting_library.rabbitmq',
 
     # User Created Apps
     'apps.users',
@@ -144,39 +147,15 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['request_logs'],
-            'propagate': True,
-        },
-        'django.request': {
-            'handlers': ['request_logs'],
-            'propagate': False
-        },
-        'fyle_sage_desktop_api': {
-            'handlers': ['debug_logs'],
-            'level': 'ERROR',
-            'propagate': False
-        },
-        'apps': {
-            'handlers': ['debug_logs'],
-            'level': 'ERROR',
-            'propagate': False
-        },
-         'django_q': {
-            'handlers': ['debug_logs'],
-            'propagate': True,
-        },
-        'fyle_integrations_platform_connector': {
-            'handlers': ['debug_logs'],
-            'propagate': True,
-        },
-        'gunicorn': {
-            'handlers': ['request_logs'],
+        '': {
+            'handlers': ['console'],
             'level': 'INFO',
-            'propagate': False
-        }
-    }
+        },
+        'django.request': {'handlers': ['request_logs'], 'propagate': False}
+    },
 }
+
+dictConfig(LOGGING)
 
 CACHES = {
     'default': {

@@ -3,6 +3,9 @@ from typing import List, Dict
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
+from fyle_accounting_library.fyle_platform.constants import IMPORTED_FROM_CHOICES
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
 from sage_desktop_api.models.fields import (
     StringNotNullField,
     StringNullField,
@@ -94,6 +97,7 @@ class Expense(BaseForeignWorkspaceModel):
     corporate_card_id = StringNullField(help_text='Corporate Card ID')
     purpose = models.TextField(null=True, blank=True, help_text='Purpose')
     report_id = StringNotNullField(help_text='Report ID')
+    imported_from = StringNullField(choices=IMPORTED_FROM_CHOICES, max_length=255, help_text='Imported from source')
     billable = BooleanFalseField(help_text='Expense billable or not')
     file_ids = ArrayField(base_field=models.CharField(max_length=255), null=True, help_text='File IDs')
     spent_at = CustomDateTimeField(help_text='Expense spent at')
@@ -117,7 +121,7 @@ class Expense(BaseForeignWorkspaceModel):
         db_table = 'expenses'
 
     @staticmethod
-    def create_expense_objects(expenses: List[Dict], workspace_id: int, skip_update: bool = False):
+    def create_expense_objects(expenses: List[Dict], workspace_id: int, skip_update: bool = False, imported_from: ExpenseImportSourceEnum = None):
         """
         Bulk create expense objects
         """
@@ -177,10 +181,16 @@ class Expense(BaseForeignWorkspaceModel):
                 defaults.update(expense_data_to_append)
 
             # Create or update an Expense object based on expense_id
-            expense_object, _ = Expense.objects.update_or_create(
+            expense_object, created = Expense.objects.update_or_create(
                 expense_id=expense['id'],
                 defaults=defaults
             )
+            # Only set imported_from for newly created expenses
+            if created and imported_from:
+                expense_object.imported_from = imported_from
+                expense_object.save(
+                    update_fields=['imported_from']
+                )
 
             # Check if an AccountingExport related to the expense object already exists
             if not expense_object.accountingexport_set.exists():
