@@ -1,16 +1,16 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 from django.conf import settings
 from django.db.models import Q
-
-from fyle_accounting_mappings.models import MappingSetting
+from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
 
 from apps.fyle.helpers import post_request
 from apps.mappings.schedules import schedule_or_delete_fyle_import_tasks
-from apps.workspaces.models import FyleCredential, ImportSetting, Workspace, AdvancedSetting
+from apps.workspaces.models import AdvancedSetting, FyleCredential, ImportSetting, Workspace
 from apps.workspaces.tasks import schedule_sync
+from fyle_integrations_imports.models import ImportLog
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -23,6 +23,62 @@ class ImportSettingsTrigger:
     def __init__(self, mapping_settings: List[Dict], workspace_id):
         self.__mapping_settings = mapping_settings
         self.__workspace_id = workspace_id
+
+    def __unset_auto_mapped_flag(self, current_mapping_settings: list[MappingSetting], new_mappings_settings: list[dict]) -> None:
+        """
+        Set the auto_mapped flag to false for the expense_attributes for the attributes
+        whose mapping is changed.
+        """
+        changed_source_fields = []
+
+        for new_setting in new_mappings_settings:
+            destination_field = new_setting['destination_field']
+            source_field = new_setting['source_field']
+            current_setting = current_mapping_settings.filter(destination_field=destination_field).first()
+            if current_setting and current_setting.source_field != source_field:
+                changed_source_fields.append(current_setting.source_field)
+
+        ExpenseAttribute.objects.filter(workspace_id=self.__workspace_id, attribute_type__in=changed_source_fields).update(auto_mapped=False)
+
+    def __reset_import_log_timestamp(
+            self,
+            current_mapping_settings: List[MappingSetting],
+            new_mappings_settings: List[Dict],
+            workspace_id: int
+    ) -> None:
+        """
+        Reset Import logs when mapping settings are deleted or the source_field is changed.
+        """
+        changed_source_fields = set()
+
+        for new_setting in new_mappings_settings:
+            destination_field = new_setting['destination_field']
+            source_field = new_setting['source_field']
+            current_setting = current_mapping_settings.filter(source_field=source_field).first()
+            if current_setting and current_setting.destination_field != destination_field:
+                changed_source_fields.add(source_field)
+
+        current_source_fields = set(mapping_setting.source_field for mapping_setting in current_mapping_settings)
+        new_source_fields = set(mapping_setting['source_field'] for mapping_setting in new_mappings_settings)
+        deleted_source_fields = current_source_fields.difference(new_source_fields | {'CORPORATE_CARD', 'CATEGORY'})
+
+        reset_source_fields = changed_source_fields.union(deleted_source_fields)
+
+        ImportLog.objects.filter(workspace_id=workspace_id, attribute_type__in=reset_source_fields).update(last_successful_run_at=None, updated_at=datetime.now(timezone.utc))
+
+    def pre_save_mapping_settings(self) -> None:
+        """
+        Pre save action for mapping settings
+        """
+        mapping_settings = self.__mapping_settings
+
+        current_mapping_settings = MappingSetting.objects.filter(workspace_id=self.__workspace_id).all()
+        self.__unset_auto_mapped_flag(current_mapping_settings, mapping_settings)
+        self.__reset_import_log_timestamp(
+            current_mapping_settings=current_mapping_settings,
+            new_mappings_settings=mapping_settings,
+            workspace_id=self.__workspace_id
+        )
 
     def post_save_mapping_settings(self):
         """
