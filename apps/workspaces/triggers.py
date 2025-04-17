@@ -7,10 +7,10 @@ from django.db.models import Q
 from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
 
 from apps.fyle.helpers import post_request
-from apps.mappings.models import ImportLog
 from apps.mappings.schedules import schedule_or_delete_fyle_import_tasks
 from apps.workspaces.models import AdvancedSetting, FyleCredential, ImportSetting, Workspace
 from apps.workspaces.tasks import schedule_sync
+from fyle_integrations_imports.models import ImportLog
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
