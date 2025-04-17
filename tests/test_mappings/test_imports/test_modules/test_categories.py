@@ -1,32 +1,30 @@
 from apps.workspaces.models import ImportSetting
-from apps.mappings.imports.modules.categories import Category, disable_categories
 from fyle_accounting_mappings.models import CategoryMapping, DestinationAttribute, ExpenseAttribute
+from fyle_integrations_imports.modules.categories import Category, disable_categories
 from tests.test_mappings.test_imports.test_modules.fixtures import data as destination_attributes_data
 from .fixtures import data
 
 
 def test_construct_fyle_payload(
     api_client,
+    mocker,
     test_connection,
     create_temp_workspace,
     add_fyle_credentials,
     add_sage300_creds,
     add_expense_destination_attributes_1,
-    mocker,
 ):
-    category = Category(1, "ACCOUNT", None)
+    category = Category(1, "ACCOUNT", None, sdk_connection=mocker.Mock(), destination_sync_methods=['accounts'], is_auto_sync_enabled=True, is_3d_mapping=False, charts_of_accounts=None)
 
     # create new case
     paginated_destination_attributes = DestinationAttribute.objects.filter(
         workspace_id=1, attribute_type="ACCOUNT"
     )
     existing_fyle_attributes_map = {}
-    is_auto_sync_status_allowed = category.get_auto_sync_permission()
 
     fyle_payload = category.construct_fyle_payload(
         paginated_destination_attributes,
         existing_fyle_attributes_map,
-        is_auto_sync_status_allowed,
     )
 
     assert (
@@ -57,7 +55,6 @@ def test_construct_fyle_payload(
     fyle_payload = category.construct_fyle_payload(
         paginated_destination_attributes,
         existing_fyle_attributes_map,
-        is_auto_sync_status_allowed,
     )
 
     assert (
@@ -70,14 +67,19 @@ def test_construct_fyle_payload(
 
 def test_create_mappings(
     db,
+    mocker,
     create_temp_workspace,
     add_expense_destination_attributes_1
 ):
     workspace_id = 1
 
-    category = Category(workspace_id, "ACCOUNT", None)
+    category = Category(1, "ACCOUNT", None, sdk_connection=mocker.Mock(), destination_sync_methods=['accounts'], is_auto_sync_enabled=True, is_3d_mapping=False, charts_of_accounts=None, use_mapping_table=False)
 
-    category.create_mappings()
+    attributes = DestinationAttribute.objects.filter(
+        workspace_id=workspace_id, attribute_type="ACCOUNT",
+        value__in=["Internet", "Meals"]
+    )
+    category.create_mappings(posted_destination_attributes=attributes)
 
     category_mappings = CategoryMapping.objects.filter(workspace_id=workspace_id)
 
@@ -88,12 +90,13 @@ def test_create_mappings(
 
 def test_get_existing_fyle_attributes(
     db,
+    mocker,
     create_temp_workspace,
     add_expense_destination_attributes_1,
     add_expense_destination_attributes_3,
     add_import_settings
 ):
-    category = Category(1, 'ACCOUNT', None)
+    category = Category(1, "ACCOUNT", None, sdk_connection=mocker.Mock(), destination_sync_methods=['accounts'], is_auto_sync_enabled=True, is_3d_mapping=False, charts_of_accounts=None)
 
     paginated_destination_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT')
     paginated_destination_attributes_without_duplicates = category.remove_duplicate_attributes(paginated_destination_attributes)
@@ -103,7 +106,7 @@ def test_get_existing_fyle_attributes(
     assert existing_fyle_attributes_map == {'internet': '10091', 'meals': '10092'}
 
     # with code prepending
-    category.use_code_in_naming = True
+    category = Category(1, "ACCOUNT", None, sdk_connection=mocker.Mock(), destination_sync_methods=['accounts'], is_auto_sync_enabled=True, prepend_code_to_name=True, is_3d_mapping=False, charts_of_accounts=None)
     paginated_destination_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT', code__isnull=False)
     paginated_destination_attributes_without_duplicates = category.remove_duplicate_attributes(paginated_destination_attributes)
     paginated_destination_attribute_values = [attribute.value for attribute in paginated_destination_attributes_without_duplicates]
@@ -114,12 +117,13 @@ def test_get_existing_fyle_attributes(
 
 def test_construct_fyle_payload_with_code(
     db,
+    mocker,
     create_temp_workspace,
     add_expense_destination_attributes_1,
     add_expense_destination_attributes_3,
     add_import_settings
 ):
-    category = Category(1, 'ACCOUNT', None, True)
+    category = Category(1, "ACCOUNT", None, sdk_connection=mocker.Mock(), destination_sync_methods=['accounts'], is_auto_sync_enabled=True, prepend_code_to_name=True, is_3d_mapping=False, charts_of_accounts=None)
 
     paginated_destination_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='ACCOUNT')
     paginated_destination_attributes_without_duplicates = category.remove_duplicate_attributes(paginated_destination_attributes)
@@ -130,7 +134,6 @@ def test_construct_fyle_payload_with_code(
     fyle_payload = category.construct_fyle_payload(
         paginated_destination_attributes,
         existing_fyle_attributes_map,
-        True
     )
 
     assert fyle_payload == []
@@ -140,7 +143,6 @@ def test_construct_fyle_payload_with_code(
     fyle_payload = category.construct_fyle_payload(
         paginated_destination_attributes,
         existing_fyle_attributes_map,
-        True
     )
 
     assert fyle_payload == data["create_fyle_category_payload_with_code_create_new_case"]
@@ -174,7 +176,7 @@ def test_disable_categories(
         active=True
     )
 
-    mock_platform = mocker.patch('apps.mappings.imports.modules.categories.PlatformConnector')
+    mock_platform = mocker.patch('fyle_integrations_imports.modules.categories.PlatformConnector')
     bulk_post_call = mocker.patch.object(mock_platform.return_value.categories, 'post_bulk')
 
     disable_categories(workspace_id, categories_to_disable, is_import_to_fyle_enabled=True)

@@ -5,6 +5,7 @@ from typing import List
 from django.conf import settings
 from django_q.models import Schedule
 from fyle_integrations_platform_connector import PlatformConnector
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
 from apps.fyle.queue import queue_import_credit_card_expenses, queue_import_reimbursable_expenses
@@ -46,7 +47,7 @@ def run_import_export(workspace_id: int, export_mode = None):
 
     # For Reimbursable Expenses
     if export_settings.reimbursable_expenses_export_type:
-        queue_import_reimbursable_expenses(workspace_id=workspace_id,  synchronous=True)
+        queue_import_reimbursable_expenses(workspace_id=workspace_id,  synchronous=True, imported_from=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
         accounting_export = AccountingExport.objects.get(
             workspace_id=workspace_id,
             type='FETCHING_REIMBURSABLE_EXPENSES'
@@ -59,11 +60,11 @@ def run_import_export(workspace_id: int, export_mode = None):
             if len(accounting_export_ids):
                 is_expenses_exported = True
                 export = export_map[export_settings.reimbursable_expenses_export_type]
-                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours)
+                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
 
     # For Credit Card Expenses
     if export_settings.credit_card_expense_export_type:
-        queue_import_credit_card_expenses(workspace_id=workspace_id, synchronous=True)
+        queue_import_credit_card_expenses(workspace_id=workspace_id, synchronous=True, imported_from=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
         accounting_export = AccountingExport.objects.get(
             workspace_id=workspace_id,
             type='FETCHING_CREDIT_CARD_EXPENSES'
@@ -75,7 +76,7 @@ def run_import_export(workspace_id: int, export_mode = None):
             if len(accounting_export_ids):
                 is_expenses_exported = True
                 export = export_map[export_settings.credit_card_expense_export_type]
-                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours)
+                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
 
     if is_expenses_exported:
         accounting_summary.last_exported_at = last_exported_at
@@ -128,7 +129,7 @@ def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_a
     return advance_settings
 
 
-def export_to_sage300(workspace_id: int):
+def export_to_sage300(workspace_id: int, triggered_by: ExpenseImportSourceEnum):
     """
     Function to export expenses to Sage 300
     """
@@ -164,7 +165,7 @@ def export_to_sage300(workspace_id: int):
             is_expenses_exported = True
             # Get the appropriate export class and trigger the export
             export = export_map[export_settings.reimbursable_expenses_export_type]
-            export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours)
+            export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by)
 
     # Check and export credit card expenses if configured
     if export_settings.credit_card_expense_export_type:
@@ -177,7 +178,7 @@ def export_to_sage300(workspace_id: int):
             is_expenses_exported = True
             # Get the appropriate export class and trigger the export
             export = export_map[export_settings.credit_card_expense_export_type]
-            export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours)
+            export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by)
 
     # Update the accounting summary if expenses are exported
     if is_expenses_exported:
@@ -203,3 +204,35 @@ def async_create_admin_subcriptions(workspace_id: int) -> None:
         'webhook_url': '{}/workspaces/{}/fyle/webhook_callback/'.format(settings.API_URL, workspace_id)
     }
     platform.subscriptions.post(payload)
+
+
+def get_error_model_path() -> str:
+    """
+    Get error model path: This is for imports submodule
+    :return: str
+    """
+    return 'apps.accounting_exports.models.Error'
+
+
+def get_import_configuration_model_path() -> str:
+    """
+    Get import configuration model path: This is for imports submodule
+    :return: str
+    """
+    return 'apps.workspaces.models.ImportSetting'
+
+
+def get_cost_code_update_method_path() -> str:
+    """
+    Update and disable cost code path
+    :return: str
+    """
+    return 'apps.sage300.dependent_fields.update_and_disable_cost_code'
+
+
+def get_app_name() -> str:
+    """
+    Get app name
+    :return: str
+    """
+    return 'SAGE300'

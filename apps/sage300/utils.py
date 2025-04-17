@@ -1,21 +1,24 @@
 import logging
+
 from django.utils.module_loading import import_string
+
 from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
+
 from apps.workspaces.models import Sage300Credential, ImportSetting
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 from apps.sage300.models import CostCategory
 from apps.mappings.models import Version
-from apps.mappings.exceptions import handle_import_exceptions
+from apps.mappings.exceptions import handle_import_exceptions_v2
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
 ATTRIBUTE_CALLBACK_MAP = {
-    'PROJECT': 'apps.mappings.imports.modules.projects.disable_projects',
-    'CATEGORY': 'apps.mappings.imports.modules.categories.disable_categories',
-    'MERCHANT': 'apps.mappings.imports.modules.merchants.disable_merchants',
-    'COST_CENTER': 'apps.mappings.imports.modules.cost_centers.disable_cost_centers'
+    'PROJECT': 'fyle_integrations_imports.modules.projects.disable_projects',
+    'CATEGORY': 'fyle_integrations_imports.modules.categories.disable_categories',
+    'MERCHANT': 'fyle_integrations_imports.modules.merchants.disable_merchants',
+    'COST_CENTER': 'fyle_integrations_imports.modules.cost_centers.disable_cost_centers'
 }
 
 
@@ -197,7 +200,7 @@ class SageDesktopConnector:
 
         is_import_to_fyle_enabled = self.is_imported_enabled('ACCOUNT', self.workspace_id)
 
-        self._sync_data(accounts, 'ACCOUNT', 'accounts', self.workspace_id, ['code', 'version'], is_import_to_fyle_enabled=is_import_to_fyle_enabled)
+        self._sync_data(accounts, 'ACCOUNT', 'Account', self.workspace_id, ['code', 'version'], is_import_to_fyle_enabled=is_import_to_fyle_enabled)
         return []
 
     def sync_vendors(self):
@@ -222,7 +225,7 @@ class SageDesktopConnector:
         vendor_types = DestinationAttribute.objects.filter(workspace_id=self.workspace_id, attribute_type='VENDOR_TYPE').values('destination_id', 'value').distinct()
         vendor_type_mapping = {vendor_type['destination_id']: vendor_type['value'] for vendor_type in vendor_types}
 
-        self._sync_data(vendors, 'VENDOR', 'vendor', self.workspace_id, field_names, vendor_type_mapping=vendor_type_mapping, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
+        self._sync_data(vendors, 'VENDOR', 'Vendor', self.workspace_id, field_names, vendor_type_mapping=vendor_type_mapping, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
         return []
 
     def sync_jobs(self):
@@ -237,7 +240,7 @@ class SageDesktopConnector:
 
         is_import_to_fyle_enabled = self.is_imported_enabled('JOB', self.workspace_id)
 
-        self._sync_data(jobs, 'JOB', 'job', self.workspace_id, field_names, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
+        self._sync_data(jobs, 'JOB', 'Job', self.workspace_id, field_names, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
         return []
 
     def sync_standard_cost_codes(self):
@@ -290,7 +293,7 @@ class SageDesktopConnector:
             ]
             self._sync_data(commitment_items, 'COMMITMENT_ITEM', 'commitment_item', self.workspace_id, field_names, False)
 
-    @handle_import_exceptions
+    @handle_import_exceptions_v2
     def sync_cost_codes(self, _import_log = None):
         """
         Synchronize cost codes from Sage Desktop SDK to your application
@@ -307,7 +310,7 @@ class SageDesktopConnector:
         self._sync_data(cost_codes, 'COST_CODE', 'cost_code', self.workspace_id, field_names, distinct_job_ids=distinct_job_ids)
         return []
 
-    @handle_import_exceptions
+    @handle_import_exceptions_v2
     def sync_cost_categories(self, import_log = None):
         """
          Synchronize categories from Sage Desktop SDK to your application

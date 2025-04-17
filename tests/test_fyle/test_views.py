@@ -10,7 +10,7 @@ from .fixtures import fixtures as data
 
 def test_import_fyle_attributes(mocker, api_client, test_connection, create_temp_workspace, add_fyle_credentials):
     mocker.patch('fyle_integrations_platform_connector.fyle_integrations_platform_connector.PlatformConnector.import_fyle_dimensions', return_value=[])
-    mocker.patch('apps.fyle.serializers.chain_import_fields_to_fyle', return_value=None)
+    mocker.patch('apps.fyle.serializers.construct_tasks_and_chain_import_fields_to_fyle', return_value=None)
 
     url = reverse('import-fyle-attributes', kwargs={'workspace_id': 1})
 

@@ -1,6 +1,3 @@
-"""
-Workspace Serializers
-"""
 import logging
 
 from django.conf import settings
@@ -16,7 +13,7 @@ from rest_framework import serializers
 from apps.accounting_exports.models import AccountingExportSummary
 from apps.fyle.helpers import get_cluster_domain
 from apps.fyle.models import DependentFieldSetting
-from apps.mappings.models import ImportLog, Version
+from apps.mappings.models import Version
 from apps.users.models import User
 from apps.workspaces.models import (
     AdvancedSetting,
@@ -27,6 +24,7 @@ from apps.workspaces.models import (
     Workspace,
 )
 from apps.workspaces.triggers import AdvancedSettingsTriggers, ImportSettingsTrigger
+from fyle_integrations_imports.models import ImportLog
 from sage_desktop_api.utils import assert_valid
 from sage_desktop_sdk.exceptions import (
     InvalidUserCredentials,

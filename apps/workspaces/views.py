@@ -1,12 +1,18 @@
 import logging
-from django.contrib.auth import get_user_model
+
 from rest_framework import generics
 from rest_framework.views import Response, status
+from django.contrib.auth import get_user_model
+
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from fyle_rest_auth.utils import AuthUtils
 
-from sage_desktop_api.utils import assert_valid
+from fyle_accounting_mappings.models import MappingSetting
 
+from fyle_integrations_imports.models import ImportLog
+
+from sage_desktop_api.utils import assert_valid
 from apps.workspaces.tasks import export_to_sage300
 from apps.workspaces.models import (
     Workspace,
@@ -22,8 +28,6 @@ from apps.workspaces.serializers import (
     AdvancedSettingSerializer,
     WorkspaceAdminSerializer
 )
-from apps.mappings.models import ImportLog
-from fyle_accounting_mappings.models import MappingSetting
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -134,7 +138,7 @@ class TriggerExportsView(generics.GenericAPIView):
     """
 
     def post(self, request, *args, **kwargs):
-        export_to_sage300(workspace_id=kwargs['workspace_id'])
+        export_to_sage300(workspace_id=kwargs['workspace_id'], triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
 
         return Response(
             status=status.HTTP_200_OK

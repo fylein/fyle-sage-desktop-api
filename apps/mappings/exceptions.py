@@ -1,14 +1,15 @@
 import logging
 import traceback
 
-from sage_desktop_sdk.exceptions import InvalidUserCredentials
 from fyle.platform.exceptions import (
     WrongParamsError,
     InvalidTokenError as FyleInvalidTokenError,
     InternalServerError,
     RetryException
 )
-from apps.mappings.models import ImportLog
+
+from sage_desktop_sdk.exceptions import InvalidUserCredentials
+from fyle_integrations_imports.models import ImportLog
 from apps.workspaces.models import Sage300Credential
 
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
-def handle_import_exceptions(func):
+def handle_import_exceptions_v2(func):
     def new_fn(expense_attribute_instance, *args, **kwargs):
         import_log = None
         if isinstance(expense_attribute_instance, ImportLog):

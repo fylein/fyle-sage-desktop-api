@@ -1,6 +1,8 @@
 from datetime import datetime
+
 from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting
+
 from apps.workspaces.models import ImportSetting
 
 
@@ -18,7 +20,7 @@ def schedule_or_delete_fyle_import_tasks(import_settings: ImportSetting, mapping
 
     if task_to_be_scheduled or import_settings.import_categories or import_settings.import_vendors_as_merchants:
         Schedule.objects.update_or_create(
-            func='apps.mappings.imports.queues.chain_import_fields_to_fyle',
+            func='apps.mappings.tasks.construct_tasks_and_chain_import_fields_to_fyle',
             args='{}'.format(import_settings.workspace_id),
             defaults={
                 'schedule_type': Schedule.MINUTES,
@@ -43,6 +45,6 @@ def schedule_or_delete_fyle_import_tasks(import_settings: ImportSetting, mapping
     # If the import fields count is 0, delete the schedule
     if import_fields_count == 0 and custom_field_import_fields_count == 0:
         Schedule.objects.filter(
-            func='apps.mappings.imports.queues.chain_import_fields_to_fyle',
+            func='apps.mappings.tasks.construct_tasks_and_chain_import_fields_to_fyle',
             args='{}'.format(import_settings.workspace_id)
         ).delete()

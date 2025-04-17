@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from apps.sage300.utils import SageDesktopConnector
 from fyle_accounting_mappings.models import (
     CategoryMapping,
     DestinationAttribute,
@@ -9,11 +10,11 @@ from fyle_accounting_mappings.models import (
 from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import Error
-from apps.mappings.imports.modules.categories import Category
+from fyle_integrations_imports.modules.categories import Category
 from apps.workspaces.models import FyleCredential
 from tests.test_mappings.test_imports.test_modules.fixtures import data as destination_attributes_data
 from tests.test_mappings.test_imports.test_modules.helpers import get_base_class_instance, get_platform_connection
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 
 
 def test_get_platform_class(
@@ -45,36 +46,6 @@ def test_get_platform_class(
     assert base.get_platform_class(platform) == platform.cost_centers
 
 
-def test_get_auto_sync_permission(
-    api_client,
-    test_connection,
-    create_temp_workspace,
-    add_fyle_credentials,
-    add_sage300_creds,
-):
-    base = get_base_class_instance()
-
-    assert base.get_auto_sync_permission() == False
-
-    base = get_base_class_instance(
-        workspace_id=1,
-        source_field="CATEGORY",
-        destination_field="ACCOUNT",
-        platform_class_name="categories",
-    )
-
-    assert base.get_auto_sync_permission() == True
-
-    base = get_base_class_instance(
-        workspace_id=1,
-        source_field="PROJECT",
-        destination_field="DEPARTMENT",
-        platform_class_name="projects",
-    )
-
-    assert base.get_auto_sync_permission() == False
-
-
 def test_construct_attributes_filter(
     api_client,
     test_connection,
@@ -84,11 +55,7 @@ def test_construct_attributes_filter(
     add_cost_center_mappings,
 ):
     base = get_base_class_instance()
-
-    assert base.construct_attributes_filter("PROJECT") == {
-        "attribute_type": "PROJECT",
-        "workspace_id": 1,
-    }
+    assert base.construct_attributes_filter("PROJECT") == {'attribute_type': 'PROJECT', 'workspace_id': 1, 'active': True}
 
     date_string = "2023-08-06 12:50:05.875029"
     sync_after = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S.%f")
@@ -101,11 +68,7 @@ def test_construct_attributes_filter(
         sync_after=sync_after,
     )
 
-    assert base.construct_attributes_filter("CATEGORY") == {
-        "attribute_type": "CATEGORY",
-        "workspace_id": 1,
-        "updated_at__gte": sync_after,
-    }
+    assert base.construct_attributes_filter("CATEGORY") == {'attribute_type': 'CATEGORY', 'workspace_id': 1, 'active': True, 'updated_at__gte': sync_after}
 
     paginated_destination_attribute_values = [
         "Mobile App Redesign",
@@ -125,12 +88,7 @@ def test_construct_attributes_filter(
 
     assert base.construct_attributes_filter(
         "COST_CENTER", paginated_destination_attribute_values
-    ) == {
-        "attribute_type": "COST_CENTER",
-        "workspace_id": 1,
-        "updated_at__gte": sync_after,
-        "value__in": paginated_destination_attribute_values,
-    }
+    ) == {'attribute_type': 'COST_CENTER', 'workspace_id': 1, 'active': True, 'updated_at__gte': sync_after}
 
 
 def test_remove_duplicates(
@@ -164,6 +122,7 @@ def test_remove_duplicates(
 
 
 def test_resolve_expense_attribute_errors(
+    mocker,
     api_client,
     test_connection,
     create_temp_workspace,
@@ -172,7 +131,7 @@ def test_resolve_expense_attribute_errors(
     add_expense_destination_attributes,
 ):
     workspace_id = 1
-    category = Category(1, "ACCOUNT", None)
+    category = Category(1, "ACCOUNT", None, sdk_connection=mocker.Mock(), destination_sync_methods=['accounts'], is_auto_sync_enabled=True, is_3d_mapping=False, use_mapping_table=False, charts_of_accounts=None)
 
     # deleting all the Error objects
     Error.objects.filter(workspace_id=workspace_id).delete()
@@ -240,7 +199,7 @@ def test_sync_expense_atrributes(
     ).count()
     assert category_count == 0
 
-    category = Category(workspace_id, "ACCOUNT", None)
+    category = Category(workspace_id, "ACCOUNT", None, sdk_connection=mocker.Mock(), destination_sync_methods=['accounts'], is_auto_sync_enabled=True, is_3d_mapping=False, charts_of_accounts=None)
     category.sync_expense_attributes(platform)
 
     category_count = ExpenseAttribute.objects.filter(
@@ -278,8 +237,14 @@ def test_sync_destination_attributes(
     def test():
         pass
 
+    mocker.patch(
+        "apps.sage300.utils.SageDesktopConnector.__init__",
+        return_value=None
+    )
+
     mock_connection = mocker.patch(
-        "apps.mappings.imports.modules.base.SageDesktopConnector"
+        "apps.sage300.utils.SageDesktopConnector",
+        return_value=mocker.Mock(spec=SageDesktopConnector)
     )
 
     mocker.patch.object(
@@ -318,25 +283,18 @@ def test_sync_destination_attributes(
         return_value=test
     )
 
-    base = get_base_class_instance()
+    base = get_base_class_instance(destination_sync_methods = ["jobs"], sdk_connection = mock_connection.return_value)
 
-    base.sync_destination_attributes("STANDARD_CATEGORY")
-    mock_connection.return_value.sync_standard_categories.assert_called_once()
-
-    base.sync_destination_attributes("STANDARD_COST_CODE")
-    mock_connection.return_value.sync_standard_cost_codes.assert_called_once()
-
-    base.sync_destination_attributes("JOB")
+    base.sync_destination_attributes()
     mock_connection.return_value.sync_jobs.assert_called_once()
 
-    base.sync_destination_attributes("VENDOR")
+    base = get_base_class_instance(destination_sync_methods = ["vendors"], sdk_connection = mock_connection.return_value)
+    base.sync_destination_attributes()
     mock_connection.return_value.sync_vendors.assert_called_once()
 
-    base.sync_destination_attributes("ACCOUNT")
+    base = get_base_class_instance(destination_sync_methods = ["accounts"], sdk_connection = mock_connection.return_value)
+    base.sync_destination_attributes()
     mock_connection.return_value.sync_accounts.assert_called_once()
-
-    base.sync_destination_attributes("COMMITMENT")
-    mock_connection.return_value.sync_commitments.assert_called_once()
 
 
 def test_import_destination_attribute_to_fyle(
@@ -347,7 +305,7 @@ def test_import_destination_attribute_to_fyle(
 ):
     base = get_base_class_instance()
 
-    mocker.patch('apps.mappings.imports.modules.base.PlatformConnector')
+    mocker.patch('fyle_integrations_imports.modules.base.PlatformConnector')
 
     mocker.patch.object(
         base,
@@ -385,13 +343,16 @@ def test_import_destination_attribute_to_fyle(
 
 def test_create_mappings(
     db,
+    mocker,
     create_temp_workspace,
     add_cost_center_mappings
 ):
     workspace_id = 1
     base = get_base_class_instance()
 
-    base.create_mappings()
+    values = DestinationAttribute.objects.filter(workspace_id=workspace_id, value__in=["Direct Mail Campaign", "Platform APIs"])
+
+    base.create_mappings(values)
 
     mappings = Mapping.objects.filter(workspace_id=workspace_id)
 
@@ -408,7 +369,7 @@ def test_construct_payload_and_import_to_fyle(
 ):
     base = get_base_class_instance()
 
-    platform = mocker.patch('apps.mappings.imports.modules.base.PlatformConnector')
+    platform = mocker.patch('fyle_integrations_imports.modules.base.PlatformConnector')
     mocker.patch.object(
         base,
         'post_to_fyle_and_sync',
@@ -469,7 +430,7 @@ def test_post_to_fyle_and_sync(
 ):
     base = get_base_class_instance()
 
-    platform = mocker.patch('apps.mappings.imports.modules.base.PlatformConnector')
+    platform = mocker.patch('fyle_integrations_imports.modules.base.PlatformConnector')
     mocker.patch.object(
         platform.return_value,
         'post'

@@ -6,7 +6,7 @@ from apps.sage300.dependent_fields import (
     import_dependent_fields_to_fyle
 )
 from apps.fyle.models import DependentFieldSetting
-from apps.mappings.models import ImportLog
+from fyle_integrations_imports.models import ImportLog
 from apps.sage300.models import CostCategory
 from apps.workspaces.models import ImportSetting
 
@@ -68,7 +68,7 @@ def test_post_dependent_cost_code(
     }
 
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
-    cost_code_import_log = ImportLog.create('COST_CODE', workspace_id)
+    cost_code_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CODE', workspace_id)
 
     result, is_errored = post_dependent_cost_code(
         cost_code_import_log,
@@ -127,7 +127,7 @@ def test_post_dependent_cost_type(
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
     dependent_field_settings.last_successful_import_at = None
 
-    cost_category_import_log = ImportLog.create('COST_CATEGORY', workspace_id)
+    cost_category_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CATEGORY', workspace_id)
 
     post_dependent_cost_type(
         cost_category_import_log,
@@ -186,8 +186,8 @@ def test_post_dependent_expense_field_values(
 
     dependent_field_settings = DependentFieldSetting.objects.get(workspace_id=workspace_id)
 
-    ImportLog.create('COST_CODE', workspace_id)
-    ImportLog.create('COST_CATEGORY', workspace_id)
+    ImportLog.update_or_create_in_progress_import_log('COST_CODE', workspace_id)
+    ImportLog.update_or_create_in_progress_import_log('COST_CATEGORY', workspace_id)
 
     post_dependent_expense_field_values(
         workspace_id=workspace_id,
@@ -216,8 +216,8 @@ def test_import_dependent_fields_to_fyle(
         'dependent_fields.bulk_post_dependent_expense_field_values'
     )
 
-    ImportLog.create('COST_CODE', workspace_id)
-    ImportLog.create('COST_CATEGORY', workspace_id)
+    ImportLog.update_or_create_in_progress_import_log('COST_CODE', workspace_id)
+    ImportLog.update_or_create_in_progress_import_log('COST_CATEGORY', workspace_id)
 
     import_dependent_fields_to_fyle(workspace_id)
 

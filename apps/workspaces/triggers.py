@@ -7,8 +7,8 @@ from django.db.models import Q
 from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
 
 from apps.fyle.helpers import post_request
-from apps.mappings.imports.schedules import schedule_or_delete_fyle_import_tasks
 from apps.mappings.models import ImportLog
+from apps.mappings.schedules import schedule_or_delete_fyle_import_tasks
 from apps.workspaces.models import AdvancedSetting, FyleCredential, ImportSetting, Workspace
 from apps.workspaces.tasks import schedule_sync
 
@@ -150,7 +150,7 @@ class AdvancedSettingsTriggers:
         try:
             post_request(url, payload, refresh_token)
             org_id = Workspace.objects.get(id=workspace_id).org_id
-            logger.info(f'New integration record: Fyle Sage 300 Integration (ACCOUNTING) | {workspace_id =} | {org_id =}')
+            logger.info(f'New integration record: Fyle Sage 300 Integration (ACCOUNTING) | {workspace_id} | {org_id}')
 
         except Exception as error:
             logger.error(error)
