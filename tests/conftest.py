@@ -2,39 +2,37 @@
 Fixture configuration for all the tests
 """
 from datetime import datetime, timezone
-
 from unittest import mock
+
 import pytest
-
-from rest_framework.test import APIClient
 from fyle.platform.platform import Platform
-from fyle_rest_auth.models import User, AuthToken
 from fyle_accounting_mappings.models import (
-    ExpenseAttribute,
-    DestinationAttribute,
-    MappingSetting,
-    EmployeeMapping,
     CategoryMapping,
-    Mapping
+    DestinationAttribute,
+    EmployeeMapping,
+    ExpenseAttribute,
+    Mapping,
+    MappingSetting,
 )
+from fyle_rest_auth.models import AuthToken, User
+from rest_framework.test import APIClient
 
+from apps.accounting_exports.models import AccountingExport, AccountingExportSummary, Error
 from apps.fyle.helpers import get_access_token
-from apps.workspaces.models import (
-    Workspace,
-    FyleCredential,
-    Sage300Credential,
-    ExportSetting,
-    ImportSetting,
-    AdvancedSetting
-)
-from apps.fyle.models import ExpenseFilter, DependentFieldSetting, Expense
-from apps.accounting_exports.models import AccountingExport, Error, AccountingExportSummary
-from sage_desktop_api.tests import settings
-from apps.sage300.models import CostCategory
-from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
+from apps.fyle.models import DependentFieldSetting, Expense, ExpenseFilter
 from apps.sage300.exports.direct_cost.models import DirectCost
-
-from .test_fyle.fixtures import fixtures as fyle_fixtures
+from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
+from apps.sage300.models import CostCategory
+from apps.workspaces.models import (
+    AdvancedSetting,
+    ExportSetting,
+    FyleCredential,
+    ImportSetting,
+    Sage300Credential,
+    Workspace,
+)
+from sage_desktop_api.tests import settings
+from tests.test_fyle.fixtures import fixtures as fyle_fixtures
 
 
 @pytest.fixture
@@ -66,7 +64,7 @@ def test_connection(db):
 
     access_token = get_access_token(refresh_token)
     fyle_connection.access_token = access_token
-    user_profile = fyle_connection.v1beta.spender.my_profile.get()['data']
+    user_profile = fyle_connection.v1.spender.my_profile.get()['data']
     user = User(
         password='', last_login=datetime.now(tz=timezone.utc), id=1, email=user_profile['user']['email'],
         user_id=user_profile['user_id'], full_name='', active='t', staff='f', admin='t'
@@ -108,7 +106,7 @@ def default_session_fixture(request):
     patched_3.__enter__()
 
     patched_4 = mock.patch(
-        'fyle.platform.apis.v1beta.spender.MyProfile.get',
+        'fyle.platform.apis.v1.spender.MyProfile.get',
         return_value=fyle_fixtures['get_my_profile']
     )
     patched_4.__enter__()
