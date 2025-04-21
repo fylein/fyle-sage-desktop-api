@@ -407,7 +407,7 @@ class Category:
             month_to_date_cost=data_dict.get('MonthToDateCost'),
             month_to_date_dollars_paid=data_dict.get('MonthToDateDollarsPaid'),
             month_to_date_units=data_dict.get('MonthToDateUnits'),
-            name=data_dict.get('Name', data_dict.get('Description')),
+            name=data_dict.get('Name', data_dict.get('StandardCategoryDescription')),
             original_commitment=data_dict.get('OriginalCommitment'),
             original_estimate=data_dict.get('OriginalEstimate'),
             original_estimate_units=data_dict.get('OriginalEstimateUnits'),
