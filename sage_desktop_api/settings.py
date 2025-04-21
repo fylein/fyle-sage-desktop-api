@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
 import sys
-from logging.config import dictConfig
 
 import dj_database_url
 
@@ -147,15 +146,39 @@ LOGGING = {
         },
     },
     'loggers': {
-        '': {
-            'handlers': ['console'],
-            'level': 'INFO',
+        'django': {
+            'handlers': ['request_logs'],
+            'propagate': True,
         },
-        'django.request': {'handlers': ['request_logs'], 'propagate': False}
-    },
+        'django.request': {
+            'handlers': ['request_logs'],
+            'propagate': False
+        },
+        'fyle_sage_desktop_api': {
+            'handlers': ['debug_logs'],
+            'level': 'ERROR',
+            'propagate': False
+        },
+        'apps': {
+            'handlers': ['debug_logs'],
+            'level': 'ERROR',
+            'propagate': False
+        },
+         'django_q': {
+            'handlers': ['debug_logs'],
+            'propagate': True,
+        },
+        'fyle_integrations_platform_connector': {
+            'handlers': ['debug_logs'],
+            'propagate': True,
+        },
+        'gunicorn': {
+            'handlers': ['request_logs'],
+            'level': 'INFO',
+            'propagate': False
+        }
+    }
 }
-
-dictConfig(LOGGING)
 
 CACHES = {
     'default': {
