@@ -6,7 +6,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Count
 from fyle_accounting_mappings.models import ExpenseAttribute
-from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 from fyle_accounting_library.fyle_platform.constants import IMPORTED_FROM_CHOICES
 
 from apps.fyle.models import Expense
