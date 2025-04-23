@@ -1,20 +1,15 @@
 from datetime import datetime
 
-from apps.sage300.utils import SageDesktopConnector
-from fyle_accounting_mappings.models import (
-    CategoryMapping,
-    DestinationAttribute,
-    ExpenseAttribute,
-    Mapping
-)
+from fyle_accounting_mappings.models import CategoryMapping, DestinationAttribute, ExpenseAttribute, Mapping
 from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import Error
-from fyle_integrations_imports.modules.categories import Category
+from apps.sage300.utils import SageDesktopConnector
 from apps.workspaces.models import FyleCredential
+from fyle_integrations_imports.models import ImportLog
+from fyle_integrations_imports.modules.categories import Category
 from tests.test_mappings.test_imports.test_modules.fixtures import data as destination_attributes_data
 from tests.test_mappings.test_imports.test_modules.helpers import get_base_class_instance, get_platform_connection
-from fyle_integrations_imports.models import ImportLog
 
 
 def test_get_platform_class(
@@ -192,7 +187,7 @@ def test_sync_expense_atrributes(
     fyle_credentials.workspace.save()
     platform = PlatformConnector(fyle_credentials=fyle_credentials)
 
-    mocker.patch("fyle.platform.apis.v1beta.admin.Categories.list_all", return_value=[])
+    mocker.patch("fyle.platform.apis.v1.admin.Categories.list_all", return_value=[])
 
     category_count = ExpenseAttribute.objects.filter(
         workspace_id=workspace_id, attribute_type="CATEGORY"
@@ -208,7 +203,7 @@ def test_sync_expense_atrributes(
     assert category_count == 0
 
     mocker.patch(
-        "fyle.platform.apis.v1beta.admin.Categories.list_all",
+        "fyle.platform.apis.v1.admin.Categories.list_all",
         return_value=destination_attributes_data[
             "create_new_auto_create_categories_expense_attributes_0"
         ],

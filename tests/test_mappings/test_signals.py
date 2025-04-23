@@ -1,24 +1,18 @@
 
-import pytest
 from asyncio.log import logger
 from datetime import datetime, timedelta, timezone
 from unittest import mock
+
+import pytest
 from django.db import transaction
 from django_q.models import Schedule
-
 from fyle.platform.exceptions import WrongParamsError
-from fyle_accounting_mappings.models import (
-    MappingSetting,
-    Mapping,
-    ExpenseAttribute,
-    CategoryMapping,
-    DestinationAttribute
-)
+from fyle_accounting_mappings.models import CategoryMapping, DestinationAttribute, ExpenseAttribute, Mapping, MappingSetting
 
-from apps.workspaces.models import ImportSetting
 from apps.accounting_exports.models import Error
+from apps.workspaces.models import ImportSetting
 from fyle_integrations_imports.models import ImportLog
-from .fixtures import data as fyle_data
+from tests.test_mappings.fixtures import data as fyle_data
 
 
 @pytest.mark.django_db()
@@ -89,7 +83,7 @@ def test_run_post_mapping_settings_triggers(
     )
 
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.ExpenseFields.list_all',
+        'fyle.platform.apis.v1.admin.ExpenseFields.list_all',
         return_value=fyle_data['get_all_expense_fields']
     )
 
@@ -197,7 +191,7 @@ def test_run_pre_mapping_settings_triggers(
     )
 
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.ExpenseFields.list_all',
+        'fyle.platform.apis.v1.admin.ExpenseFields.list_all',
         return_value=fyle_data['get_all_expense_fields']
     )
 

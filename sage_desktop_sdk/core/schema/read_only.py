@@ -88,7 +88,7 @@ class Commitment:
     code: int
     created_on_utc: str
     date: str
-    description: str 
+    description: str
     has_external_id: bool
     is_active: bool
     is_archived: bool
@@ -143,6 +143,7 @@ class Commitment:
             was_printed=commitment.get('WasPrinted'),
             tax_group_id=commitment.get('TaxGroupId')
         )
+
 
 @dataclass
 class Job:
@@ -346,7 +347,6 @@ class CostCode:
         )
 
 
-
 @dataclass
 class Category:
     id: str
@@ -407,7 +407,7 @@ class Category:
             month_to_date_cost=data_dict.get('MonthToDateCost'),
             month_to_date_dollars_paid=data_dict.get('MonthToDateDollarsPaid'),
             month_to_date_units=data_dict.get('MonthToDateUnits'),
-            name=data_dict.get('Name'),
+            name=data_dict.get('Name', data_dict.get('StandardCategoryDescription')),
             original_commitment=data_dict.get('OriginalCommitment'),
             original_estimate=data_dict.get('OriginalEstimate'),
             original_estimate_units=data_dict.get('OriginalEstimateUnits'),

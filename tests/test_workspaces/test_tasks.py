@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.urls import reverse
 from django_q.models import Schedule
-
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
@@ -291,7 +290,7 @@ def test_async_create_admin_subcriptions(
     add_fyle_credentials
 ):
     mock_api = mocker.patch(
-        'fyle.platform.apis.v1beta.admin.Subscriptions.post',
+        'fyle.platform.apis.v1.admin.Subscriptions.post',
         return_value={}
     )
     workspace_id = 1
@@ -318,7 +317,7 @@ def test_async_create_admin_subcriptions_2(
     add_fyle_credentials
 ):
     mock_api = mocker.patch(
-        'fyle.platform.apis.v1beta.admin.Subscriptions.post',
+        'fyle.platform.apis.v1.admin.Subscriptions.post',
         return_value={}
     )
     workspace_id = 1
