@@ -144,15 +144,13 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
                 AccountingExport.create_accounting_export(
                     reimbursable_expense_objects,
                     fund_source='PERSONAL',
-                    workspace_id=workspace_id,
-                    triggered_by=imported_from
+                    workspace_id=workspace_id
                 )
             if credit_card_expense_objects:
                 AccountingExport.create_accounting_export(
                     credit_card_expense_objects,
                     fund_source='CCC',
-                    workspace_id=workspace_id,
-                    triggered_by=imported_from
+                    workspace_id=workspace_id
                 )
 
     accounting_export.status = 'COMPLETE'
