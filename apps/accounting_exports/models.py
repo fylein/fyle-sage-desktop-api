@@ -108,7 +108,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
         db_table = 'accounting_exports'
 
     @staticmethod
-    def create_accounting_export(expense_objects: List[Expense], fund_source: str, workspace_id, triggered_by: ExpenseImportSourceEnum):
+    def create_accounting_export(expense_objects: List[Expense], fund_source: str, workspace_id):
         """
         Group expenses by report_id and fund_source, format date fields, and create AccountingExport objects.
         """
@@ -148,8 +148,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
                 workspace_id=workspace_id,
                 fund_source=accounting_export['fund_source'],
                 description=accounting_export,
-                status='EXPORT_READY',
-                triggered_by=triggered_by
+                status='EXPORT_READY'
             )
 
             # Add related expenses to the AccountingExport object
