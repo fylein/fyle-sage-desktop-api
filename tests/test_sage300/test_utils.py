@@ -565,7 +565,9 @@ def test_bulk_create_or_update_destination_attributes_with_code(db, create_temp_
         attributes=attributes,
         attribute_type='COST_CODE',
         workspace_id=workspace_id,
-        update=True
+        update=True,
+        app_name='Sage 300',
+        skip_deletion=True
     )
 
     # Verify creation
@@ -581,7 +583,9 @@ def test_bulk_create_or_update_destination_attributes_with_code(db, create_temp_
         attributes=attributes,
         attribute_type='COST_CODE',
         workspace_id=workspace_id,
-        update=True
+        update=True,
+        app_name='Sage 300',
+        skip_deletion=True
     )
 
     # Verify update
@@ -622,7 +626,9 @@ def test_bulk_create_or_update_destination_attributes_without_code(db, create_te
         attributes=attributes,
         attribute_type='COST_CODE',
         workspace_id=workspace_id,
-        update=True
+        update=True,
+        app_name='Sage 300',
+        skip_deletion=True
     )
 
     # Verify creation
@@ -636,7 +642,9 @@ def test_bulk_create_or_update_destination_attributes_without_code(db, create_te
         attributes=attributes,
         attribute_type='COST_CODE',
         workspace_id=workspace_id,
-        update=True
+        update=True,
+        app_name='Sage 300',
+        skip_deletion=True
     )
 
     # Verify update
