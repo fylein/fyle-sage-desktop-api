@@ -1,42 +1,38 @@
 import logging
 
-from django.db.models import Q
-from django.db import transaction
-from django.core.cache import cache
 from django.conf import settings
+from django.core.cache import cache
+from django.db import transaction
+from django.db.models import Q
 from django_q.tasks import async_task
-from rest_framework import serializers
-
+from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
 from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
-from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
+from rest_framework import serializers
 
-
-from fyle_integrations_imports.models import ImportLog
-
-from apps.fyle.models import DependentFieldSetting
-from sage_desktop_api.utils import assert_valid
-from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
-from sage_desktop_sdk.exceptions import (
-    UserAccountLocked,
-    InvalidUserCredentials,
-    InvalidWebApiClientCredentials,
-    WebApiClientLocked
-)
-
-from apps.workspaces.models import (
-    Workspace,
-    FyleCredential,
-    Sage300Credential,
-    ExportSetting,
-    ImportSetting,
-    AdvancedSetting
-)
 from apps.accounting_exports.models import AccountingExportSummary
+from apps.fyle.helpers import get_cluster_domain
+from apps.fyle.models import DependentFieldSetting
 from apps.mappings.models import Version
 from apps.users.models import User
-from apps.fyle.helpers import get_cluster_domain
-from apps.workspaces.triggers import ImportSettingsTrigger, AdvancedSettingsTriggers
+from apps.workspaces.models import (
+    AdvancedSetting,
+    ExportSetting,
+    FyleCredential,
+    ImportSetting,
+    Sage300Credential,
+    Workspace,
+)
+from apps.workspaces.triggers import AdvancedSettingsTriggers, ImportSettingsTrigger
+from fyle_integrations_imports.models import ImportLog
+from sage_desktop_api.utils import assert_valid
+from sage_desktop_sdk.exceptions import (
+    InvalidUserCredentials,
+    InvalidWebApiClientCredentials,
+    UserAccountLocked,
+    WebApiClientLocked,
+)
+from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -298,6 +294,8 @@ class ImportSettingsSerializer(serializers.ModelSerializer):
                 mapping_settings=mapping_settings,
                 workspace_id=instance.id
             )
+
+            trigger.pre_save_mapping_settings()
 
             for setting in mapping_settings:
                 MappingSetting.objects.update_or_create(

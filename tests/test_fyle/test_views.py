@@ -1,11 +1,12 @@
 import json
 from unittest import mock
-from django.urls import reverse
-from apps.workspaces.models import FyleCredential, Workspace
-from apps.accounting_exports.models import AccountingExport
 
+from django.urls import reverse
+
+from apps.accounting_exports.models import AccountingExport
+from apps.workspaces.models import FyleCredential, Workspace
 from tests.helper import dict_compare_keys
-from .fixtures import fixtures as data
+from tests.test_fyle.fixtures import fixtures as data
 
 
 def test_import_fyle_attributes(mocker, api_client, test_connection, create_temp_workspace, add_fyle_credentials):
@@ -75,7 +76,7 @@ def test_fyle_expense_fields(api_client, test_connection, create_temp_workspace,
     url = reverse('fyle-expense-fields', kwargs={'workspace_id': workspace_id})
 
     mocker.patch(
-        'fyle.platform.apis.v1beta.admin.ExpenseFields.list_all',
+        'fyle.platform.apis.v1.admin.ExpenseFields.list_all',
         return_value = data['get_all_custom_fields'],
     )
 

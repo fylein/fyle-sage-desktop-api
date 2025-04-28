@@ -42,10 +42,11 @@ def re_export_stuck_exports():
 
     # Check existing tasks in queue
     for orm in OrmQ.objects.all():
-        if not ('chain' in orm.task and orm.task['chain']):
+        task_data = orm.task()
+        if not ('chain' in task_data and task_data['chain']):
             continue
 
-        for chain in orm.task['chain']:
+        for chain in task_data['chain']:
             if (len(chain) > 1 and isinstance(chain[1], list) and isinstance(chain[1][0], AccountingExport) and chain[1][0].id in accounting_export_ids):
                 logger.info('Skipping Re Export For Expense Log %s', chain[1][0].id)
                 accounting_export_ids.remove(chain[1][0].id)
