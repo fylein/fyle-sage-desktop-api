@@ -193,7 +193,7 @@ class Expense(BaseForeignWorkspaceModel):
                 )
 
             # Check if an AccountingExport related to the expense object already exists
-            if not expense_object.accountingexport_set.exists():
+            if (not expense_object.is_skipped and not expense_object.accountingexport_set.exists()):
                 expense_objects.append(expense_object)
 
         return expense_objects
