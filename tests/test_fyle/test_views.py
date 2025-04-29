@@ -57,7 +57,7 @@ def test_expense_filters(api_client, test_connection, create_temp_workspace, add
 
     assert dict_compare_keys(response, data['expense_filters_response']) == [], 'expense group api return diffs in keys'
 
-    url = reverse('expense-filters', kwargs={'workspace_id': 1, 'pk': 2})
+    url = reverse('expense-filters', kwargs={'workspace_id': 1, 'pk': 3})
 
     response = api_client.delete(url, content_type='application/json')
     assert response.status_code == 204
