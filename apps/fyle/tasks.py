@@ -272,8 +272,6 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
                     logger.info('Deleting Sage300 error for accounting export %s before export', accounting_export.id)
                     error.delete()
 
-                print('accounting_export', accounting_export)
-                print('accounting_export', accounting_export.__dict__)
                 accounting_export.expenses.remove(*skipped_expenses)
                 if not accounting_export.expenses.exists():
                     logger.info('Deleting empty accounting export %s before export', accounting_export.id)
