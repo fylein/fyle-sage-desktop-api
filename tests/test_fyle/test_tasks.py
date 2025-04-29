@@ -159,7 +159,7 @@ def test_re_run_skip_export_rule(db, create_temp_workspace, mocker, api_client, 
     # Create error for the first expense group
     error = Error.objects.create(
         workspace_id=1,
-        type='QBO_ERROR',
+        type='SAGE300_ERROR',
         error_title='Test error title',
         error_detail='Test error detail',
         accounting_export=AccountingExport.objects.get(id=accounting_export_skipped.id)
@@ -177,7 +177,7 @@ def test_re_run_skip_export_rule(db, create_temp_workspace, mocker, api_client, 
     workspace = Workspace.objects.get(id=1)
 
     assert accounting_export.status == 'FAILED'
-    assert error.type == 'QBO_ERROR'
+    assert error.type == 'SAGE300_ERROR'
 
     re_run_skip_export_rule(workspace)
 
@@ -202,3 +202,15 @@ def test_re_run_skip_export_rule(db, create_temp_workspace, mocker, api_client, 
     # Test 5: Verify LastExportDetail updates
     last_export_detail = AccountingExportSummary.objects.filter(workspace_id=1).first()
     assert last_export_detail.failed_accounting_export_count == 0
+
+    try:
+        ExpenseFilter.objects.create(
+            workspace_id=1,
+            condition='last_spend_at',
+            operator='in',
+            values=['2025-04-29'],
+            rank=1,
+            join_by=None,
+        )
+    except ValidationError as e:
+        assert e.detail[0] == 'Failed to process expense filter'
