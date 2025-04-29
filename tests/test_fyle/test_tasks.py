@@ -205,7 +205,7 @@ def test_re_run_skip_export_rule(db, create_temp_workspace, mocker, api_client, 
 
     try:
         ExpenseFilter.objects.create(
-            workspace_id=1,
+            workspace_id=2,
             condition='last_spend_at',
             operator='in',
             values=['2025-04-29'],
