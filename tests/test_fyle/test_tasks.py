@@ -187,7 +187,7 @@ def test_re_run_skip_export_rule(db, create_temp_workspace, mocker, api_client, 
     assert skipped_expense.is_skipped == True
     assert non_skipped_expense.is_skipped == False
 
-    # Test 2: Verify expense group modifications 
+    # Test 2: Verify expense group modifications
     remaining_groups = AccountingExport.objects.filter(id__in=accounting_export_ids)
     assert remaining_groups.count() == 2
 
