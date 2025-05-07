@@ -176,9 +176,6 @@ class SageDesktopConnector:
                             is_import_to_fyle_enabled=is_import_to_fyle_enabled,
                             app_name='Sage 300',
                             skip_deletion=skip_deletion
-                            is_import_to_fyle_enabled=is_import_to_fyle_enabled,
-                            app_name='Sage 300',
-                            skip_deletion=skip_deletion
                         )
                     else:
                         DestinationAttribute.bulk_create_or_update_destination_attributes(
