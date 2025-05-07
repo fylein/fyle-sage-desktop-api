@@ -41,6 +41,8 @@ class WorkspaceView(generics.CreateAPIView, generics.RetrieveAPIView):
     Create Retrieve Workspaces
     """
     serializer_class = WorkspaceSerializer
+    permission_classes = []
+    pagination_class = None
 
     def get_object(self):
         """

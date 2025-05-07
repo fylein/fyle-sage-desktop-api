@@ -44,7 +44,7 @@ def api_client():
 
 
 @pytest.fixture()
-def test_connection(db):
+def test_connection(db, create_temp_workspace):
     """
     Creates a connection with Fyle
     """
@@ -71,6 +71,10 @@ def test_connection(db):
     )
 
     user.save()
+
+    for workspace in Workspace.objects.all():
+        workspace.user.add(user)
+        workspace.save()
 
     auth_token = AuthToken(
         id=1,

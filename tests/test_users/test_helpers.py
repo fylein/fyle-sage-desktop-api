@@ -32,7 +32,7 @@ def test_get_cluster_domain_and_refresh_token(
     assert cluster_domain == 'https://dummy_cluster_domain.com'
     assert refresh_token == 'dummy_refresh_token'
 
-    fyle_credentials = FyleCredential.objects.get(workspace__user=user)
+    fyle_credentials = FyleCredential.objects.filter(workspace__user=user).all()
     fyle_credentials.delete()
 
     cluster_domain, refresh_token = get_cluster_domain_and_refresh_token(user)

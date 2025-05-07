@@ -20,6 +20,7 @@ def test_post_of_workspace(api_client, test_connection):
     '''
     Test post of workspace
     '''
+    Workspace.objects.all().delete()
     url = reverse('workspaces')
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
@@ -40,6 +41,7 @@ def test_get_of_workspace(api_client, test_connection):
     '''
     Test get of workspace
     '''
+    Workspace.objects.all().delete()
     url = reverse('workspaces')
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.get(url)
@@ -64,6 +66,7 @@ def test_post_of_sage300_creds(api_client, test_connection, mocker):
     '''
     Test post of sage300 creds
     '''
+    Workspace.objects.all().delete()
     url = reverse('workspaces')
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)

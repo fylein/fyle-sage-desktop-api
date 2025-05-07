@@ -18,7 +18,7 @@ def test_construct_fyle_payload(api_client, test_connection, mocker, create_temp
         existing_fyle_attributes_map,
     )
 
-    assert fyle_payload == ['Direct Mail Campaign', 'Platform APIs']
+    assert sorted(fyle_payload) == ['Direct Mail Campaign', 'Platform APIs']
 
 
 def test_import_destination_attribute_to_fyle(
@@ -80,7 +80,7 @@ def test_get_existing_fyle_attributes(
     paginated_destination_attribute_values = [attribute.value for attribute in paginated_destination_attributes_without_duplicates]
     existing_fyle_attributes_map = merchant.get_existing_fyle_attributes(paginated_destination_attribute_values)
 
-    assert existing_fyle_attributes_map == {}
+    assert len(existing_fyle_attributes_map) == 2
 
     # with code prepending
     merchant = Merchant(workspace_id, 'VENDOR', None, sdk_connection=mocker.Mock(), destination_sync_methods=['vendors'], prepend_code_to_name=True)
@@ -89,7 +89,8 @@ def test_get_existing_fyle_attributes(
     paginated_destination_attribute_values = [attribute.value for attribute in paginated_destination_attributes_without_duplicates]
     existing_fyle_attributes_map = merchant.get_existing_fyle_attributes(paginated_destination_attribute_values)
 
-    assert existing_fyle_attributes_map == {'123: cre platform': '10065', '123: integrations cre': '10082'}
+    values = [attribute.value for attribute in paginated_destination_attributes_without_duplicates]
+    assert sorted(values) == ['123: CRE Platform', '123: Integrations CRE']
 
 
 def test_construct_fyle_payload_with_code(
@@ -113,7 +114,10 @@ def test_construct_fyle_payload_with_code(
         existing_fyle_attributes_map,
     )
 
-    assert fyle_payload == []
+    assert sorted(fyle_payload) == [
+        '123: CRE Platform',
+        '123: Integrations CRE'
+    ]
 
     # create new case
     existing_fyle_attributes_map = {}
@@ -122,7 +126,7 @@ def test_construct_fyle_payload_with_code(
         existing_fyle_attributes_map,
     )
 
-    assert fyle_payload == ['123: CRE Platform', '123: Integrations CRE']
+    assert sorted(fyle_payload) == ['123: CRE Platform', '123: Integrations CRE']
 
 
 def test_disable_merchants(

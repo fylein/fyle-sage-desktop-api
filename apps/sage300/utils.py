@@ -147,6 +147,7 @@ class SageDesktopConnector:
         :param field_names: Names of fields to include in detail
         """
         source_type = self.get_source_type(attribute_type, workspace_id)
+        skip_deletion = False if attribute_type in ['JOB', 'VENDOR', 'ACCOUNT'] else True
 
         if is_generator:
             for data in data_gen:
@@ -171,11 +172,13 @@ class SageDesktopConnector:
                             workspace_id,
                             True,
                             attribute_disable_callback_path=ATTRIBUTE_CALLBACK_MAP[source_type],
-                            is_import_to_fyle_enabled=is_import_to_fyle_enabled
+                            is_import_to_fyle_enabled=is_import_to_fyle_enabled,
+                            app_name='Sage 300',
+                            skip_deletion=skip_deletion
                         )
                     else:
                         DestinationAttribute.bulk_create_or_update_destination_attributes(
-                            destination_attributes, attribute_type, workspace_id, True)
+                            destination_attributes, attribute_type, workspace_id, True, app_name='Sage 300', skip_deletion=skip_deletion)
         else:
             destination_attributes = []
             for item in data_gen:
@@ -184,7 +187,7 @@ class SageDesktopConnector:
                     destination_attributes.append(destination_attr)
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                destination_attributes, attribute_type, workspace_id, True)
+                destination_attributes, attribute_type, workspace_id, True, app_name='Sage 300', skip_deletion=skip_deletion)
 
         if attribute_type != 'VENDOR_TYPE':
             self._update_latest_version(attribute_type)

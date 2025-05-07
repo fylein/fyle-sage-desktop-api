@@ -551,13 +551,7 @@ data = {
             "description": "Project - Direct Mail Campaign, Id - 10064",
             "is_enabled": True,
             "name": "Direct Mail Campaign",
-        },
-        {
-            "code": "10081",
-            "description": "Project - Platform APIs, Id - 10081",
-            "is_enabled": False,
-            "name": "Platform APIs",
-        },
+        }
     ],
     "create_fyle_project_payload_create_disable_case2": [
         {
