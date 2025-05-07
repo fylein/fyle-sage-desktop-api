@@ -178,7 +178,7 @@ class SageDesktopConnector:
                         )
                     else:
                         DestinationAttribute.bulk_create_or_update_destination_attributes(
-                            destination_attributes, attribute_type, workspace_id, True, app_name='Sage 300', skip_deletion=skip_deletion)
+                            destination_attributes, attribute_type, workspace_id, True, app_name='Sage 300', skip_deletion=skip_deletion, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
         else:
             destination_attributes = []
             for item in data_gen:
@@ -187,7 +187,7 @@ class SageDesktopConnector:
                     destination_attributes.append(destination_attr)
 
             DestinationAttribute.bulk_create_or_update_destination_attributes(
-                destination_attributes, attribute_type, workspace_id, True, app_name='Sage 300', skip_deletion=skip_deletion)
+                destination_attributes, attribute_type, workspace_id, True, app_name='Sage 300', skip_deletion=skip_deletion, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
 
         if attribute_type != 'VENDOR_TYPE':
             self._update_latest_version(attribute_type)
