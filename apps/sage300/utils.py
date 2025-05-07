@@ -148,7 +148,6 @@ class SageDesktopConnector:
         """
         source_type = self.get_source_type(attribute_type, workspace_id)
         skip_deletion = False if attribute_type in ['JOB', 'VENDOR', 'ACCOUNT'] else True
-        skip_deletion = False if attribute_type in ['JOB', 'VENDOR', 'ACCOUNT'] else True
 
         if is_generator:
             for data in data_gen:
