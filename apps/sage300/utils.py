@@ -148,6 +148,7 @@ class SageDesktopConnector:
         """
         source_type = self.get_source_type(attribute_type, workspace_id)
         skip_deletion = False if attribute_type in ['JOB', 'VENDOR', 'ACCOUNT'] else True
+        skip_deletion = False if attribute_type in ['JOB', 'VENDOR', 'ACCOUNT'] else True
 
         if is_generator:
             for data in data_gen:
@@ -172,6 +173,9 @@ class SageDesktopConnector:
                             workspace_id,
                             True,
                             attribute_disable_callback_path=ATTRIBUTE_CALLBACK_MAP[source_type],
+                            is_import_to_fyle_enabled=is_import_to_fyle_enabled,
+                            app_name='Sage 300',
+                            skip_deletion=skip_deletion
                             is_import_to_fyle_enabled=is_import_to_fyle_enabled,
                             app_name='Sage 300',
                             skip_deletion=skip_deletion
