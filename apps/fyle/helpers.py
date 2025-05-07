@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import json
 from typing import List
 
@@ -9,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.constants import DEFAULT_FYLE_CONDITIONS
-from apps.fyle.models import ExpenseFilter
+from apps.fyle.models import Expense, ExpenseFilter
 from apps.workspaces.models import ExportSetting, FyleCredential, Workspace
 
 
@@ -266,3 +267,15 @@ def assert_valid_request(workspace_id:int, org_id:str):
     workspace = Workspace.objects.get(org_id=org_id)
     if workspace.id != workspace_id:
         raise ValidationError('Workspace mismatch')
+
+
+def __bulk_update_expenses(expense_to_be_updated: List[Expense]) -> None:
+    """
+    Bulk update expenses
+    :param expense_to_be_updated: expenses to be updated
+    :return: None
+    """
+    if expense_to_be_updated:
+        for expense in expense_to_be_updated:
+            expense.updated_at = datetime.now(timezone.utc)
+        Expense.objects.bulk_update(expense_to_be_updated, ['is_skipped', 'updated_at'], batch_size=50)

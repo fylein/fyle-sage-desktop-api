@@ -201,7 +201,7 @@ def add_expense_filters():
             workspace_id=workspace_id
         )
         ExpenseFilter.objects.create(
-            condition='last_spent_at',
+            condition='spent_at',
             operator='lt',
             values=['2020-04-20 23:59:59+00'],
             rank="2",

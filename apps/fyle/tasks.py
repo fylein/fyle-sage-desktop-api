@@ -6,18 +6,20 @@ All Tasks from which involve Fyle APIs
 """
 import logging
 from datetime import datetime, timezone
-from typing import Dict
+from typing import Dict, List
+
 from django.db import transaction
+from django.db.models import Q
 
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle_integrations_platform_connector.apis.expenses import Expenses as FyleExpenses
 from fyle_accounting_library.fyle_platform.helpers import get_expense_import_states, filter_expenses_based_on_state, get_source_account_types_based_on_export_modules
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
-from apps.accounting_exports.models import AccountingExport
+from apps.accounting_exports.models import AccountingExport, AccountingExportSummary, Error
 from apps.workspaces.models import ExportSetting, Workspace, FyleCredential
 from apps.fyle.models import Expense, ExpenseFilter
-from apps.fyle.helpers import construct_expense_filter_query
+from apps.fyle.helpers import __bulk_update_expenses, construct_expense_filter_query
 from apps.fyle.exceptions import handle_exceptions
 
 SOURCE_ACCOUNT_MAP = {
@@ -202,3 +204,88 @@ def update_non_exported_expenses(data: Dict) -> None:
             Expense.create_expense_objects(
                 expense_objects, expense.workspace_id, skip_update=True
             )
+
+
+def mark_expenses_as_skipped(final_query: Q, expenses_object_ids: List, workspace: Workspace) -> List[Expense]:
+    """
+    Mark expenses as skipped in bulk
+    :param final_query: final query
+    :param expenses_object_ids: expenses object ids
+    :param workspace: workspace object
+    :return: List of skipped expense objects
+    """
+    expenses_to_be_skipped = Expense.objects.filter(
+        final_query,
+        id__in=expenses_object_ids,
+        org_id=workspace.org_id,
+        is_skipped=False
+    )
+    skipped_expenses_list = list(expenses_to_be_skipped)
+    expense_to_be_updated = []
+    for expense in expenses_to_be_skipped:
+        expense_to_be_updated.append(
+            Expense(
+                id=expense.id,
+                is_skipped=True,
+            )
+        )
+
+    if expense_to_be_updated:
+        __bulk_update_expenses(expense_to_be_updated)
+
+    # Return the updated expense objects
+    return skipped_expenses_list
+
+
+def re_run_skip_export_rule(workspace: Workspace) -> None:
+    """
+    Skip expenses before export
+    :param workspace_id: Workspace id
+    :return: None
+    """
+    expense_filters = ExpenseFilter.objects.filter(workspace_id=workspace.id).order_by('rank')
+    if expense_filters:
+        filtered_expense_query = construct_expense_filter_query(expense_filters)
+        # Get all expenses matching the filter query, excluding those in COMPLETE state
+        expenses = Expense.objects.filter(
+            filtered_expense_query, workspace_id=workspace.id, is_skipped=False, accountingexport__exported_at__isnull=True
+        )
+        expense_ids = list(expenses.values_list('id', flat=True))
+        skipped_expenses = mark_expenses_as_skipped(
+            filtered_expense_query,
+            expense_ids,
+            workspace
+        )
+        if skipped_expenses:
+            accounting_exports = AccountingExport.objects.filter(exported_at__isnull=True, workspace_id=workspace.id, expenses__in=skipped_expenses)
+            deleted_failed_accounting_export_count = 0
+            deleted_total_accounting_export_count = 0
+            for accounting_export in accounting_exports:
+                if accounting_export.status != 'COMPLETE':
+                    deleted_failed_accounting_export_count += 1
+
+                error = Error.objects.filter(
+                    workspace_id=workspace.id,
+                    accounting_export_id=accounting_export.id
+                ).first()
+                if error:
+                    logger.info('Deleting Sage300 error for accounting export %s before export', accounting_export.id)
+                    error.delete()
+
+                accounting_export.expenses.remove(*skipped_expenses)
+                if not accounting_export.expenses.exists():
+                    logger.info('Deleting empty accounting export %s before export', accounting_export.id)
+                    accounting_export.delete()
+                    deleted_total_accounting_export_count += 1
+
+            last_export_detail = AccountingExportSummary.objects.filter(workspace_id=workspace.id).first()
+            if last_export_detail:
+                last_export_detail.failed_accounting_export_count = max(
+                    0,
+                    (last_export_detail.failed_accounting_export_count or 0) - deleted_failed_accounting_export_count
+                )
+                last_export_detail.total_accounting_export_count = max(
+                    0,
+                    (last_export_detail.total_accounting_export_count or 0) - deleted_total_accounting_export_count
+                )
+                last_export_detail.save()
