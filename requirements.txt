@@ -21,8 +21,8 @@ fyle==1.0.0
 
 # Reusable Fyle Packages
 fyle-rest-auth==1.8.2
-fyle-accounting-mappings==2.1.2
-fyle-integrations-platform-connector==2.2.2
+fyle-accounting-mappings==2.2.3
+fyle-integrations-platform-connector==2.2.4
 
 
 # Postgres Dependincies
