@@ -170,7 +170,7 @@ def test_disable_projects(
     payload = [{
         'name': 'old_project_code: old_project',
         'code': 'destination_id',
-        'description': 'Sage 300 Project - {0}, Id - {1}'.format(
+        'description': 'Project - {0}, Id - {1}'.format(
             'old_project_code: old_project',
             'destination_id'
         ),
