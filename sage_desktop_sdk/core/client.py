@@ -57,27 +57,40 @@ class Client:
         :param cookie: Raw cookie string from headers
         :return: Reformatted cookie string
         """
-        cookies_raw = cookie.split(', ')
+        cookies_raw = []
+        for cookie_header in cookie.split(', '):
+            if '=' in cookie_header.split(';')[0]:
+                cookies_raw.append(cookie_header)
+            else:
+                if cookies_raw:
+                    cookies_raw[-1] += ', ' + cookie_header
+                else:
+                    cookies_raw.append(cookie_header)
+
         cookie_dict = {}
+        other_cookies = []
 
         for cookie_item in cookies_raw:
-            # Get the cookie name and value (everything before the first semicolon)
             cookie_parts = cookie_item.split(';')
             cookie_name_value = cookie_parts[0].strip()
 
             if '=' in cookie_name_value:
                 name, value = cookie_name_value.split('=', 1)
-                cookie_dict[name] = cookie_name_value
+                name = name.strip()
+                if name in ['.ASPXAUTH', 'ApplicationGatewayAffinity', 'ApplicationGatewayAffinityCORS']:
+                    cookie_dict[name] = cookie_name_value
+                else:
+                    other_cookies.append(cookie_name_value)
 
-        # Reorder in the requested format
-        desired_order = ['.ASPXAUTH', 'ApplicationGatewayAffinity', 'ApplicationGatewayAffinityCORS']
+        priority_order = ['.ASPXAUTH', 'ApplicationGatewayAffinity', 'ApplicationGatewayAffinityCORS']
         reordered_cookies = []
 
-        for cookie_name in desired_order:
+        for cookie_name in priority_order:
             if cookie_name in cookie_dict:
                 reordered_cookies.append(cookie_dict[cookie_name])
 
-        # Join with semicolon and space
+        reordered_cookies.extend(other_cookies)
+
         return '; '.join(reordered_cookies)
 
     def update_cookie(self, api_key: str, api_secret: str):
