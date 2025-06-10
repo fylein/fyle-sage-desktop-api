@@ -1,21 +1,23 @@
-
-import logging
-import requests
 import json
-from typing import List, Dict, Generator
+import logging
+from typing import Dict, Generator, List
+
+import requests
+
 from sage_desktop_sdk.exceptions import (
+    InternalServerError,
     InvalidUserCredentials,
     InvalidWebApiClientCredentials,
-    UserAccountLocked,
-    WebApiClientLocked,
-    WrongParamsError,
     NotAcceptableClientError,
     NotFoundItemError,
     SageDesktopSDKError,
-    InternalServerError
+    UserAccountLocked,
+    WebApiClientLocked,
+    WrongParamsError,
 )
 
 logger = logging.getLogger(__name__)
+
 
 class Client:
     """
@@ -49,6 +51,35 @@ class Client:
     def set_cookie(self, cookie: str):
         self.__cookie = cookie
 
+    def _reformat_cookie(self, cookie: str) -> str:
+        """
+        Reformat cookie string to proper order and format
+        :param cookie: Raw cookie string from headers
+        :return: Reformatted cookie string
+        """
+        cookies_raw = cookie.split(', ')
+        cookie_dict = {}
+
+        for cookie_item in cookies_raw:
+            # Get the cookie name and value (everything before the first semicolon)
+            cookie_parts = cookie_item.split(';')
+            cookie_name_value = cookie_parts[0].strip()
+
+            if '=' in cookie_name_value:
+                name, value = cookie_name_value.split('=', 1)
+                cookie_dict[name] = cookie_name_value
+
+        # Reorder in the requested format
+        desired_order = ['.ASPXAUTH', 'ApplicationGatewayAffinity', 'ApplicationGatewayAffinityCORS']
+        reordered_cookies = []
+
+        for cookie_name in desired_order:
+            if cookie_name in cookie_dict:
+                reordered_cookies.append(cookie_dict[cookie_name])
+
+        # Join with semicolon and space
+        return '; '.join(reordered_cookies)
+
     def update_cookie(self, api_key: str, api_secret: str):
         """
         Sets the cookies for APIs
@@ -78,7 +109,7 @@ class Client:
             response = json.loads(result.text)
 
             if response['Result'] == 5:
-                cookie = result.headers.get('Set-Cookie')
+                cookie = self._reformat_cookie(result.headers.get('Set-Cookie'))
                 self.__cookie = cookie
                 return cookie
 
