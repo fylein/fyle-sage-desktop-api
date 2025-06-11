@@ -32,7 +32,7 @@ def test_get_accounting_export_summary(api_client, test_connection, create_temp_
 
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
 
-    response = api_client.get(url)
+    response = api_client.get(url + '?start_date=2023-10-27T04:53:59.287618Z')
     assert response.status_code == 200
     response = json.loads(response.content)
     assert dict_compare_keys(response, data['accounting_export_summary_response']) == [], 'expense group api return diffs in keys'

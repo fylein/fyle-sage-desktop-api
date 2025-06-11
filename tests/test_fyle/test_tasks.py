@@ -2,6 +2,7 @@ from .fixtures import fixtures as data
 from django.urls import reverse
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 from apps.fyle.tasks import (
     re_run_skip_export_rule, update_non_exported_expenses, import_expenses
 )
@@ -82,11 +83,11 @@ def test_import_expenses(db, create_temp_workspace, add_accounting_export_expens
     )
 
     accounting_export = AccountingExport.objects.filter(workspace_id=1).first()
-    import_expenses(1, accounting_export_id=accounting_export.id, is_state_change_event=True, report_state='APPROVED', fund_source_key='PERSONAL')
+    import_expenses(1, accounting_export_id=accounting_export.id, is_state_change_event=True, report_state='APPROVED', fund_source_key='PERSONAL', trigger_export=True, triggered_by=ExpenseImportSourceEnum.WEBHOOK)
 
     import_expenses(1, accounting_export_id=accounting_export.id, fund_source_key='PERSONAL')
 
-    import_expenses(1, accounting_export_id=accounting_export.id, is_state_change_event=True, report_state='PAYMENT_PROCESSING', fund_source_key='PERSONAL')
+    import_expenses(1, accounting_export_id=accounting_export.id, is_state_change_event=True, report_state='PAYMENT_PROCESSING', fund_source_key='PERSONAL', trigger_export=True, triggered_by=ExpenseImportSourceEnum.WEBHOOK)
 
 
 def test_re_run_skip_export_rule(db, create_temp_workspace, mocker, api_client, add_export_settings):

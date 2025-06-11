@@ -197,6 +197,7 @@ def test_sync_schedule_2(
     )
 
     advance_settings.schedule = sch
+    advance_settings.is_real_time_export_enabled = True
     advance_settings.save()
 
     advanced_settings = schedule_sync(
