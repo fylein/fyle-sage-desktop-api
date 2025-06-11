@@ -25,10 +25,24 @@ def run_pre_save_export_settings_triggers(sender: type[ExportSetting], instance:
 
     if existing_export_settings:
         # TODO: move these async_tasks to utility worker later
-        if existing_export_settings.reimbursable_expenses_export_type and existing_export_settings.reimbursable_expense_state != instance.reimbursable_expense_state and existing_export_settings.reimbursable_expense_state == ExpenseStateEnum.PAID and instance.reimbursable_expense_state == ExpenseStateEnum.PAYMENT_PROCESSING:
+        is_reimbursable_state_changed = (
+            existing_export_settings.reimbursable_expense_state != instance.reimbursable_expense_state
+        )
+        is_paid_to_processing = (
+            existing_export_settings.reimbursable_expense_state == ExpenseStateEnum.PAID and
+            instance.reimbursable_expense_state == ExpenseStateEnum.PAYMENT_PROCESSING
+        )
+        if existing_export_settings.reimbursable_expenses_export_type and is_reimbursable_state_changed and is_paid_to_processing:
             logger.info(f'Reimbursable expense state changed from {existing_export_settings.reimbursable_expense_state} to {instance.reimbursable_expense_state} for workspace {instance.workspace_id}, so pulling the data from Fyle')
             async_task('apps.fyle.tasks.import_expenses', workspace_id=instance.workspace_id, fund_source='PERSONAL_CASH_ACCOUNT', fund_source_key='PERSONAL', imported_from=ExpenseImportSourceEnum.CONFIGURATION_UPDATE)
 
-        if existing_export_settings.credit_card_expense_export_type and existing_export_settings.credit_card_expense_state != instance.credit_card_expense_state and existing_export_settings.credit_card_expense_state == ExpenseStateEnum.PAID and instance.credit_card_expense_state == ExpenseStateEnum.APPROVED:
+        is_ccc_state_changed = (
+            existing_export_settings.credit_card_expense_state != instance.credit_card_expense_state
+        )
+        is_paid_to_approved = (
+            existing_export_settings.credit_card_expense_state == ExpenseStateEnum.PAID and
+            instance.credit_card_expense_state == ExpenseStateEnum.APPROVED
+        )
+        if existing_export_settings.credit_card_expense_export_type and is_ccc_state_changed and is_paid_to_approved:
             logger.info(f'Corporate credit card expense state changed from {existing_export_settings.credit_card_expense_state} to {instance.credit_card_expense_state} for workspace {instance.workspace_id}, so pulling the data from Fyle')
             async_task('apps.fyle.tasks.import_expenses', workspace_id=instance.workspace_id, fund_source='PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT', fund_source_key='CCC', imported_from=ExpenseImportSourceEnum.CONFIGURATION_UPDATE)
