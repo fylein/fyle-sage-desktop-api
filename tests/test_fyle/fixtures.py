@@ -459,7 +459,10 @@ fixtures = {
         "total_accounting_export_count":10,
         "successful_accounting_export_count":5,
         "failed_accounting_export_count":5,
-        "workspace":1
+        "workspace":1,
+        "repurposed_successful_count": 5,
+        "repurposed_failed_count": 5,
+        "repurposed_last_exported_at": "2023-10-27T04:53:59.287618Z"
     },
     "import_settings_payload": {
         "import_settings": {
