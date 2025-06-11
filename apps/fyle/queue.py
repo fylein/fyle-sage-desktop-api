@@ -90,6 +90,8 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
                 'is_state_change_event': True,
                 'report_state': state,
                 'imported_from': ExpenseImportSourceEnum.WEBHOOK,
+                'trigger_export': True,
+                'triggered_by': ExpenseImportSourceEnum.WEBHOOK
             },
             'workspace_id': workspace_id
         }
