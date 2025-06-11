@@ -73,7 +73,7 @@ def test_update_non_exported_expenses(db, create_temp_workspace, mocker, api_cli
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
-def test_import_expenses(db, create_temp_workspace, add_accounting_export_expenses, add_export_settings, add_fyle_credentials, mocker, api_client, test_connection):
+def test_import_expenses(db, create_temp_workspace, add_accounting_export_expenses, add_export_settings, add_fyle_credentials, mocker, api_client, test_connection, add_advanced_settings, add_accounting_export_summary):
     """
     Test import_expenses
     """
