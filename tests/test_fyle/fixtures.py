@@ -275,7 +275,8 @@ fixtures = {
         "emails_selected": ["email1@example.com", "email2@example.com"],
         "emails_added": ["newemail@example.com"],
         "auto_create_vendor": False,
-        "sync_sage_300_to_fyle_payments": False
+        "sync_sage_300_to_fyle_payments": False,
+        "is_real_time_export_enabled": True
     },
     "expense_filters_response": {
         "count": 2,
