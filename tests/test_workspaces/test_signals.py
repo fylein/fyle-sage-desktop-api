@@ -74,14 +74,14 @@ def test_run_pre_save_export_settings_triggers_both_state_changes(db, mocker, cr
     assert calls[0] == mocker.call(
         'apps.fyle.tasks.import_expenses',
         workspace_id=workspace_id,
-        fund_source='PERSONAL_CASH_ACCOUNT',
+        source_account_type='PERSONAL_CASH_ACCOUNT',
         fund_source_key='PERSONAL',
         imported_from=ExpenseImportSourceEnum.CONFIGURATION_UPDATE
     )
     assert calls[1] == mocker.call(
         'apps.fyle.tasks.import_expenses',
         workspace_id=workspace_id,
-        fund_source='PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT',
+        source_account_type='PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT',
         fund_source_key='CCC',
         imported_from=ExpenseImportSourceEnum.CONFIGURATION_UPDATE
     )
