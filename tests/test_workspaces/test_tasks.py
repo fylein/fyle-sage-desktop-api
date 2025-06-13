@@ -146,6 +146,7 @@ def test_sync_schedule(
 
     advance_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
     advance_settings.schedule_is_enabled = True
+    advance_settings.is_real_time_export_enabled = False
     advance_settings.save()
 
     advanced_settings = schedule_sync(
@@ -215,6 +216,33 @@ def test_sync_schedule_2(
     assert schedules.count() == 0
     assert schedules.first() is None
     assert advanced_settings.schedule_is_enabled == False
+
+
+def test_sync_schedule_3(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_advanced_settings
+):
+    workspace_id = 1
+
+    advance_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
+    advance_settings.schedule_is_enabled = True
+    advance_settings.is_real_time_export_enabled = True
+    advance_settings.save()
+
+    advanced_settings = schedule_sync(
+        workspace_id=workspace_id,
+        schedule_enabled=True,
+        hours=0,
+        email_added=['test2@fyle.in', 'test2@fyle.in'],
+        emails_selected=['test1@fyle.in']
+    )
+
+    assert advanced_settings.schedule_is_enabled == True
+    assert advanced_settings.emails_selected == ['test1@fyle.in']
+    assert advanced_settings.interval_hours == 0
+    assert advance_settings.is_real_time_export_enabled == True
 
 
 def test_export_to_sage300(

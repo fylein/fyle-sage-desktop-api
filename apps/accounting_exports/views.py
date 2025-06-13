@@ -46,11 +46,9 @@ class AccountingExportSummaryView(generics.RetrieveAPIView):
     """
     Retrieve Accounting Export Summary
     """
-    lookup_field = 'workspace_id'
-    lookup_url_kwarg = 'workspace_id'
-
-    queryset = AccountingExportSummary.objects.filter(last_exported_at__isnull=False, total_accounting_export_count__gt=0)
     serializer_class = AccountingExportSummarySerializer
+    queryset = AccountingExportSummary.objects.filter(last_exported_at__isnull=False, total_accounting_export_count__gt=0)
+    lookup_field = 'workspace_id'
 
 
 class ErrorsView(LookupFieldMixin, generics.ListAPIView):
