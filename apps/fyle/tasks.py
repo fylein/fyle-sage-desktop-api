@@ -10,14 +10,16 @@ from typing import Dict, List
 
 from django.db import transaction
 from django.db.models import Q
+from django.utils.module_loading import import_string
 
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle_integrations_platform_connector.apis.expenses import Expenses as FyleExpenses
 from fyle_accounting_library.fyle_platform.helpers import get_expense_import_states, filter_expenses_based_on_state, get_source_account_types_based_on_export_modules
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+from fyle_accounting_library.fyle_platform.branding import feature_configuration
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary, Error
-from apps.workspaces.models import ExportSetting, Workspace, FyleCredential
+from apps.workspaces.models import ExportSetting, Workspace, FyleCredential, AdvancedSetting
 from apps.fyle.models import Expense, ExpenseFilter
 from apps.fyle.helpers import __bulk_update_expenses, construct_expense_filter_query
 from apps.fyle.exceptions import handle_exceptions
@@ -56,13 +58,15 @@ def get_filtered_expenses(workspace: int, expense_objects: list, expense_filters
     return filtered_expenses
 
 
-def import_expenses(workspace_id, accounting_export: AccountingExport = None, source_account_type: str = None, fund_source_key: str = None, is_state_change_event: bool = False, report_state: str = None, imported_from: ExpenseImportSourceEnum = None, accounting_export_id: int = None, report_id: str = None):
+def import_expenses(workspace_id, accounting_export: AccountingExport = None, source_account_type: str = None, fund_source_key: str = None, is_state_change_event: bool = False, report_state: str = None, imported_from: ExpenseImportSourceEnum = None, accounting_export_id: int = None, report_id: str = None, trigger_export: bool = False, triggered_by: ExpenseImportSourceEnum = None):
     """
     Common logic for importing expenses from Fyle
     :param accounting_export: Task log object
     :param workspace_id: workspace id
     :param source_account_type: Fyle source account type
     :param fund_source_key: Key for accessing fund source specific fields in ExportSetting
+    :param trigger_export: trigger export - will be true for webhook calls that are state change events (i.e. report state changes)
+    :param triggered_by: triggered by
     """
     if accounting_export_id:
         accounting_export = AccountingExport.objects.get(id=accounting_export_id, workspace_id=workspace_id)
@@ -82,18 +86,18 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
         'CCC': 'credit_card'
     }
 
-    last_synced_at = getattr(workspace, f"{fund_source_map.get(fund_source_key)}_last_synced_at", None)
+    last_synced_at = getattr(workspace, f"{fund_source_map.get(fund_source_key)}_last_synced_at", None) if imported_from != ExpenseImportSourceEnum.CONFIGURATION_UPDATE else None
 
     settled_at_query_param = None
-    if not is_state_change_event and getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'PAYMENT_PROCESSING':
+    if not is_state_change_event and getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'PAYMENT_PROCESSING' and imported_from != ExpenseImportSourceEnum.CONFIGURATION_UPDATE:
         settled_at_query_param = last_synced_at
 
     approved_at_query_param = None
-    if not is_state_change_event and getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'APPROVED':
+    if not is_state_change_event and getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'APPROVED' and imported_from != ExpenseImportSourceEnum.CONFIGURATION_UPDATE:
         approved_at_query_param = last_synced_at
 
     last_paid_at_query_param = None
-    if not is_state_change_event and getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'PAID':
+    if not is_state_change_event and getattr(export_settings, f"{fund_source_map.get(fund_source_key)}_expense_state") == 'PAID' and imported_from != ExpenseImportSourceEnum.CONFIGURATION_UPDATE:
         last_paid_at_query_param = last_synced_at
 
     import_states_query_param = None
@@ -131,7 +135,8 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
         with transaction.atomic():
             if not is_state_change_event:
                 setattr(workspace, f"{fund_source_map.get(fund_source_key)}_last_synced_at", datetime.now())
-                workspace.save()
+                if imported_from != ExpenseImportSourceEnum.CONFIGURATION_UPDATE:
+                    workspace.save()
 
             expense_objects = Expense.create_expense_objects(expenses, workspace_id, imported_from=imported_from)
 
@@ -155,10 +160,20 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
                     workspace_id=workspace_id
                 )
 
-    accounting_export.status = 'COMPLETE'
-    accounting_export.detail = None
+    if accounting_export:
+        accounting_export.status = 'COMPLETE'
+        accounting_export.detail = None
 
-    accounting_export.save()
+        accounting_export.save()
+
+    if trigger_export:
+        # Trigger export immediately for customers who have enabled real time export
+        is_real_time_export_enabled = AdvancedSetting.objects.filter(workspace_id=workspace.id, is_real_time_export_enabled=True).exists()
+
+        # Allow real time export if it's supported for the branded app and setting is enabled
+        if is_real_time_export_enabled and feature_configuration.feature.real_time_export_1hr_orgs:
+            logger.info(f'Exporting expenses for workspace {workspace.id} with report id {report_id}, triggered by {imported_from}')
+            import_string('apps.workspaces.tasks.export_to_sage300')(workspace_id=workspace_id, triggered_by=triggered_by, accounting_export_filters={'expenses__report_id': report_id})
 
 
 @handle_exceptions

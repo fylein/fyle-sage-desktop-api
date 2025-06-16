@@ -389,7 +389,8 @@ class AdvancedSettingSerializer(serializers.ModelSerializer):
             'emails_selected',
             'emails_added',
             'auto_create_vendor',
-            'sync_sage_300_to_fyle_payments'
+            'sync_sage_300_to_fyle_payments',
+            'is_real_time_export_enabled'
         ]
         read_only_fields = ('id', 'workspace', 'created_at', 'updated_at')
 

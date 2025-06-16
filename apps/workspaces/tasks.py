@@ -89,47 +89,75 @@ def run_import_export(workspace_id: int, export_mode = None):
 
 
 def schedule_sync(workspace_id: int, schedule_enabled: bool, hours: int, email_added: List, emails_selected: List):
-
+    """
+    Configure sync schedule settings for a workspace
+    """
     advance_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
+    advance_settings.schedule_is_enabled = schedule_enabled
 
     if schedule_enabled:
-        advance_settings.schedule_is_enabled = schedule_enabled
-        advance_settings.start_datetime = datetime.now()
-        advance_settings.interval_hours = hours
-        advance_settings.emails_selected = emails_selected
-
-        if email_added:
-            advance_settings.emails_added = email_added
-
-        # create next run by adding hours to current time
-        next_run = datetime.now() + timedelta(hours=hours)
-
-        schedule, _ = Schedule.objects.update_or_create(
-            func='apps.workspaces.tasks.run_import_export',
-            args='{}'.format(workspace_id),
-            defaults={
-                'schedule_type': Schedule.MINUTES,
-                'minutes': hours * 60,
-                'next_run': next_run
-            }
-        )
-
-        advance_settings.schedule = schedule
-        advance_settings.save()
-
+        _enable_schedule(advance_settings, hours, email_added, emails_selected)
     else:
-        advance_settings.schedule_is_enabled = schedule_enabled
-
-        if advance_settings.schedule:
-            schedule = advance_settings.schedule
-            advance_settings.schedule = None
-            advance_settings.save()
-            schedule.delete()
+        _disable_schedule(advance_settings)
 
     return advance_settings
 
 
-def export_to_sage300(workspace_id: int, triggered_by: ExpenseImportSourceEnum):
+def _enable_schedule(advance_settings, hours: int, email_added: List, emails_selected: List):
+    """
+    Enable sync schedule and configure settings
+    """
+    advance_settings.start_datetime = datetime.now()
+    advance_settings.interval_hours = hours
+    advance_settings.emails_selected = emails_selected
+
+    if email_added:
+        advance_settings.emails_added = email_added
+
+    if advance_settings.is_real_time_export_enabled:
+        _cleanup_existing_schedule(advance_settings)
+    else:
+        _create_or_update_schedule(advance_settings, hours)
+
+
+def _disable_schedule(advance_settings):
+    """
+    Disable sync schedule and cleanup existing schedule
+    """
+    _cleanup_existing_schedule(advance_settings)
+
+
+def _create_or_update_schedule(advance_settings, hours: int):
+    """
+    Create or update the sync schedule
+    """
+    next_run = datetime.now() + timedelta(hours=hours)
+
+    schedule, _ = Schedule.objects.update_or_create(
+        func='apps.workspaces.tasks.run_import_export',
+        args='{}'.format(advance_settings.workspace_id),
+        defaults={
+            'schedule_type': Schedule.MINUTES,
+            'minutes': hours * 60,
+            'next_run': next_run
+        }
+    )
+    advance_settings.schedule = schedule
+    advance_settings.save()
+
+
+def _cleanup_existing_schedule(advance_settings):
+    """
+    Remove existing schedule if it exists
+    """
+    if advance_settings.schedule:
+        schedule = advance_settings.schedule
+        advance_settings.schedule = None
+        advance_settings.save()
+        schedule.delete()
+
+
+def export_to_sage300(workspace_id: int, triggered_by: ExpenseImportSourceEnum, accounting_export_filters: dict = {}):
     """
     Function to export expenses to Sage 300
     """
@@ -158,7 +186,7 @@ def export_to_sage300(workspace_id: int, triggered_by: ExpenseImportSourceEnum):
     if export_settings.reimbursable_expenses_export_type:
         # Get IDs of unreexported accounting exports for personal fund source
         accounting_export_ids = AccountingExport.objects.filter(
-            fund_source='PERSONAL', exported_at__isnull=True, workspace_id=workspace_id).values_list('id', flat=True)
+            fund_source='PERSONAL', exported_at__isnull=True, workspace_id=workspace_id, **accounting_export_filters).values_list('id', flat=True)
 
         if len(accounting_export_ids):
             # Set the flag indicating expenses are exported
@@ -171,7 +199,7 @@ def export_to_sage300(workspace_id: int, triggered_by: ExpenseImportSourceEnum):
     if export_settings.credit_card_expense_export_type:
         # Get IDs of unreexported accounting exports for credit card fund source
         accounting_export_ids = AccountingExport.objects.filter(
-            fund_source='CCC', exported_at__isnull=True, workspace_id=workspace_id).values_list('id', flat=True)
+            fund_source='CCC', exported_at__isnull=True, workspace_id=workspace_id, **accounting_export_filters).values_list('id', flat=True)
 
         if len(accounting_export_ids):
             # Set the flag indicating expenses are exported
