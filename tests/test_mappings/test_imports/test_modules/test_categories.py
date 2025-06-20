@@ -220,7 +220,7 @@ def test_disable_categories(
 
     payload = [{
         'name': 'old_category_code: old_category',
-        'code': 'destination_id',
+        'code': None,
         'is_enabled': False,
         'id': 'source_id_123'
     }]

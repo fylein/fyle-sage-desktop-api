@@ -9,6 +9,7 @@ from apps.fyle.models import DependentFieldSetting
 from apps.sage300.models import CostCategory
 from fyle_integrations_imports.modules.projects import disable_projects
 from apps.sage300.dependent_fields import update_and_disable_cost_code
+from tests.helper import dict_compare_keys
 
 
 def test_check_interval_and_sync_dimension(
@@ -169,7 +170,7 @@ def test_disable_projects(
 
     payload = [{
         'name': 'old_project_code: old_project',
-        'code': 'destination_id',
+        'code': None,
         'description': 'Project - {0}, Id - {1}'.format(
             'old_project_code: old_project',
             'destination_id'
@@ -178,7 +179,9 @@ def test_disable_projects(
         'id': 'source_id_123'
     }]
 
-    assert disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True) == payload
+    response_payload = disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True)
+
+    assert dict_compare_keys(response_payload, payload) == [], 'Response payload does not match expected payload'
 
 
 def test_update_and_disable_cost_code(

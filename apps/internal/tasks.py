@@ -27,6 +27,7 @@ def re_export_stuck_exports():
     accounting_exports = AccountingExport.objects.filter(
         status__in=['ENQUEUED', 'IN_PROGRESS'],
         updated_at__lt=timezone.now() - timedelta(minutes=60),
+        updated_at__gt=timezone.now() - timedelta(days=7),
         workspace_id__in=prod_workspace_ids
     ).select_related('workspace')
 

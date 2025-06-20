@@ -159,7 +159,7 @@ def test_disable_cost_centers(
     payload = [
         {
             'name': 'old_cost_center_code: old_cost_center',
-            'code': 'destination_id',
+            'code': None,
             'is_enabled': False,
             'id': 'source_id_123',
             'description': 'Cost Center - old_cost_center_code: old_cost_center, Id - destination_id'

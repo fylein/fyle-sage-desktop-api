@@ -28,4 +28,4 @@ max-line-length = 99
 max-complexity = 19
 ban-relative-imports = true
 select = B,C,E,F,N,W,I25
-exclude=*env, *sage_desktop_sdk, *.yml, .flake8, *.txt, *.yaml, apps/*/migrations/*, Dockerfile, fyle_accounting_library/**, common/**, main.py
+exclude=*env, *sage_desktop_sdk, *.yml, .flake8, *.txt, *.yaml, apps/*/migrations/*, Dockerfile, fyle_accounting_library/**, fyle_integrations_imports/*, common/**, main.py
