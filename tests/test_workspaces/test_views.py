@@ -74,19 +74,35 @@ def test_post_of_sage300_creds(api_client, test_connection, mocker):
     url = reverse('sage300-creds', kwargs={'workspace_id': response.data['id']})
 
     payload = {
-        'identifier': "indentifier",
-        'password': "passeord",
-        'username': "username",
+        'identifier': "test-server",
+        'password': "password123",
+        'username': "testuser",
         'workspace': response.data['id']
     }
 
-    mocker.patch(
-        'sage_desktop_sdk.core.client.Client.update_cookie',
-        return_value={'text': {'Result': 2}}
-    )
+    # Mock the settings values
+    mocker.patch('apps.workspaces.views.settings.SD_API_KEY', 'test_api_key')
+    mocker.patch('apps.workspaces.views.settings.SD_API_SECRET', 'test_api_secret')
+
+    # Mock SageDesktopSDK and its methods
+    mock_vendors = mocker.MagicMock()
+    mock_vendors.get_vendor_types.return_value = []
+
+    mock_sdk = mocker.MagicMock()
+    mock_sdk.vendors = mock_vendors
+
+    mocker.patch('apps.workspaces.views.SageDesktopSDK', return_value=mock_sdk)
 
     response = api_client.post(url, payload)
-    assert response.status_code == 201
+    assert response.status_code == 200
+
+    # Verify the credential was created with correct values
+    sage300_cred = Sage300Credential.objects.get(workspace_id=response.data['workspace'])
+    assert sage300_cred.identifier == 'test-server.hh2.com'
+    assert sage300_cred.username == 'testuser'
+    assert sage300_cred.password == 'password123'
+    assert sage300_cred.api_key == 'test_api_key'
+    assert sage300_cred.api_secret == 'test_api_secret'
 
 
 def test_get_of_sage300_creds(api_client, test_connection):
