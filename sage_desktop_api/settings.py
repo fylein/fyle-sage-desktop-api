@@ -180,8 +180,8 @@ CACHES = {
 Q_CLUSTER = {
     'name': 'sage_desktop_api',
     'save_limit': 0,
-    'retry': 14400,
-    'timeout': 3600,
+    'retry': 2592000,
+    'timeout': 86400,
     'catch_up': False,
     'workers': 4,
     # How many tasks are kept in memory by a single cluster.
