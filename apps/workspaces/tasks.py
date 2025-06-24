@@ -243,7 +243,7 @@ def patch_integration_settings(workspace_id: int, is_token_expired: bool, errors
     refresh_token = FyleCredential.objects.get(workspace_id=workspace_id).refresh_token
     url = '{}/integrations/'.format(settings.INTEGRATIONS_SETTINGS_API)
     payload = {
-        'tpa_name': 'Fyle Sage Desktop Integration'
+        'tpa_name': 'Fyle Sage 300 Integration'
     }
 
     if errors is not None:
