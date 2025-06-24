@@ -106,6 +106,17 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
             username = validated_data.get('username')
             password = validated_data.get('password')
             identifier = validated_data.get('identifier')
+
+            if identifier.startswith('https://'):
+                identifier = identifier[8:]
+            elif identifier.startswith('http://'):
+                identifier = identifier[7:]
+
+            if not identifier.endswith('.hh2.com'):
+                identifier = identifier + '.hh2.com'
+
+            validated_data['identifier'] = identifier
+
             workspace = validated_data.get('workspace')
             sd_api_key = settings.SD_API_KEY
             sd_api_secret = settings.SD_API_SECRET
