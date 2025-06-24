@@ -596,7 +596,7 @@ def test_sage300_health_check_view(db, mocker, api_client, test_connection, crea
     sage300_creds.is_expired = False
     sage300_creds.save()
 
-    # Mock cache to return True (healthy)
+    # Mock cache.get to return True (cache hit - healthy connection)
     mocker.patch('apps.workspaces.views.cache.get', return_value=True)
 
     response = api_client.get(url)
@@ -604,9 +604,12 @@ def test_sage300_health_check_view(db, mocker, api_client, test_connection, crea
     assert response.data['message'] == 'Sage300 connection is active'
 
     # Test case 4: Connection healthy (cache miss, successful connection)
-    # Mock cache to return None (cache miss)
+    # Mock cache.get to return None (cache miss)
     mocker.patch('apps.workspaces.views.cache.get', return_value=None)
     mocker.patch('apps.workspaces.views.cache.set')
+    
+    # Mock timedelta since it's used in the view
+    mocker.patch('apps.workspaces.views.timedelta')
 
     # Mock the SageDesktopConnector
     mock_connector = mocker.MagicMock()
