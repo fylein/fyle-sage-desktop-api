@@ -3,7 +3,8 @@ import logging
 from rest_framework import generics
 from rest_framework.views import Response, status
 from django.contrib.auth import get_user_model
-
+from django.core.cache import cache
+from datetime import timedelta
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from fyle_rest_auth.utils import AuthUtils
@@ -12,7 +13,9 @@ from fyle_accounting_mappings.models import MappingSetting
 
 from fyle_integrations_imports.models import ImportLog
 
-from sage_desktop_api.utils import assert_valid
+from apps.sage300.utils import SageDesktopConnector
+
+from sage_desktop_api.utils import assert_valid, invalidate_sage300_credentials
 from apps.workspaces.tasks import export_to_sage300
 from apps.workspaces.models import (
     Workspace,
@@ -178,3 +181,38 @@ class ImportCodeFieldView(generics.GenericAPIView):
             data=response_data,
             status=status.HTTP_200_OK
         )
+
+
+class TokenHealthView(generics.RetrieveAPIView):
+    """
+    Token Health View
+    """
+
+    def get(self, request, *args, **kwargs):
+        status_code = status.HTTP_200_OK
+        message = "Sage300 connection is active"
+
+        workspace_id = kwargs.get('workspace_id')
+        sage300_credentials = Sage300Credential.objects.filter(workspace=workspace_id).first()
+
+        if not sage300_credentials:
+            status_code = status.HTTP_400_BAD_REQUEST
+            message = "Sage300 credentials not found"
+        elif sage300_credentials.is_expired:
+            status_code = status.HTTP_400_BAD_REQUEST
+            message = "Sage300 connection expired"
+        else:
+            try:
+                cache_key = f'HEALTH_CHECK_CACHE_{workspace_id}'
+                is_healthy = cache.get(cache_key)
+
+                if is_healthy is None:
+                    sage300_connection = SageDesktopConnector(credentials_object=sage300_credentials, workspace_id=workspace_id)
+                    sage300_connection.connection.vendors.get_vendor_types()
+                    cache.set(cache_key, True, timeout=timedelta(hours=24).total_seconds())
+            except Exception:
+                invalidate_sage300_credentials(workspace_id, sage300_credentials)
+                status_code = status.HTTP_400_BAD_REQUEST
+                message = "Sage300 connection expired"
+
+        return Response({"message": message}, status=status_code)

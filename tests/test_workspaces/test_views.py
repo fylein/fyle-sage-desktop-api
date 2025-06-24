@@ -562,3 +562,67 @@ def test_import_code_field_view(db, mocker, create_temp_workspace, api_client, t
         'VENDOR': True,
         'ACCOUNT': True
     }
+
+
+def test_sage300_health_check_view(db, mocker, api_client, test_connection, create_temp_workspace, add_sage300_creds):
+    """
+    Test Sage300 health check view
+    """
+    workspace_id = 1
+    url = f'/api/workspaces/{workspace_id}/token_health/'
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+
+    # Test case 1: No credentials found
+    Sage300Credential.objects.filter(workspace_id=workspace_id).delete()
+    response = api_client.get(url)
+    assert response.status_code == 400
+    assert response.data['message'] == 'Sage300 credentials not found'
+
+    # Test case 2: Credentials expired
+    sage300_creds = Sage300Credential.objects.create(
+        identifier='test_identifier',
+        username='test_username',
+        password='test_password',
+        api_key='test_api_key',
+        api_secret='test_api_secret',
+        workspace_id=workspace_id,
+        is_expired=True
+    )
+    response = api_client.get(url)
+    assert response.status_code == 400
+    assert response.data['message'] == 'Sage300 connection expired'
+
+    # Test case 3: Connection healthy (cache hit)
+    sage300_creds.is_expired = False
+    sage300_creds.save()
+
+    # Mock cache to return True (healthy)
+    mocker.patch('apps.workspaces.views.cache.get', return_value=True)
+
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert response.data['message'] == 'Sage300 connection is active'
+
+    # Test case 4: Connection healthy (cache miss, successful connection)
+    # Mock cache to return None (cache miss)
+    mocker.patch('apps.workspaces.views.cache.get', return_value=None)
+    mocker.patch('apps.workspaces.views.cache.set')
+
+    # Mock the SageDesktopConnector
+    mock_connector = mocker.MagicMock()
+    mocker.patch('apps.workspaces.views.SageDesktopConnector', return_value=mock_connector)
+
+    # Mock successful connection test
+    mock_connector.connection.vendors.get_vendor_types.return_value = ['type1', 'type2']
+
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert response.data['message'] == 'Sage300 connection is active'
+
+    # Test case 5: Connection fails
+    mock_connector.connection.vendors.get_vendor_types.side_effect = Exception('Connection failed')
+    mocker.patch('apps.workspaces.views.invalidate_sage300_credentials')
+
+    response = api_client.get(url)
+    assert response.status_code == 400
+    assert response.data['message'] == 'Sage300 connection expired'
