@@ -40,13 +40,13 @@ class Client:
         self.__user_id = user_id
         self.__user_password = user_password
 
-    def set_api_url(self, indentifier: str):
+    def set_api_url(self, identifier: str):
         """
-        Set the api url and indentifier for APIs
-        :param identifier: indentifier
+        Set the api url and identifier for APIs
+        :param identifier: identifier
         :return: None
         """
-        self.__api_url = "https://{0}".format(indentifier)
+        self.__api_url = "https://{0}".format(identifier)
 
     def set_cookie(self, cookie: str):
         self.__cookie = cookie
@@ -100,7 +100,7 @@ class Client:
         :param api_secret: Sage Desktop Api Secret
         :param user_name: Sage Desktop user name
         :param password: Sage Desktop user password
-        :param indentifier: Sage Desktop Indentifier
+        :param identifier: Sage Desktop Identifier
         :return: cookie
         """
 

@@ -125,7 +125,7 @@ class Sage300CredsView(generics.CreateAPIView, generics.RetrieveAPIView):
                     api_secret=api_secret,
                     user_name=username,
                     password=password,
-                    indentifier=identifier
+                    identifier=identifier
                 )
                 vendors = sage_300_connection.vendors
                 vendors.get_vendor_types()
