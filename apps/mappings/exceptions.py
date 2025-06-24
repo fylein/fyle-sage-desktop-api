@@ -12,7 +12,6 @@ from sage_desktop_sdk.exceptions import InvalidUserCredentials
 from fyle_integrations_imports.models import ImportLog
 from apps.workspaces.models import Sage300Credential
 
-
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
@@ -40,8 +39,16 @@ def handle_import_exceptions_v2(func):
             error['alert'] = True
             import_log.status = 'FAILED'
 
-        except (Sage300Credential.DoesNotExist, InvalidUserCredentials):
-            error['message'] = 'Invalid Token or Sage 300 credentials does not exist workspace_id - {0}'.format(workspace_id)
+        except Sage300Credential.DoesNotExist:
+            error['message'] = 'Sage 300 credentials does not exist workspace_id - {0}'.format(workspace_id)
+            error['alert'] = False
+            import_log.status = 'FAILED'
+
+        except InvalidUserCredentials:
+            # Importing here to avoid circular import
+            from sage_desktop_api.utils import invalidate_sage300_credentials
+            invalidate_sage300_credentials(workspace_id)
+            error['message'] = 'Invalid Sage 300 Token Error for workspace_id - {0}'.format(workspace_id)
             error['alert'] = False
             import_log.status = 'FAILED'
 

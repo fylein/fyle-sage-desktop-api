@@ -121,7 +121,7 @@ def poll_operation_status(workspace_id: int):
         return
 
     # Retrieve Sage 300 credentials for the workspace
-    sage300_credentials = Sage300Credential.objects.filter(workspace_id=workspace_id).first()
+    sage300_credentials = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     # Establish a connection to Sage 300 using the obtained credentials
     sage300_connection = SageDesktopConnector(sage300_credentials, workspace_id)

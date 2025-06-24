@@ -12,7 +12,7 @@ from apps.workspaces.models import Sage300Credential, ImportSetting
 
 
 def sync_sage300_attributes(sage300_attribute_type: str, workspace_id: int, import_log: ImportLog = None):
-    sage300_credentials: Sage300Credential = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage300_credentials: Sage300Credential = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     sage300_connection = SageDesktopConnector(
         credentials_object=sage300_credentials,
@@ -46,7 +46,7 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int) -> None:
     project_mapping = mapping_settings.filter(source_field='PROJECT', destination_field='JOB', import_to_fyle=True).first()
     project_import_log = ImportLog.objects.filter(workspace_id=workspace_id, attribute_type='PROJECT').first()
     is_sync_allowed = is_job_sync_allowed(project_import_log)
-    credentials = Sage300Credential.objects.get(workspace_id=workspace_id)
+    credentials = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     task_settings: TaskSetting = {
         'import_tax': None,

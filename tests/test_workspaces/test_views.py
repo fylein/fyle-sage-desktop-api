@@ -97,7 +97,7 @@ def test_post_of_sage300_creds(api_client, test_connection, mocker):
     assert response.status_code == 200
 
     # Verify the credential was created with correct values
-    sage300_cred = Sage300Credential.objects.get(workspace_id=response.data['workspace'])
+    sage300_cred = Sage300Credential.get_active_sage300_credentials(response.data['workspace'])
     assert sage300_cred.identifier == 'test-server.hh2.com'
     assert sage300_cred.username == 'testuser'
     assert sage300_cred.password == 'password123'

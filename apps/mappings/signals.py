@@ -79,7 +79,7 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
                     last_successful_run_at = offset_aware_time_difference
                     import_log.save()
 
-            sage_300_credentials = Sage300Credential.objects.get(workspace_id=workspace_id)
+            sage_300_credentials = Sage300Credential.get_active_sage300_credentials(workspace_id)
             sage_300_connection = SageDesktopConnector(credentials_object=sage_300_credentials, workspace_id=workspace_id)
 
             # Creating the expense_custom_field object with the correct last_successful_run_at value
