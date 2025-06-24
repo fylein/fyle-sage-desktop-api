@@ -1,16 +1,12 @@
 import json
-from django_q.models import Schedule
+
 import pytest  # noqa
 from django.urls import reverse
+from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
-from apps.workspaces.models import (
-    Workspace,
-    Sage300Credential,
-    ExportSetting,
-    AdvancedSetting
-)
+from apps.workspaces.models import AdvancedSetting, ExportSetting, Sage300Credential, Workspace
 from fyle_integrations_imports.models import ImportLog
 from tests.helper import dict_compare_keys
 from tests.test_fyle.fixtures import fixtures as data
@@ -64,7 +60,7 @@ def test_get_of_workspace(api_client, test_connection):
 
 def test_post_of_sage300_creds(api_client, test_connection, mocker):
     '''
-    Test post of sage300 creds
+    Test post of sage300 creds with identifier normalization
     '''
     Workspace.objects.all().delete()
     url = reverse('workspaces')
@@ -73,20 +69,35 @@ def test_post_of_sage300_creds(api_client, test_connection, mocker):
 
     url = reverse('sage300-creds', kwargs={'workspace_id': response.data['id']})
 
-    payload = {
-        'identifier': "indentifier",
-        'password': "passeord",
-        'username': "username",
-        'workspace': response.data['id']
-    }
-
     mocker.patch(
         'sage_desktop_sdk.core.client.Client.update_cookie',
         return_value={'text': {'Result': 2}}
     )
 
-    response = api_client.post(url, payload)
-    assert response.status_code == 201
+    base_payload = {
+        'password': "password",
+        'username': "username",
+        'workspace': response.data['id']
+    }
+
+    test_cases = [
+        "https://centurymechanicalcontractorsinc.hh2.com",
+        "http://centurymechanicalcontractorsinc.hh2.com",
+        "centurymechanicalcontractorsinc",
+        "centurymechanicalcontractorsinc.hh2.com"
+    ]
+
+    for test_case in test_cases:
+        payload = base_payload.copy()
+        payload['identifier'] = test_case
+
+        response = api_client.post(url, payload)
+        assert response.status_code == 201, f"Failed for test case: {test_case}"
+
+        sage300_cred = Sage300Credential.objects.get(workspace_id=response.data['workspace'])
+        assert sage300_cred.identifier == 'centurymechanicalcontractorsinc.hh2.com', f"Identifier normalization failed for test case: {test_case}"
+
+        sage300_cred.delete()
 
 
 def test_get_of_sage300_creds(api_client, test_connection):
