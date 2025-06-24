@@ -607,7 +607,7 @@ def test_sage300_health_check_view(db, mocker, api_client, test_connection, crea
     # Mock cache.get to return None (cache miss)
     mocker.patch('apps.workspaces.views.cache.get', return_value=None)
     mocker.patch('apps.workspaces.views.cache.set')
-    
+
     # Mock timedelta since it's used in the view
     mocker.patch('apps.workspaces.views.timedelta')
 
