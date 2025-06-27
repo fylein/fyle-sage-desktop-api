@@ -38,7 +38,7 @@ jobs:
         if: ${{env.branch_exists == 'true'}}
         run: echo "message=Branch `${{env.release_branch}}` already exists." >> $GITHUB_ENV
 
-    - name: Send message on Slack
+      - name: Send message on Slack
         uses: archive/github-actions-slack@v2.0.1
         id: notify
         with:
