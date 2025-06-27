@@ -39,6 +39,7 @@ services:
       SD_API_KEY: 23234
       SD_API_SECRET: 12312
       RABBITMQ_URL: amqp://admin:password@rabbitmq:5673/?heartbeat=0
+      STRICT_MODE: "false"
   db:
     image: "postgres:15"
     environment: 
