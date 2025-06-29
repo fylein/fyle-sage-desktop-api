@@ -150,6 +150,15 @@ class Sage300Credential(BaseModel):
     api_secret = StringNotNullField(help_text='sage300 api secret')
     is_expired = BooleanFalseField(help_text='Marks if credentials are expired')
 
+    @staticmethod
+    def get_active_sage300_credentials(workspace_id) -> 'Sage300Credential':
+        """
+        Get active Sage300 credentials
+        :param workspace_id: Workspace ID
+        :return: Sage300Credential credentials
+        """
+        return Sage300Credential.objects.get(workspace_id=workspace_id, is_expired=False)
+
     class Meta:
         db_table = 'sage300_credentials'
 

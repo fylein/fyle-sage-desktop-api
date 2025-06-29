@@ -17,7 +17,7 @@ def test_sync_dimensions(api_client, test_connection, mocker, create_temp_worksp
     response = api_client.post(url)
     assert response.status_code == 201
 
-    sage_300_credentials = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_300_credentials = Sage300Credential.get_active_sage300_credentials(workspace_id)
     sage_300_credentials.delete()
 
     response = api_client.post(url)

@@ -86,7 +86,7 @@ class ExportPurchaseInvoice(AccountingDataExporter):
         """
 
         purchase_invoice_payload = self.__construct_purchase_invoice(item, lineitem)
-        sage300_credentials = Sage300Credential.objects.filter(workspace_id=accounting_export.workspace_id).first()
+        sage300_credentials = Sage300Credential.get_active_sage300_credentials(accounting_export.workspace_id)
         # Establish a connection to Sage 300
         sage300_connection = SageDesktopConnector(sage300_credentials, accounting_export.workspace_id)
 

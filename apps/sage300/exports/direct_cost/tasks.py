@@ -59,7 +59,7 @@ class ExportDirectCost(AccountingDataExporter):
         """
 
         direct_cost_payload = self.__construct_direct_cost(item)
-        sage300_credentials = Sage300Credential.objects.filter(workspace_id=accounting_export.workspace_id).first()
+        sage300_credentials = Sage300Credential.get_active_sage300_credentials(accounting_export.workspace_id)
         # Establish a connection to Sage 300
         sage300_connection = SageDesktopConnector(sage300_credentials, accounting_export.workspace_id)
 

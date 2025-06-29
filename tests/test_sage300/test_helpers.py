@@ -22,7 +22,7 @@ def test_check_interval_and_sync_dimension(
     mocker.patch('apps.sage300.helpers.sync_dimensions')
 
     workspace = Workspace.objects.get(id=workspace_id)
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     workspace.destination_synced_at = datetime.now(timezone.utc) - timedelta(days=2)
 
@@ -55,7 +55,7 @@ def test_sync_dimensions(
 
     workspace_id = 1
 
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mock_sage_connector = mocker.patch('apps.sage300.utils.SageDesktopConnector')
 
