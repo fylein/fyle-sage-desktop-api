@@ -1,6 +1,5 @@
 import logging
 
-from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q
@@ -26,13 +25,8 @@ from apps.workspaces.models import (
 from apps.workspaces.triggers import AdvancedSettingsTriggers, ImportSettingsTrigger
 from fyle_integrations_imports.models import ImportLog
 from sage_desktop_api.utils import assert_valid
-from sage_desktop_sdk.exceptions import (
-    InvalidUserCredentials,
-    InvalidWebApiClientCredentials,
-    UserAccountLocked,
-    WebApiClientLocked,
-)
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -115,23 +109,22 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
             if not identifier.endswith('.hh2.com'):
                 identifier = identifier + '.hh2.com'
 
-            validated_data['identifier'] = identifier
-
             workspace = validated_data.get('workspace')
             sd_api_key = settings.SD_API_KEY
             sd_api_secret = settings.SD_API_SECRET
 
-            # Initialize SageDesktopSDK or perform necessary actions.
-            SageDesktopSDK(
+            sage_300_connection = SageDesktopSDK(
                 api_key=sd_api_key,
                 api_secret=sd_api_secret,
                 user_name=username,
                 password=password,
-                indentifier=identifier
+                identifier=identifier
             )
 
-            # Save the Sage300Credential instance and update the workspace
-            instance = Sage300Credential.objects.create(
+            vendors = sage_300_connection.vendors
+            vendors.get_vendor_types()
+
+            sage300_credentials = Sage300Credential.objects.create(
                 username=username,
                 password=password,
                 identifier=identifier,
@@ -143,10 +136,56 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
             workspace.onboarding_state = 'EXPORT_SETTINGS'
             workspace.save()
 
+            return sage300_credentials
+
+        except Exception as e:
+            logger.info(e)
+            raise serializers.ValidationError('Invalid Login Attempt')
+
+    def update(self, instance, validated_data):
+        try:
+            username = validated_data.get('username', instance.username)
+            password = validated_data.get('password', instance.password)
+            identifier = validated_data.get('identifier', instance.identifier)
+
+            if identifier.startswith('https://'):
+                identifier = identifier[8:]
+            elif identifier.startswith('http://'):
+                identifier = identifier[7:]
+
+            if not identifier.endswith('.hh2.com'):
+                identifier = identifier + '.hh2.com'
+
+            sd_api_key = settings.SD_API_KEY
+            sd_api_secret = settings.SD_API_SECRET
+
+            sage_300_connection = SageDesktopSDK(
+                api_key=sd_api_key,
+                api_secret=sd_api_secret,
+                user_name=username,
+                password=password,
+                identifier=identifier
+            )
+
+            vendors = sage_300_connection.vendors
+            vendors.get_vendor_types()
+
+            instance.username = username
+            instance.password = password
+            instance.identifier = identifier
+            instance.api_key = sd_api_key
+            instance.api_secret = sd_api_secret
+            instance.is_expired = False
+            instance.save()
+
+            from apps.workspaces.tasks import patch_integration_settings
+            patch_integration_settings(instance.workspace_id, is_token_expired=False)
+
             return instance
 
-        except (InvalidUserCredentials, InvalidWebApiClientCredentials, UserAccountLocked, WebApiClientLocked) as e:
-            raise serializers.ValidationError(str(e))
+        except Exception as e:
+            logger.info(e)
+            raise serializers.ValidationError('Invalid Login Attempt')
 
 
 class ExportSettingsSerializer(serializers.ModelSerializer):

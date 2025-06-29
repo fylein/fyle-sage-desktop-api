@@ -1,12 +1,16 @@
 import json
-
+from django_q.models import Schedule
 import pytest  # noqa
 from django.urls import reverse
-from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
-from apps.workspaces.models import AdvancedSetting, ExportSetting, Sage300Credential, Workspace
+from apps.workspaces.models import (
+    Workspace,
+    Sage300Credential,
+    ExportSetting,
+    AdvancedSetting
+)
 from fyle_integrations_imports.models import ImportLog
 from tests.helper import dict_compare_keys
 from tests.test_fyle.fixtures import fixtures as data
@@ -125,6 +129,121 @@ def test_get_of_sage300_creds(api_client, test_connection):
     assert response.status_code == 200
     assert response.data['username'] == 'username'
     assert response.data['password'] == 'password'
+
+
+def test_update_sage300_creds(api_client, test_connection, mocker):
+    '''
+    Test update of sage300 creds with identifier normalization and error handling
+    '''
+    # Create workspace first
+    Workspace.objects.all().delete()
+    url = reverse('workspaces')
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    response = api_client.post(url)
+    workspace_id = response.data['id']
+
+    # Create initial credentials
+    Sage300Credential.objects.create(
+        identifier='old-identifier.hh2.com',
+        username='old_username',
+        password='old_password',
+        workspace_id=workspace_id,
+        api_key='old_api_key',
+        api_secret='old_api_secret',
+        is_expired=True
+    )
+
+    url = reverse('sage300-creds', kwargs={'workspace_id': workspace_id})
+
+    # Mock successful sage300 connection
+    mocker.patch(
+        'sage_desktop_sdk.core.client.Client.update_cookie',
+        return_value={'text': {'Result': 2}}
+    )
+    mocker.patch(
+        'apps.workspaces.tasks.patch_integration_settings',
+        return_value=None
+    )
+
+    # Test cases for identifier normalization during update
+    test_cases = [
+        {
+            'input': "https://newcompany.hh2.com",
+            'expected': 'newcompany.hh2.com',
+            'description': 'https:// prefix removal'
+        },
+        {
+            'input': "http://anothercompany.hh2.com",
+            'expected': 'anothercompany.hh2.com',
+            'description': 'http:// prefix removal'
+        },
+        {
+            'input': "thirdcompany",
+            'expected': 'thirdcompany.hh2.com',
+            'description': '.hh2.com suffix addition'
+        },
+        {
+            'input': "fourthcompany.hh2.com",
+            'expected': 'fourthcompany.hh2.com',
+            'description': 'no change needed'
+        }
+    ]
+
+    for test_case in test_cases:
+        # Update payload
+        payload = {
+            'username': 'updated_username',
+            'password': 'updated_password',
+            'identifier': test_case['input'],
+            'workspace': workspace_id
+        }
+
+        response = api_client.put(url, payload)
+        assert response.status_code == 200, f"Failed for test case: {test_case['description']}"
+
+        # Verify the credentials were updated
+        updated_cred = Sage300Credential.objects.get(workspace_id=workspace_id)
+        assert updated_cred.username == 'updated_username', f"Username not updated for: {test_case['description']}"
+        assert updated_cred.password == 'updated_password', f"Password not updated for: {test_case['description']}"
+        assert updated_cred.identifier == test_case['expected'], f"Identifier normalization failed for: {test_case['description']}"
+        assert updated_cred.is_expired == False, f"is_expired not reset for: {test_case['description']}"
+
+    # Test partial update (only updating username)
+    payload = {
+        'username': 'partially_updated_username',
+        'password': 'updated_password',  # Keep existing password
+        'identifier': 'fourthcompany.hh2.com',  # Keep existing identifier
+        'workspace': workspace_id
+    }
+    response = api_client.put(url, payload)
+    assert response.status_code == 200
+
+    updated_cred = Sage300Credential.objects.get(workspace_id=workspace_id)
+    assert updated_cred.username == 'partially_updated_username'
+    assert updated_cred.password == 'updated_password'  # Should remain unchanged
+    assert updated_cred.identifier == 'fourthcompany.hh2.com'  # Should remain unchanged from last test
+
+    # Test update with connection failure
+    mocker.patch(
+        'sage_desktop_sdk.core.client.Client.update_cookie',
+        side_effect=Exception('Connection failed')
+    )
+
+    payload = {
+        'username': 'failed_username',
+        'password': 'failed_password',
+        'identifier': 'failedcompany.hh2.com',
+        'workspace': workspace_id
+    }
+
+    response = api_client.put(url, payload)
+    assert response.status_code == 400
+    assert 'Invalid Login Attempt' in str(response.data)
+
+    # Verify credentials were not updated after failure
+    unchanged_cred = Sage300Credential.objects.get(workspace_id=workspace_id)
+    assert unchanged_cred.username == 'partially_updated_username'  # Should remain unchanged
+    assert unchanged_cred.password == 'updated_password'  # Should remain unchanged
 
 
 def test_export_settings(api_client, test_connection):
@@ -573,3 +692,68 @@ def test_import_code_field_view(db, mocker, create_temp_workspace, api_client, t
         'VENDOR': True,
         'ACCOUNT': True
     }
+
+
+def test_sage300_health_check_view(db, mocker, api_client, test_connection, create_temp_workspace, add_sage300_creds):
+    """
+    Test Sage300 health check view
+    """
+    workspace_id = 1
+    url = f'/api/workspaces/{workspace_id}/token_health/'
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+
+    # Test case 1: No credentials found
+    Sage300Credential.objects.filter(workspace_id=workspace_id).delete()
+    response = api_client.get(url)
+    assert response.status_code == 400
+    assert response.data['message'] == 'Sage300 credentials not found'
+
+    # Test case 2: Credentials expired
+    sage300_creds = Sage300Credential.objects.create(
+        identifier='test_identifier',
+        username='test_username',
+        password='test_password',
+        api_key='test_api_key',
+        api_secret='test_api_secret',
+        workspace_id=workspace_id,
+        is_expired=True
+    )
+    response = api_client.get(url)
+    assert response.status_code == 400
+    assert response.data['message'] == 'Sage300 connection expired'
+
+    # Test case 3: Connection healthy (cache hit)
+    sage300_creds.is_expired = False
+    sage300_creds.save()
+
+    # Mock cache to return True (healthy) - this should skip the connection test
+    cache_mock = mocker.patch('apps.workspaces.views.cache')
+    cache_mock.get.return_value = True
+
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert response.data['message'] == 'Sage300 connection is active'
+
+    # Test case 4: Connection healthy (cache miss, successful connection)
+    # Mock cache to return None (cache miss)
+    cache_mock.get.return_value = None
+    cache_mock.set.return_value = None
+
+    # Mock the SageDesktopConnector
+    mock_connector = mocker.MagicMock()
+    mocker.patch('apps.workspaces.views.SageDesktopConnector', return_value=mock_connector)
+
+    # Mock successful connection test
+    mock_connector.connection.vendors.get_vendor_types.return_value = ['type1', 'type2']
+
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert response.data['message'] == 'Sage300 connection is active'
+
+    # Test case 5: Connection fails
+    mock_connector.connection.vendors.get_vendor_types.side_effect = Exception('Connection failed')
+    mocker.patch('apps.workspaces.views.invalidate_sage300_credentials')
+
+    response = api_client.get(url)
+    assert response.status_code == 400
+    assert response.data['message'] == 'Sage300 connection expired'

@@ -8,6 +8,7 @@ from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
+from apps.fyle.helpers import patch_request
 from apps.fyle.queue import queue_import_credit_card_expenses, queue_import_reimbursable_expenses
 from apps.sage300.exports.direct_cost.tasks import ExportDirectCost
 from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
@@ -232,3 +233,26 @@ def async_create_admin_subcriptions(workspace_id: int) -> None:
         'webhook_url': '{}/workspaces/{}/fyle/webhook_callback/'.format(settings.API_URL, workspace_id)
     }
     platform.subscriptions.post(payload)
+
+
+def patch_integration_settings(workspace_id: int, is_token_expired: bool, errors: int = None):
+    """
+    Patch integration settings
+    """
+
+    refresh_token = FyleCredential.objects.get(workspace_id=workspace_id).refresh_token
+    url = '{}/integrations/'.format(settings.INTEGRATIONS_SETTINGS_API)
+    payload = {
+        'tpa_name': 'Fyle Sage 300 Integration'
+    }
+
+    if errors is not None:
+        payload['errors_count'] = errors
+
+    if is_token_expired is not None:
+        payload['is_token_expired'] = is_token_expired
+
+    try:
+        patch_request(url, payload, refresh_token)
+    except Exception as error:
+        logger.error(error, exc_info=True)

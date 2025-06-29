@@ -10,21 +10,21 @@ class SageDesktopSDK:
     Sage Desktop SDK
     """
 
-    def __init__(self, api_key: str, api_secret: str,  user_name: str, password: str, indentifier: str):
+    def __init__(self, api_key: str, api_secret: str,  user_name: str, password: str, identifier: str):
         """
         Initialize connection to Sage300
             :param api_key: Sage API Key
             :param api_secret: Sage Desktop Api Secret
             :param user_name: Sage Desktop user name
             :param password: Sage Desktop user password
-            :param indentifier: Sage Desktop Indentifier
+            :param identifier: Sage Desktop Identifier
         """
 
         self.__api_key = api_key
         self.__api_secret = api_secret
         self.__user_name = user_name
         self.__password = password
-        self.__indentifier = indentifier
+        self.__identifier = identifier
 
         self.client = Client()
         self.accounts = Accounts()
@@ -56,17 +56,17 @@ class SageDesktopSDK:
         self.event_failures.set_user_id_and_password(self.__user_name, self.__password)
 
     def update_api_url(self):
-        self.client.set_api_url(self.__indentifier)
-        self.accounts.set_api_url(self.__indentifier)
-        self.vendors.set_api_url(self.__indentifier)
-        self.jobs.set_api_url(self.__indentifier)
-        self.commitments.set_api_url(self.__indentifier)
-        self.documents.set_api_url(self.__indentifier)
-        self.operation_status.set_api_url(self.__indentifier)
-        self.cost_codes.set_api_url(self.__indentifier)
-        self.categories.set_api_url(self.__indentifier)
-        self.direct_costs.set_api_url(self.__indentifier)
-        self.event_failures.set_api_url(self.__indentifier)
+        self.client.set_api_url(self.__identifier)
+        self.accounts.set_api_url(self.__identifier)
+        self.vendors.set_api_url(self.__identifier)
+        self.jobs.set_api_url(self.__identifier)
+        self.commitments.set_api_url(self.__identifier)
+        self.documents.set_api_url(self.__identifier)
+        self.operation_status.set_api_url(self.__identifier)
+        self.cost_codes.set_api_url(self.__identifier)
+        self.categories.set_api_url(self.__identifier)
+        self.direct_costs.set_api_url(self.__identifier)
+        self.event_failures.set_api_url(self.__identifier)
 
     def update_cookie(self):
         cookie = self.client.update_cookie(self.__api_key, self.__api_secret)
