@@ -3,7 +3,6 @@ import logging
 from rest_framework import generics
 from rest_framework.views import Response, status
 from django.contrib.auth import get_user_model
-from django.conf import settings
 from django.core.cache import cache
 from datetime import timedelta
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
@@ -15,10 +14,9 @@ from fyle_accounting_mappings.models import MappingSetting
 from fyle_integrations_imports.models import ImportLog
 
 from apps.sage300.utils import SageDesktopConnector
-from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 
 from sage_desktop_api.utils import assert_valid, invalidate_sage300_credentials
-from apps.workspaces.tasks import export_to_sage300, patch_integration_settings
+from apps.workspaces.tasks import export_to_sage300
 from apps.workspaces.models import (
     Workspace,
     Sage300Credential,
@@ -90,89 +88,14 @@ class ReadyView(generics.RetrieveAPIView):
         )
 
 
-class Sage300CredsView(generics.CreateAPIView, generics.RetrieveAPIView):
+class Sage300CredsView(generics.CreateAPIView, generics.RetrieveAPIView, generics.UpdateAPIView):
     """
     Sage 300 Creds View
     """
     serializer_class = Sage300CredentialSerializer
     lookup_field = 'workspace_id'
+
     queryset = Sage300Credential.objects.all()
-
-    def post(self, request, **kwargs):
-        try:
-            identifier = request.data.get('identifier')
-            username = request.data.get('username')
-            password = request.data.get('password')
-
-            api_key = settings.SD_API_KEY
-            api_secret = settings.SD_API_SECRET
-
-            if identifier.startswith('https://'):
-                identifier = identifier[8:]
-            elif identifier.startswith('http://'):
-                identifier = identifier[7:]
-
-            if not identifier.endswith('.hh2.com'):
-                identifier = identifier + '.hh2.com'
-
-            workspace = Workspace.objects.get(pk=kwargs['workspace_id'])
-
-            sage300_credentials = Sage300Credential.objects.filter(workspace=workspace).first()
-
-            try:
-                sage_300_connection = SageDesktopSDK(
-                    api_key=api_key,
-                    api_secret=api_secret,
-                    user_name=username,
-                    password=password,
-                    identifier=identifier
-                )
-                vendors = sage_300_connection.vendors
-                vendors.get_vendor_types()
-            except Exception as connection_error:
-                error_message = str(connection_error)
-                logger.error(error_message)
-                return Response(
-                    {
-                        'message': 'Sage300 credentails invalid'
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            if not sage300_credentials:
-                sage300_credentials = Sage300Credential.objects.create(
-                    identifier=identifier,
-                    username=username,
-                    password=password,
-                    api_key=api_key,
-                    api_secret=api_secret,
-                    workspace=workspace
-                )
-                workspace.onboarding_state = 'EXPORT_SETTINGS'
-                workspace.save()
-            else:
-                sage300_credentials.identifier = identifier
-                sage300_credentials.username = username
-                sage300_credentials.password = password
-                sage300_credentials.api_key = api_key
-                sage300_credentials.api_secret = api_secret
-                sage300_credentials.is_expired = False
-                sage300_credentials.save()
-
-                patch_integration_settings(kwargs['workspace_id'], is_token_expired=False)
-
-            return Response(
-                data=Sage300CredentialSerializer(sage300_credentials).data,
-                status=status.HTTP_200_OK
-            )
-        except Exception as e:
-            logger.info(e)
-            return Response(
-                {
-                    'message': 'Invalid Login Attempt'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
 
 class ExportSettingView(generics.CreateAPIView, generics.RetrieveAPIView):
