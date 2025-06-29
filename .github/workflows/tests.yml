@@ -17,7 +17,7 @@ jobs:
         run: |
           docker compose -f docker-compose-pipeline.yml build
           docker compose -f docker-compose-pipeline.yml up -d
-          docker compose -f docker-compose-pipeline.yml exec -T api pytest tests/ --cov --junit-xml=test-reports/report.xml --cov-report=xml --cov-report=term-missing --cov-fail-under=70 | tee pytest-coverage.txt
+          docker compose -f docker-compose-pipeline.yml exec -T api pytest tests/ --cov --junit-xml=test-reports/report.xml --cov-report=xml --cov-report=term-missing --cov-fail-under=90 | tee pytest-coverage.txt
           echo "STATUS=$(cat pytest-coverage.txt | grep 'Required test' | awk '{ print $1 }')" >> $GITHUB_ENV
           echo "FAILED=$(cat test-reports/report.xml | awk -F'=' '{print $5}' | awk -F' ' '{gsub(/"/, "", $1); print $1}')" >> $GITHUB_ENV
 
@@ -36,7 +36,7 @@ jobs:
           python -m pip install diff-cover
 
           git fetch origin master --depth=1
-          diff-cover coverage.xml --compare-branch=origin/master --diff-range-notation .. --fail-under=70 > result.txt 2>&1 || echo "diff-cover failed or no changes detected" > result.txt
+          diff-cover coverage.xml --compare-branch=origin/master --diff-range-notation .. --fail-under=98 > result.txt 2>&1 || echo "diff-cover failed or no changes detected" > result.txt
 
       - name: Comment coverage check
         if: always()
