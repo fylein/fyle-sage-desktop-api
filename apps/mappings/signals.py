@@ -4,10 +4,12 @@ from datetime import timedelta, datetime, timezone
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
+from django.utils.module_loading import import_string
 from rest_framework.exceptions import ValidationError
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle.platform.exceptions import WrongParamsError
 from fyle_accounting_mappings.models import MappingSetting, CategoryMapping, EmployeeMapping
+from sage_desktop_sdk.exceptions import InvalidUserCredentials
 
 from fyle_integrations_imports.models import ImportLog
 from fyle_integrations_imports.modules.expense_custom_fields import ExpenseCustomField
@@ -106,6 +108,14 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
 
             # NOTE: We are not setting the import_log status to COMPLETE
             # since the post_save trigger will run the import again in async manner
+
+        except Sage300Credential.DoesNotExist:
+            return
+
+        except InvalidUserCredentials:
+            invalidate_sage300_credentials = import_string('sage_desktop_api.utils.invalidate_sage300_credentials')
+            invalidate_sage300_credentials(workspace_id)
+            return
 
         except WrongParamsError as error:
             logger.error(

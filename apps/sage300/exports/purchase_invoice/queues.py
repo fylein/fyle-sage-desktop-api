@@ -2,11 +2,13 @@ import logging
 from datetime import datetime
 from typing import List
 
+from django.utils.module_loading import import_string
 from django.db.models import Q
 from django_q.models import Schedule
 from django_q.tasks import Chain
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+from sage_desktop_sdk.exceptions import InvalidUserCredentials
 
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.actions import update_accounting_export_summary
@@ -120,11 +122,17 @@ def poll_operation_status(workspace_id: int):
 
         return
 
-    # Retrieve Sage 300 credentials for the workspace
-    sage300_credentials = Sage300Credential.get_active_sage300_credentials(workspace_id)
+    try:
+        sage300_credentials = Sage300Credential.get_active_sage300_credentials(workspace_id)
+        sage300_connection = SageDesktopConnector(sage300_credentials, workspace_id)
 
-    # Establish a connection to Sage 300 using the obtained credentials
-    sage300_connection = SageDesktopConnector(sage300_credentials, workspace_id)
+    except Sage300Credential.DoesNotExist:
+        return
+
+    except InvalidUserCredentials:
+        invalidate_sage300_credentials = import_string('sage_desktop_api.utils.invalidate_sage300_credentials')
+        invalidate_sage300_credentials(workspace_id)
+        return
 
     # Iterate through each queued accounting export
     for accounting_export in accounting_exports:

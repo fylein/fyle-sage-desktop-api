@@ -1,4 +1,5 @@
 from fyle_accounting_mappings.models import MappingSetting
+from django.utils.module_loading import import_string
 
 from fyle_integrations_imports.models import ImportLog
 from fyle_integrations_imports.dataclasses import TaskSetting
@@ -9,6 +10,7 @@ from apps.sage300.utils import SageDesktopConnector
 from apps.mappings.helpers import is_job_sync_allowed
 from apps.fyle.models import DependentFieldSetting
 from apps.workspaces.models import Sage300Credential, ImportSetting
+from sage_desktop_sdk.exceptions import InvalidUserCredentials
 
 
 def sync_sage300_attributes(sage300_attribute_type: str, workspace_id: int, import_log: ImportLog = None):
@@ -120,8 +122,17 @@ def sync_dependent_fields(workspace_id: int) -> None:
     :param workspace_id: Workspace ID
     :return: None
     """
-    cost_code_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CODE', workspace_id)
-    cost_category_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CATEGORY', workspace_id)
-    sync_sage300_attributes('JOB', workspace_id)
-    sync_sage300_attributes('COST_CODE', workspace_id, cost_code_import_log)
-    sync_sage300_attributes('COST_CATEGORY', workspace_id, cost_category_import_log)
+    try:
+        cost_code_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CODE', workspace_id)
+        cost_category_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CATEGORY', workspace_id)
+        sync_sage300_attributes('JOB', workspace_id)
+        sync_sage300_attributes('COST_CODE', workspace_id, cost_code_import_log)
+        sync_sage300_attributes('COST_CATEGORY', workspace_id, cost_category_import_log)
+
+    except Sage300Credential.DoesNotExist:
+        return
+
+    except InvalidUserCredentials:
+        invalidate_sage300_credentials = import_string('sage_desktop_api.utils.invalidate_sage300_credentials')
+        invalidate_sage300_credentials(workspace_id)
+        return

@@ -1,5 +1,6 @@
 import logging
 import traceback
+from django.utils.module_loading import import_string
 
 from fyle.platform.exceptions import (
     WrongParamsError,
@@ -45,8 +46,7 @@ def handle_import_exceptions_v2(func):
             import_log.status = 'FAILED'
 
         except InvalidUserCredentials:
-            # Importing here to avoid circular import
-            from sage_desktop_api.utils import invalidate_sage300_credentials
+            invalidate_sage300_credentials = import_string('sage_desktop_api.utils.invalidate_sage300_credentials')
             invalidate_sage300_credentials(workspace_id)
             error['message'] = 'Invalid Sage 300 Token Error for workspace_id - {0}'.format(workspace_id)
             error['alert'] = False
