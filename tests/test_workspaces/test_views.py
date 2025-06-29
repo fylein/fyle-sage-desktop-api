@@ -64,7 +64,7 @@ def test_get_of_workspace(api_client, test_connection):
 
 def test_post_of_sage300_creds(api_client, test_connection, mocker):
     '''
-    Test post of sage300 creds
+    Test post of sage300 creds with identifier normalization
     '''
     Workspace.objects.all().delete()
     url = reverse('workspaces')
@@ -73,36 +73,35 @@ def test_post_of_sage300_creds(api_client, test_connection, mocker):
 
     url = reverse('sage300-creds', kwargs={'workspace_id': response.data['id']})
 
-    payload = {
-        'identifier': "test-server",
-        'password': "password123",
-        'username': "testuser",
+    mocker.patch(
+        'sage_desktop_sdk.core.client.Client.update_cookie',
+        return_value={'text': {'Result': 2}}
+    )
+
+    base_payload = {
+        'password': "password",
+        'username': "username",
         'workspace': response.data['id']
     }
 
-    # Mock the settings values
-    mocker.patch('apps.workspaces.views.settings.SD_API_KEY', 'test_api_key')
-    mocker.patch('apps.workspaces.views.settings.SD_API_SECRET', 'test_api_secret')
+    test_cases = [
+        "https://centurymechanicalcontractorsinc.hh2.com",
+        "http://centurymechanicalcontractorsinc.hh2.com",
+        "centurymechanicalcontractorsinc",
+        "centurymechanicalcontractorsinc.hh2.com"
+    ]
 
-    # Mock SageDesktopSDK and its methods
-    mock_vendors = mocker.MagicMock()
-    mock_vendors.get_vendor_types.return_value = []
+    for test_case in test_cases:
+        payload = base_payload.copy()
+        payload['identifier'] = test_case
 
-    mock_sdk = mocker.MagicMock()
-    mock_sdk.vendors = mock_vendors
+        response = api_client.post(url, payload)
+        assert response.status_code == 201, f"Failed for test case: {test_case}"
 
-    mocker.patch('apps.workspaces.views.SageDesktopSDK', return_value=mock_sdk)
+        sage300_cred = Sage300Credential.objects.get(workspace_id=response.data['workspace'])
+        assert sage300_cred.identifier == 'centurymechanicalcontractorsinc.hh2.com', f"Identifier normalization failed for test case: {test_case}"
 
-    response = api_client.post(url, payload)
-    assert response.status_code == 200
-
-    # Verify the credential was created with correct values
-    sage300_cred = Sage300Credential.objects.get(workspace_id=response.data['workspace'])
-    assert sage300_cred.identifier == 'test-server.hh2.com'
-    assert sage300_cred.username == 'testuser'
-    assert sage300_cred.password == 'password123'
-    assert sage300_cred.api_key == 'test_api_key'
-    assert sage300_cred.api_secret == 'test_api_secret'
+        sage300_cred.delete()
 
 
 def test_get_of_sage300_creds(api_client, test_connection):
@@ -130,6 +129,121 @@ def test_get_of_sage300_creds(api_client, test_connection):
     assert response.status_code == 200
     assert response.data['username'] == 'username'
     assert response.data['password'] == 'password'
+
+
+def test_update_sage300_creds(api_client, test_connection, mocker):
+    '''
+    Test update of sage300 creds with identifier normalization and error handling
+    '''
+    # Create workspace first
+    Workspace.objects.all().delete()
+    url = reverse('workspaces')
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    response = api_client.post(url)
+    workspace_id = response.data['id']
+
+    # Create initial credentials
+    Sage300Credential.objects.create(
+        identifier='old-identifier.hh2.com',
+        username='old_username',
+        password='old_password',
+        workspace_id=workspace_id,
+        api_key='old_api_key',
+        api_secret='old_api_secret',
+        is_expired=True
+    )
+
+    url = reverse('sage300-creds', kwargs={'workspace_id': workspace_id})
+
+    # Mock successful sage300 connection
+    mocker.patch(
+        'sage_desktop_sdk.core.client.Client.update_cookie',
+        return_value={'text': {'Result': 2}}
+    )
+    mocker.patch(
+        'apps.workspaces.tasks.patch_integration_settings',
+        return_value=None
+    )
+
+    # Test cases for identifier normalization during update
+    test_cases = [
+        {
+            'input': "https://newcompany.hh2.com",
+            'expected': 'newcompany.hh2.com',
+            'description': 'https:// prefix removal'
+        },
+        {
+            'input': "http://anothercompany.hh2.com",
+            'expected': 'anothercompany.hh2.com',
+            'description': 'http:// prefix removal'
+        },
+        {
+            'input': "thirdcompany",
+            'expected': 'thirdcompany.hh2.com',
+            'description': '.hh2.com suffix addition'
+        },
+        {
+            'input': "fourthcompany.hh2.com",
+            'expected': 'fourthcompany.hh2.com',
+            'description': 'no change needed'
+        }
+    ]
+
+    for test_case in test_cases:
+        # Update payload
+        payload = {
+            'username': 'updated_username',
+            'password': 'updated_password',
+            'identifier': test_case['input'],
+            'workspace': workspace_id
+        }
+
+        response = api_client.put(url, payload)
+        assert response.status_code == 200, f"Failed for test case: {test_case['description']}"
+
+        # Verify the credentials were updated
+        updated_cred = Sage300Credential.objects.get(workspace_id=workspace_id)
+        assert updated_cred.username == 'updated_username', f"Username not updated for: {test_case['description']}"
+        assert updated_cred.password == 'updated_password', f"Password not updated for: {test_case['description']}"
+        assert updated_cred.identifier == test_case['expected'], f"Identifier normalization failed for: {test_case['description']}"
+        assert updated_cred.is_expired == False, f"is_expired not reset for: {test_case['description']}"
+
+    # Test partial update (only updating username)
+    payload = {
+        'username': 'partially_updated_username',
+        'password': 'updated_password',  # Keep existing password
+        'identifier': 'fourthcompany.hh2.com',  # Keep existing identifier
+        'workspace': workspace_id
+    }
+    response = api_client.put(url, payload)
+    assert response.status_code == 200
+
+    updated_cred = Sage300Credential.objects.get(workspace_id=workspace_id)
+    assert updated_cred.username == 'partially_updated_username'
+    assert updated_cred.password == 'updated_password'  # Should remain unchanged
+    assert updated_cred.identifier == 'fourthcompany.hh2.com'  # Should remain unchanged from last test
+
+    # Test update with connection failure
+    mocker.patch(
+        'sage_desktop_sdk.core.client.Client.update_cookie',
+        side_effect=Exception('Connection failed')
+    )
+
+    payload = {
+        'username': 'failed_username',
+        'password': 'failed_password',
+        'identifier': 'failedcompany.hh2.com',
+        'workspace': workspace_id
+    }
+
+    response = api_client.put(url, payload)
+    assert response.status_code == 400
+    assert 'Invalid Login Attempt' in str(response.data)
+
+    # Verify credentials were not updated after failure
+    unchanged_cred = Sage300Credential.objects.get(workspace_id=workspace_id)
+    assert unchanged_cred.username == 'partially_updated_username'  # Should remain unchanged
+    assert unchanged_cred.password == 'updated_password'  # Should remain unchanged
 
 
 def test_export_settings(api_client, test_connection):

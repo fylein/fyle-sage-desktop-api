@@ -148,7 +148,7 @@ class Sage300Credential(BaseModel):
     password = StringNotNullField(help_text='sage300 password')
     api_key = StringNotNullField(help_text='sage300 api key')
     api_secret = StringNotNullField(help_text='sage300 api secret')
-    is_expired = models.BooleanField(default=False, help_text='Marks if credentials are expired')
+    is_expired = BooleanFalseField(help_text='Marks if credentials are expired')
 
     class Meta:
         db_table = 'sage300_credentials'
