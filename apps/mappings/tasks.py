@@ -1,3 +1,4 @@
+import logging
 from fyle_accounting_mappings.models import MappingSetting
 from django.utils.module_loading import import_string
 
