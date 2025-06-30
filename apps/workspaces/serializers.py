@@ -96,21 +96,25 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
         model = Sage300Credential
         fields = '__all__'
 
-    def create(self, validated_data):
+    def _validate_and_normalize_identifier(self, identifier):
+        """
+        Validate and normalize the identifier by removing protocol and ensuring .hh2.com suffix
+        """
+        if identifier.startswith('https://'):
+            identifier = identifier[8:]
+        elif identifier.startswith('http://'):
+            identifier = identifier[7:]
+
+        if not identifier.endswith('.hh2.com'):
+            identifier = identifier + '.hh2.com'
+
+        return identifier
+
+    def _validate_sage300_connection(self, username, password, identifier):
+        """
+        Validate Sage 300 connection by attempting to connect and fetch vendor types
+        """
         try:
-            username = validated_data.get('username')
-            password = validated_data.get('password')
-            identifier = validated_data.get('identifier')
-
-            if identifier.startswith('https://'):
-                identifier = identifier[8:]
-            elif identifier.startswith('http://'):
-                identifier = identifier[7:]
-
-            if not identifier.endswith('.hh2.com'):
-                identifier = identifier + '.hh2.com'
-
-            workspace = validated_data.get('workspace')
             sd_api_key = settings.SD_API_KEY
             sd_api_secret = settings.SD_API_SECRET
 
@@ -124,6 +128,23 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
 
             vendors = sage_300_connection.vendors
             vendors.get_vendor_types()
+
+            return sd_api_key, sd_api_secret
+
+        except Exception as e:
+            logger.info(e)
+            raise serializers.ValidationError('Invalid Login Attempt')
+
+    def create(self, validated_data):
+        try:
+            username = validated_data.get('username')
+            password = validated_data.get('password')
+            identifier = validated_data.get('identifier')
+
+            identifier = self._validate_and_normalize_identifier(identifier)
+            sd_api_key, sd_api_secret = self._validate_sage300_connection(username, password, identifier)
+
+            workspace = validated_data.get('workspace')
 
             sage300_credentials = Sage300Credential.objects.create(
                 username=username,
@@ -149,27 +170,8 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
             password = validated_data.get('password', instance.password)
             identifier = validated_data.get('identifier', instance.identifier)
 
-            if identifier.startswith('https://'):
-                identifier = identifier[8:]
-            elif identifier.startswith('http://'):
-                identifier = identifier[7:]
-
-            if not identifier.endswith('.hh2.com'):
-                identifier = identifier + '.hh2.com'
-
-            sd_api_key = settings.SD_API_KEY
-            sd_api_secret = settings.SD_API_SECRET
-
-            sage_300_connection = SageDesktopSDK(
-                api_key=sd_api_key,
-                api_secret=sd_api_secret,
-                user_name=username,
-                password=password,
-                identifier=identifier
-            )
-
-            vendors = sage_300_connection.vendors
-            vendors.get_vendor_types()
+            identifier = self._validate_and_normalize_identifier(identifier)
+            sd_api_key, sd_api_secret = self._validate_sage300_connection(username, password, identifier)
 
             instance.username = username
             instance.password = password
