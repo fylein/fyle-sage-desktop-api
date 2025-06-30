@@ -12,6 +12,8 @@ from apps.fyle.models import DependentFieldSetting
 from apps.workspaces.models import Sage300Credential, ImportSetting
 from sage_desktop_sdk.exceptions import InvalidUserCredentials
 
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 def sync_sage300_attributes(sage300_attribute_type: str, workspace_id: int, import_log: ImportLog = None):
     sage300_credentials: Sage300Credential = Sage300Credential.get_active_sage300_credentials(workspace_id)
