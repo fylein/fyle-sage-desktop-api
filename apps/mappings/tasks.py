@@ -130,6 +130,7 @@ def sync_dependent_fields(workspace_id: int) -> None:
         sync_sage300_attributes('COST_CATEGORY', workspace_id, cost_category_import_log)
 
     except Sage300Credential.DoesNotExist:
+        logger.info('Sage credentials not found in workspace')
         return
 
     except InvalidUserCredentials:

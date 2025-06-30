@@ -127,6 +127,7 @@ def poll_operation_status(workspace_id: int):
         sage300_connection = SageDesktopConnector(sage300_credentials, workspace_id)
 
     except Sage300Credential.DoesNotExist:
+        logger.info('Sage credentials not found in workspace')
         return
 
     except InvalidUserCredentials:

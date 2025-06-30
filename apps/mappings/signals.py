@@ -110,6 +110,7 @@ def run_pre_mapping_settings_triggers(sender, instance: MappingSetting, **kwargs
             # since the post_save trigger will run the import again in async manner
 
         except Sage300Credential.DoesNotExist:
+            logger.info('Sage credentials not found in workspace')
             return
 
         except InvalidUserCredentials:
