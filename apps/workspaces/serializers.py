@@ -3,6 +3,7 @@ import logging
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q
+from django.utils.module_loading import import_string
 from django_q.tasks import async_task
 from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
 from fyle_rest_auth.helpers import get_fyle_admin
@@ -178,7 +179,7 @@ class Sage300CredentialSerializer(serializers.ModelSerializer):
             instance.is_expired = False
             instance.save()
 
-            from apps.workspaces.tasks import patch_integration_settings
+            patch_integration_settings = import_string('apps.workspaces.tasks.patch_integration_settings')
             patch_integration_settings(instance.workspace_id, is_token_expired=False)
 
             return instance
