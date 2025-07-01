@@ -39,7 +39,7 @@ class SageDesktopConnector:
             api_secret=credentials_object.api_secret,
             user_name=credentials_object.username,
             password=credentials_object.password,
-            indentifier=credentials_object.identifier
+            identifier=credentials_object.identifier
         )
 
         self.workspace_id = workspace_id

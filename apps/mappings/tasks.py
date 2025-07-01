@@ -1,4 +1,6 @@
+import logging
 from fyle_accounting_mappings.models import MappingSetting
+from django.utils.module_loading import import_string
 
 from fyle_integrations_imports.models import ImportLog
 from fyle_integrations_imports.dataclasses import TaskSetting
@@ -9,10 +11,14 @@ from apps.sage300.utils import SageDesktopConnector
 from apps.mappings.helpers import is_job_sync_allowed
 from apps.fyle.models import DependentFieldSetting
 from apps.workspaces.models import Sage300Credential, ImportSetting
+from sage_desktop_sdk.exceptions import InvalidUserCredentials
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def sync_sage300_attributes(sage300_attribute_type: str, workspace_id: int, import_log: ImportLog = None):
-    sage300_credentials: Sage300Credential = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage300_credentials: Sage300Credential = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     sage300_connection = SageDesktopConnector(
         credentials_object=sage300_credentials,
@@ -46,7 +52,7 @@ def construct_tasks_and_chain_import_fields_to_fyle(workspace_id: int) -> None:
     project_mapping = mapping_settings.filter(source_field='PROJECT', destination_field='JOB', import_to_fyle=True).first()
     project_import_log = ImportLog.objects.filter(workspace_id=workspace_id, attribute_type='PROJECT').first()
     is_sync_allowed = is_job_sync_allowed(project_import_log)
-    credentials = Sage300Credential.objects.get(workspace_id=workspace_id)
+    credentials = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     task_settings: TaskSetting = {
         'import_tax': None,
@@ -120,8 +126,18 @@ def sync_dependent_fields(workspace_id: int) -> None:
     :param workspace_id: Workspace ID
     :return: None
     """
-    cost_code_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CODE', workspace_id)
-    cost_category_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CATEGORY', workspace_id)
-    sync_sage300_attributes('JOB', workspace_id)
-    sync_sage300_attributes('COST_CODE', workspace_id, cost_code_import_log)
-    sync_sage300_attributes('COST_CATEGORY', workspace_id, cost_category_import_log)
+    try:
+        cost_code_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CODE', workspace_id)
+        cost_category_import_log = ImportLog.update_or_create_in_progress_import_log('COST_CATEGORY', workspace_id)
+        sync_sage300_attributes('JOB', workspace_id)
+        sync_sage300_attributes('COST_CODE', workspace_id, cost_code_import_log)
+        sync_sage300_attributes('COST_CATEGORY', workspace_id, cost_category_import_log)
+
+    except Sage300Credential.DoesNotExist:
+        logger.info('Sage credentials not found in workspace')
+        return
+
+    except InvalidUserCredentials:
+        invalidate_sage300_credentials = import_string('sage_desktop_api.utils.invalidate_sage300_credentials')
+        invalidate_sage300_credentials(workspace_id)
+        return

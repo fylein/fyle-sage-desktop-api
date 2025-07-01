@@ -6,6 +6,7 @@ from apps.fyle.helpers import (
     get_fyle_orgs,
     get_request,
     post_request,
+    patch_request,
     construct_expense_filter_query,
 )
 from apps.fyle.models import ExpenseFilter
@@ -116,6 +117,125 @@ def test_post_request(mocker):
         )
     except Exception as e:
         assert str(e) == '{"error": "error"}'
+
+
+def test_patch_request(mocker):
+    """
+    Test patch_request function with various scenarios
+    """
+    # Test successful patch request with refresh token
+    mock_response = Response()
+    mock_response.status_code = 200
+    mock_response._content = b'{"data": "updated", "id": 123}'
+
+    mocker.patch(
+        'apps.fyle.helpers.requests.patch',
+        return_value=mock_response
+    )
+
+    mocker.patch(
+        'apps.fyle.helpers.get_access_token',
+        return_value='access_token_123'
+    )
+
+    response = patch_request(
+        url='https://api.fyle.tech/api/v7/integrations/',
+        body={
+            'tpa_name': 'Fyle Sage Desktop Integration',
+            'errors_count': 0,
+            'is_token_expired': False
+        },
+        refresh_token='refresh_token_123',
+    )
+
+    assert response.get('data') == "updated"
+    assert response.get('id') == 123
+
+    # Test successful patch request with 201 status code
+    mock_response.status_code = 201
+    mock_response._content = b'{"data": "created", "id": 456}'
+
+    response = patch_request(
+        url='https://api.fyle.tech/api/v7/integrations/',
+        body={
+            'tpa_name': 'Fyle Sage Desktop Integration',
+            'errors_count': 5
+        },
+        refresh_token='refresh_token_123',
+    )
+
+    assert response.get('data') == "created"
+    assert response.get('id') == 456
+
+    # Test patch request without refresh token (no authorization header)
+    mock_response.status_code = 200
+    mock_response._content = b'{"data": "updated_no_auth"}'
+
+    response = patch_request(
+        url='https://api.fyle.tech/api/v7/integrations/',
+        body={
+            'tpa_name': 'Fyle Sage Desktop Integration'
+        },
+        refresh_token=None,
+    )
+
+    assert response.get('data') == "updated_no_auth"
+
+    # Test patch request with empty refresh token
+    response = patch_request(
+        url='https://api.fyle.tech/api/v7/integrations/',
+        body={
+            'tpa_name': 'Fyle Sage Desktop Integration'
+        },
+        refresh_token='',
+    )
+
+    assert response.get('data') == "updated_no_auth"
+
+    # Test error response with 400 status code
+    mock_response.status_code = 400
+    mock_response._content = b'{"error": "Bad Request", "message": "Invalid data"}'
+
+    try:
+        response = patch_request(
+            url='https://api.fyle.tech/api/v7/integrations/',
+            body={
+                'invalid_field': 'invalid_value'
+            },
+            refresh_token='refresh_token_123',
+        )
+    except Exception as e:
+        assert str(e) == '{"error": "Bad Request", "message": "Invalid data"}'
+
+    # Test error response with 401 status code
+    mock_response.status_code = 401
+    mock_response._content = b'{"error": "Unauthorized", "message": "Invalid token"}'
+
+    try:
+        response = patch_request(
+            url='https://api.fyle.tech/api/v7/integrations/',
+            body={
+                'tpa_name': 'Fyle Sage Desktop Integration'
+            },
+            refresh_token='invalid_refresh_token',
+        )
+    except Exception as e:
+        assert str(e) == '{"error": "Unauthorized", "message": "Invalid token"}'
+
+    # Test error response with 500 status code
+    mock_response.status_code = 500
+    mock_response._content = b'{"error": "Internal Server Error"}'
+
+    try:
+        response = patch_request(
+            url='https://api.fyle.tech/api/v7/integrations/',
+            body={
+                'tpa_name': 'Fyle Sage Desktop Integration'
+            },
+            refresh_token='refresh_token_123',
+        )
+    except Exception as e:
+        assert str(e) == '{"error": "Internal Server Error"}'
 
 
 def test_construct_expense_filter_query(

@@ -23,7 +23,8 @@ from apps.workspaces.views import (
     AdvancedSettingView,
     WorkspaceAdminsView,
     TriggerExportsView,
-    ImportCodeFieldView
+    ImportCodeFieldView,
+    TokenHealthView
 )
 
 
@@ -31,6 +32,7 @@ workspace_app_paths = [
     path('', WorkspaceView.as_view(), name='workspaces'),
     path('ready/', ReadyView.as_view(), name='ready'),
     path('<int:workspace_id>/credentials/sage300/', Sage300CredsView.as_view(), name='sage300-creds'),
+    path('<int:workspace_id>/token_health/', TokenHealthView.as_view()),
     path('<int:workspace_id>/exports/trigger/', TriggerExportsView.as_view(), name='trigger-exports'),
     path('<int:workspace_id>/export_settings/', ExportSettingView.as_view(), name='export-settings'),
     path('<int:workspace_id>/import_settings/import_code_fields_config/', ImportCodeFieldView.as_view(), name='import-code-fields-config'),
