@@ -43,7 +43,7 @@ def test_handle_import_exceptions_v2(
     test_func(expense_attribute, import_log)
 
     assert import_log.status == 'FAILED'
-    assert import_log.error_log['message'] == 'Invalid Token or Sage 300 credentials does not exist workspace_id - 1'
+    assert import_log.error_log['message'] == 'Invalid Sage 300 Token Error for workspace_id - 1'
 
     import_log.status = 'IN_PROGRESS'
     import_log.save()

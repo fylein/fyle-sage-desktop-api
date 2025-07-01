@@ -15,7 +15,7 @@ def test_sage_desktop_connector(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mock_sage_connector = mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -34,7 +34,7 @@ def test__create_destination_attribute(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -80,7 +80,7 @@ def test__update_latest_version(
     add_cost_code_mappings
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -109,7 +109,7 @@ def test__sync_data(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -160,7 +160,7 @@ def test_sync_accounts(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -198,7 +198,7 @@ def test_sync_vendors(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -241,7 +241,7 @@ def test_sync_jobs(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -282,7 +282,7 @@ def test_sync_standard_cost_codes(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -322,7 +322,7 @@ def test_sync_standard_categories(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -362,7 +362,7 @@ def test_sync_commitments(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -407,7 +407,7 @@ def test_sync_commitment_items(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -451,7 +451,7 @@ def test_sync_cost_categories(
     add_project_mappings
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -501,7 +501,7 @@ def test_sync_cost_codes(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
@@ -660,7 +660,7 @@ def sync_instance(
     add_sage300_creds
 ):
     workspace_id = 1
-    sage_creds = Sage300Credential.objects.get(workspace_id=workspace_id)
+    sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
 
     mocker.patch('apps.sage300.utils.SageDesktopSDK')
 
