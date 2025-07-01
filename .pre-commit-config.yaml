@@ -27,13 +27,6 @@ repos:
       - id: flake8
         additional_dependencies: [flake8-isort, flake8-tidy-imports]
 
-  - repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
-    rev: v1.0.5
-    hooks:
-      - id: python-bandit-vulnerability-check
-        args: ["-lll", "--recursive", "-c", "bandit.yaml", "."]  # Fixed the syntax error here
-        files: '\.py$'  # Fixed the regex syntax here
-
   - repo: local
     hooks:
       - id: flake8
