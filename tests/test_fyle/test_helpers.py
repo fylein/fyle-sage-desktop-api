@@ -1,13 +1,17 @@
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from requests import Response
+
 from apps.fyle.helpers import (
     Q,
+    check_interval_and_sync_dimension,
     construct_expense_filter,
+    construct_expense_filter_query,
     get_fyle_orgs,
     get_request,
-    post_request,
     patch_request,
-    construct_expense_filter_query,
+    post_request,
 )
 from apps.fyle.models import ExpenseFilter
 from tests.test_fyle.fixtures import fixtures as data
@@ -458,3 +462,66 @@ def test_construct_expense_filter():
     response = Q(**filter_1) | Q(**filter_2)
 
     assert constructed_expense_filter == response
+
+
+@pytest.mark.django_db()
+def test_check_interval_and_sync_dimension(mocker):
+    """
+    Test check_interval_and_sync_dimension function with various scenarios
+    """
+    # Mock sync_dimensions function
+    mock_sync_dimensions = mocker.patch('apps.fyle.helpers.sync_dimensions')
+
+    # Mock datetime.now to control time
+    fixed_time = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+    mock_datetime_now = mocker.patch('apps.fyle.helpers.datetime')
+    mock_datetime_now.now.return_value = fixed_time
+
+    # Create workspace and fyle credentials mocks
+    workspace = mocker.MagicMock()
+    workspace.id = 1
+    fyle_credentials = mocker.MagicMock()
+
+    # Mock Workspace.objects.get
+    mock_workspace_get = mocker.patch('apps.fyle.helpers.Workspace.objects.get')
+    mock_workspace_get.return_value = workspace
+
+    # Mock FyleCredential.objects.get
+    mock_fyle_credential_get = mocker.patch('apps.fyle.helpers.FyleCredential.objects.get')
+    mock_fyle_credential_get.return_value = fyle_credentials
+
+    # Test case 1: source_synced_at is None (should sync)
+    workspace.source_synced_at = None
+
+    check_interval_and_sync_dimension(workspace_id=1)
+
+    mock_sync_dimensions.assert_called_once_with(fyle_credentials)
+    assert workspace.source_synced_at == fixed_time
+    workspace.save.assert_called_once_with(update_fields=['source_synced_at'])
+
+    # Reset mocks
+    mock_sync_dimensions.reset_mock()
+    workspace.save.reset_mock()
+
+    # Test case 2: source_synced_at is more than 1 day old (should sync)
+    old_sync_time = fixed_time - timedelta(days=2)
+    workspace.source_synced_at = old_sync_time
+
+    check_interval_and_sync_dimension(workspace_id=1)
+
+    mock_sync_dimensions.assert_called_once_with(fyle_credentials)
+    assert workspace.source_synced_at == fixed_time
+    workspace.save.assert_called_once_with(update_fields=['source_synced_at'])
+
+    # Reset mocks
+    mock_sync_dimensions.reset_mock()
+    workspace.save.reset_mock()
+
+    # Test case 3: source_synced_at is within 1 day (should not sync)
+    recent_sync_time = fixed_time - timedelta(hours=12)
+    workspace.source_synced_at = recent_sync_time
+
+    check_interval_and_sync_dimension(workspace_id=1)
+
+    mock_sync_dimensions.assert_not_called()
+    workspace.save.assert_not_called()

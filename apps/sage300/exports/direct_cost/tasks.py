@@ -21,11 +21,11 @@ class ExportDirectCost(AccountingDataExporter):
         super().__init__()  # Call the constructor of the parent class
         self.body_model = DirectCost
 
-    def trigger_export(self, workspace_id, accounting_export_ids, is_auto_export, interval_hours, triggered_by: ExpenseImportSourceEnum):
+    def trigger_export(self, workspace_id, accounting_export_ids, is_auto_export, interval_hours, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool = False):
         """
         Trigger the import process for the Project module.
         """
-        check_accounting_export_and_start_import(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by)
+        check_accounting_export_and_start_import(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by, run_in_rabbitmq_worker=run_in_rabbitmq_worker)
 
     def __construct_direct_cost(self, body: DirectCost) -> Dict:
         """
@@ -75,10 +75,11 @@ class ExportDirectCost(AccountingDataExporter):
 
 
 @handle_sage300_exceptions()
-def create_direct_cost(accounting_export: AccountingExport, _: bool):
+def create_direct_cost(accounting_export_id: int, is_last_export: bool, is_auto_export: bool):
     """
     Helper function to create and export a direct cost.
     """
+    accounting_export: AccountingExport = AccountingExport.objects.get(id=accounting_export_id)
     export_direct_cost_instance = ExportDirectCost()
 
     # Create and export the direct cost using the base class method

@@ -28,11 +28,11 @@ class ExportPurchaseInvoice(AccountingDataExporter):
         self.body_model = PurchaseInvoice
         self.lineitem_model = PurchaseInvoiceLineitems
 
-    def trigger_export(self, workspace_id, accounting_export_ids, is_auto_export, interval_hours, triggered_by: ExpenseImportSourceEnum):
+    def trigger_export(self, workspace_id, accounting_export_ids, is_auto_export, interval_hours, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool = False):
         """
         Trigger the import process for the Project module.
         """
-        check_accounting_export_and_start_import(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by)
+        check_accounting_export_and_start_import(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by, run_in_rabbitmq_worker=run_in_rabbitmq_worker)
 
     def __construct_purchase_invoice(self, body: PurchaseInvoice, lineitems: List[PurchaseInvoiceLineitems]) -> Dict:
         """
@@ -103,10 +103,11 @@ class ExportPurchaseInvoice(AccountingDataExporter):
 
 
 @handle_sage300_exceptions()
-def create_purchase_invoice(accounting_export: AccountingExport, _: bool):
+def create_purchase_invoice(accounting_export_id: int, is_last_export: bool, is_auto_export: bool):
     """
     Helper function to create and export a purchase invoice.
     """
+    accounting_export: AccountingExport = AccountingExport.objects.get(id=accounting_export_id)
     export_purchase_invoice_instance = ExportPurchaseInvoice()
 
     # Create and export the purchase invoice using the base class method
