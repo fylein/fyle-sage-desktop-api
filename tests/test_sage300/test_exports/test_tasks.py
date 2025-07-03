@@ -249,6 +249,6 @@ def test_create_direct_cost(
         return_value='123'
     )
 
-    exported_direct_cost = create_direct_cost(accounting_export.id, False, False)
+    exported_direct_cost = create_direct_cost(accounting_export.id, False)
 
     assert exported_direct_cost == '123'

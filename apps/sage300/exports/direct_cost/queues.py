@@ -68,7 +68,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
 
         chain_tasks.append(Task(
             target='apps.sage300.exports.direct_cost.tasks.create_direct_cost',
-            args=[accounting_export.id, is_last_export, is_auto_export]
+            args=[accounting_export.id, is_last_export]
         ))
 
         if is_last_export:
