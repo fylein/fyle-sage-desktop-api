@@ -306,21 +306,25 @@ def __bulk_update_expenses(expense_to_be_updated: List[Expense]) -> None:
         Expense.objects.bulk_update(expense_to_be_updated, ['is_skipped', 'updated_at'], batch_size=50)
 
 
-def check_interval_and_sync_dimension(workspace_id: int, **kwargs) -> None:
+def check_interval_and_sync_dimension(workspace_id: int, refresh: bool = False) -> None:
     """
     Check sync interval and sync dimension
     :param workspace_id: Workspace ID
+    :param refresh: Refresh sync regardless of time interval
     :param kwargs: Keyword arguments
     :return: None
     """
     workspace = Workspace.objects.get(pk=workspace_id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
 
-    time_interval = None
-    if workspace.source_synced_at:
-        time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
+    if not refresh:
+        time_interval = None
+        if workspace.source_synced_at:
+            time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
 
-    if workspace.source_synced_at is None or (time_interval and time_interval.days > 0):
-        fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+        refresh = workspace.source_synced_at is None or (time_interval and time_interval.days > 0)
+
+    if refresh:
         sync_dimensions(fyle_credentials)
         workspace.source_synced_at = datetime.now(timezone.utc)
         workspace.save(update_fields=['source_synced_at'])
