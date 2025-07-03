@@ -136,7 +136,7 @@ def test_create_purchase_invoice(
         return_value='123'
     )
 
-    exported_purchase_invoice = create_purchase_invoice(accounting_export.id, False, False)
+    exported_purchase_invoice = create_purchase_invoice(accounting_export.id, False)
 
     assert exported_purchase_invoice == '123'
 
