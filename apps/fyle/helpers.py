@@ -1,5 +1,4 @@
 import json
-import logging
 from datetime import datetime, timezone
 from typing import List
 
@@ -13,8 +12,6 @@ from apps.accounting_exports.models import AccountingExport
 from apps.fyle.constants import DEFAULT_FYLE_CONDITIONS
 from apps.fyle.models import Expense, ExpenseFilter
 from apps.workspaces.models import ExportSetting, FyleCredential, Workspace
-
-logger = logging.getLogger(__name__)
 
 
 def construct_expense_filter(expense_filter):
