@@ -118,7 +118,15 @@ REST_FRAMEWORK = {
         'fyle_rest_auth.authentication.FyleJWTAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 100
+    'PAGE_SIZE': 100,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/second',
+        'user': '10/second'
+    }
 }
 
 SERVICE_NAME = os.environ.get('SERVICE_NAME')
