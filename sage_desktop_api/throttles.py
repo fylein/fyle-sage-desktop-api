@@ -17,4 +17,4 @@ class PerUserPathThrottle(SimpleRateThrottle):
         ident = request.user.pk
         normalized_path = request.path.replace('/', '_').strip('_')
 
-        return f"throttle_{self.scope}_{normalized_path}_{ident}" 
+        return f"throttle_{self.scope}_{normalized_path}_{ident}"
