@@ -5,10 +5,13 @@ from typing import List
 from django.db.models import Q
 from django_q.models import Schedule
 from django_q.tasks import Chain
-from fyle_integrations_platform_connector import PlatformConnector
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+from fyle_accounting_library.rabbitmq.data_class import Task
+from fyle_accounting_library.rabbitmq.helpers import TaskChainRunner
+from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import AccountingExport, Error
+from apps.fyle.helpers import check_interval_and_sync_dimension
 from apps.sage300.actions import update_accounting_export_summary
 from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export, validate_failing_export
 from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
@@ -25,7 +28,7 @@ def import_fyle_dimensions(fyle_credentials: FyleCredential):
     platform.import_fyle_dimensions()
 
 
-def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str], is_auto_export: bool, interval_hours: int, triggered_by: ExpenseImportSourceEnum):
+def check_accounting_export_and_start_import(workspace_id: int, accounting_export_ids: List[str], is_auto_export: bool, interval_hours: int, triggered_by: ExpenseImportSourceEnum, run_in_rabbitmq_worker: bool = False):
     """
     Check accounting export group and start export
     """
@@ -39,9 +42,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
 
     errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, accounting_export_id__in=accounting_export_ids).all()
 
-    chain = Chain()
-
-    chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials)
+    chain_tasks = []
 
     for index, accounting_export_group in enumerate(accounting_exports):
         error = errors.filter(workspace_id=workspace_id, accounting_export=accounting_export_group, is_resolved=False).first()
@@ -70,13 +71,29 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
         if accounting_exports.count() == index + 1:
             is_last_export = True
 
-        chain.append('apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice', accounting_export, is_last_export)
+        chain_tasks.append(Task(
+            target='apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice',
+            args=[accounting_export.id, is_last_export]
+        ))
 
         if is_last_export:
-            chain.append('apps.sage300.exports.purchase_invoice.queues.create_schedule_for_polling', workspace_id)
+            chain_tasks.append(Task(
+                target='apps.sage300.exports.purchase_invoice.queues.create_schedule_for_polling',
+                args=[workspace_id]
+            ))
 
-    if chain.length() > 1:
-        chain.run()
+    if len(chain_tasks) > 0:
+        if run_in_rabbitmq_worker:
+            # This function checks intervals and triggers sync if needed, syncing dimension for all exports is overkill
+            check_interval_and_sync_dimension(workspace_id)
+            task_executor = TaskChainRunner()
+            task_executor.run(chain_tasks, workspace_id)
+        else:
+            chain = Chain()
+            chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials)
+            for task in chain_tasks:
+                chain.append(task.target, *task.args)
+            chain.run()
 
 
 def create_schedule_for_polling(workspace_id: int):
