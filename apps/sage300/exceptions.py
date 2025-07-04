@@ -33,7 +33,7 @@ def handle_sage300_error(exception, accounting_export: AccountingExport, export_
 def handle_sage300_exceptions():
     def decorator(func):
         def wrapper(*args):
-            accounting_export = args[0]
+            accounting_export = AccountingExport.objects.get(id=args[0])
             is_last_export = args[1]
             try:
                 return func(*args)

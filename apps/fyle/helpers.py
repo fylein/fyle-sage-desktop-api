@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
 import json
+from datetime import datetime, timezone
 from typing import List
 
 import requests
@@ -304,3 +304,27 @@ def __bulk_update_expenses(expense_to_be_updated: List[Expense]) -> None:
         for expense in expense_to_be_updated:
             expense.updated_at = datetime.now(timezone.utc)
         Expense.objects.bulk_update(expense_to_be_updated, ['is_skipped', 'updated_at'], batch_size=50)
+
+
+def check_interval_and_sync_dimension(workspace_id: int, refresh: bool = False) -> None:
+    """
+    Check sync interval and sync dimension
+    :param workspace_id: Workspace ID
+    :param refresh: Refresh sync regardless of time interval
+    :param kwargs: Keyword arguments
+    :return: None
+    """
+    workspace = Workspace.objects.get(pk=workspace_id)
+    fyle_credentials = FyleCredential.objects.get(workspace_id=workspace_id)
+
+    if not refresh:
+        time_interval = None
+        if workspace.source_synced_at:
+            time_interval = datetime.now(timezone.utc) - workspace.source_synced_at
+
+        refresh = workspace.source_synced_at is None or (time_interval and time_interval.days > 0)
+
+    if refresh:
+        sync_dimensions(fyle_credentials)
+        workspace.source_synced_at = datetime.now(timezone.utc)
+        workspace.save(update_fields=['source_synced_at'])
