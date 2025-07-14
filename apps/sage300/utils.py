@@ -1,14 +1,15 @@
 import logging
 
+from django.core.cache import cache
+from django.db import transaction
 from django.utils.module_loading import import_string
-
 from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
 
-from apps.workspaces.models import Sage300Credential, ImportSetting
-from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
-from apps.sage300.models import CostCategory
-from apps.mappings.models import Version
 from apps.mappings.exceptions import handle_import_exceptions_v2
+from apps.mappings.models import Version
+from apps.sage300.models import CostCategory
+from apps.workspaces.models import ImportSetting, Sage300Credential
+from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -19,6 +20,18 @@ ATTRIBUTE_CALLBACK_MAP = {
     'CATEGORY': 'fyle_integrations_imports.modules.categories.disable_categories',
     'MERCHANT': 'fyle_integrations_imports.modules.merchants.disable_merchants',
     'COST_CENTER': 'fyle_integrations_imports.modules.cost_centers.disable_cost_centers'
+}
+
+UPPER_SYNC_LIMITS = {
+    'JOB': 10000,
+    'VENDOR': 5000,
+    'ACCOUNT': 5000,
+    'COST_CODE': 100000,
+    'COST_CATEGORY': 500000,
+    'COMMITMENT': 1000,
+    'STANDARD_COST_CODE': 10000,
+    'STANDARD_CATEGORY': 5000,
+    'COMMITMENT_ITEM': 5000,
 }
 
 
@@ -149,56 +162,79 @@ class SageDesktopConnector:
         source_type = self.get_source_type(attribute_type, workspace_id)
         skip_deletion = False if attribute_type in ['JOB', 'VENDOR', 'ACCOUNT'] else True
 
-        if is_generator:
-            for data in data_gen:
-                for items in data:
-                    destination_attributes = []
-                    for _item in items:
-                        attribute_class = self._get_attribute_class(attribute_type)
-                        item = import_string(f'sage_desktop_sdk.core.schema.read_only.{attribute_class}').from_dict(_item)
-                        if (
-                            (attribute_type == 'COST_CODE' and item.job_id not in distinct_job_ids)
-                            or (attribute_type in ['COST_CODE', 'JOB'] and not item.is_active)
-                        ):
-                            continue
-                        destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names, vendor_type_mapping)
-                        if destination_attr:
-                            destination_attributes.append(destination_attr)
+        upper_sync_limit = UPPER_SYNC_LIMITS.get(attribute_type, 1000)
 
-                    if source_type in ATTRIBUTE_CALLBACK_MAP.keys():
-                        DestinationAttribute.bulk_create_or_update_destination_attributes(
-                            destination_attributes,
-                            attribute_type,
-                            workspace_id,
-                            True,
-                            attribute_disable_callback_path=ATTRIBUTE_CALLBACK_MAP[source_type],
-                            is_import_to_fyle_enabled=is_import_to_fyle_enabled,
-                            app_name='Sage 300',
-                            skip_deletion=skip_deletion
-                        )
-                    else:
-                        DestinationAttribute.bulk_create_or_update_destination_attributes(
-                            destination_attributes, attribute_type, workspace_id, True, app_name='Sage 300', skip_deletion=skip_deletion, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
-        else:
-            destination_attributes = []
-            for item in data_gen:
-                destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names)
-                if destination_attr:
-                    destination_attributes.append(destination_attr)
+        with transaction.atomic():
+            attribute_processed_count = 0
 
-            DestinationAttribute.bulk_create_or_update_destination_attributes(
-                destination_attributes, attribute_type, workspace_id, True, app_name='Sage 300', skip_deletion=skip_deletion, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
+            if is_generator:
+                for data in data_gen:
+                    for items in data:
+                        destination_attributes = []
+                        for _item in items:
+                            attribute_class = self._get_attribute_class(attribute_type)
+                            item = import_string(f'sage_desktop_sdk.core.schema.read_only.{attribute_class}').from_dict(_item)
+                            if (
+                                (attribute_type == 'COST_CODE' and item.job_id not in distinct_job_ids)
+                                or (attribute_type in ['COST_CODE', 'JOB'] and not item.is_active)
+                            ):
+                                continue
+                            destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names, vendor_type_mapping)
+                            if destination_attr:
+                                attribute_processed_count += 1
+                                destination_attributes.append(destination_attr)
 
-        if attribute_type != 'VENDOR_TYPE':
-            self._update_latest_version(attribute_type)
-        if attribute_type == 'VENDOR':
-            self._remove_credit_card_vendors()
+                        if attribute_processed_count >= upper_sync_limit:
+                            transaction.set_rollback(True)
+                            logger.info(f'Upper sync limit reached for {attribute_type} in workspace_id {workspace_id}')
+                            cache.set(f'{attribute_type}_SYNC_LIMIT_REACHED_{workspace_id}', True, timeout=60 * 60 * 24)
+                            return
+
+                        if source_type in ATTRIBUTE_CALLBACK_MAP.keys():
+                            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                                destination_attributes,
+                                attribute_type,
+                                workspace_id,
+                                True,
+                                attribute_disable_callback_path=ATTRIBUTE_CALLBACK_MAP[source_type],
+                                is_import_to_fyle_enabled=is_import_to_fyle_enabled,
+                                app_name='Sage 300',
+                                skip_deletion=skip_deletion
+                            )
+                        else:
+                            DestinationAttribute.bulk_create_or_update_destination_attributes(
+                                destination_attributes, attribute_type, workspace_id, True, app_name='Sage 300', skip_deletion=skip_deletion, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
+            else:
+                destination_attributes = []
+                for item in data_gen:
+                    destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names)
+                    if destination_attr:
+                        attribute_processed_count += 1
+                        destination_attributes.append(destination_attr)
+
+                if attribute_processed_count >= upper_sync_limit:
+                    transaction.set_rollback(True)
+                    logger.info(f'Upper sync limit reached for {attribute_type} in workspace_id {workspace_id}')
+                    cache.set(f'{attribute_type}_SYNC_LIMIT_REACHED_{workspace_id}', True, timeout=60 * 60 * 24)
+                    return
+
+                DestinationAttribute.bulk_create_or_update_destination_attributes(
+                    destination_attributes, attribute_type, workspace_id, True, app_name='Sage 300', skip_deletion=skip_deletion, is_import_to_fyle_enabled=is_import_to_fyle_enabled)
+
+            if attribute_type != 'VENDOR_TYPE':
+                self._update_latest_version(attribute_type)
+            if attribute_type == 'VENDOR':
+                self._remove_credit_card_vendors()
 
     def sync_accounts(self):
         """
         Synchronize accounts from Sage Desktop SDK to your application
         """
+        if self.is_upper_sync_limit_reached_in_cache('ACCOUNT', self.workspace_id):
+            return []
+
         version = Version.objects.get(workspace_id=self.workspace_id).account
+
         accounts = self.connection.accounts.get_all(version=version)
 
         is_import_to_fyle_enabled = self.is_imported_enabled('ACCOUNT', self.workspace_id)
@@ -210,6 +246,9 @@ class SageDesktopConnector:
         """
         Synchronize vendors from Sage Desktop SDK to your application
         """
+        if self.is_upper_sync_limit_reached_in_cache('VENDOR', self.workspace_id):
+            return []
+
         version = Version.objects.get(workspace_id=self.workspace_id).vendor
         vendors = self.connection.vendors.get_all(version=version)
         field_names = [
@@ -235,6 +274,9 @@ class SageDesktopConnector:
         """
         Synchronize jobs from Sage Desktop SDK to your application
         """
+        if self.is_upper_sync_limit_reached_in_cache('JOB', self.workspace_id):
+            return []
+
         version = Version.objects.get(workspace_id=self.workspace_id).job
         jobs = self.connection.jobs.get_all_jobs(version=version)
         field_names = [
@@ -250,6 +292,9 @@ class SageDesktopConnector:
         """
         Synchronize standard cost codes from Sage Desktop SDK to your application
         """
+        if self.is_upper_sync_limit_reached_in_cache('STANDARD_COST_CODE', self.workspace_id):
+            return []
+
         version = Version.objects.get(workspace_id=self.workspace_id).standard_cost_code
         cost_codes = self.connection.jobs.get_standard_costcodes(version=version)
         field_names = ['code', 'version', 'is_standard', 'description']
@@ -270,6 +315,9 @@ class SageDesktopConnector:
         """
         Synchronize commitments from Sage Desktop SDK to your application
         """
+        if self.is_upper_sync_limit_reached_in_cache('COMMITMENT', self.workspace_id):
+            return []
+
         version = Version.objects.get(workspace_id=self.workspace_id).commitment
         commitments = self.connection.commitments.get_all(version=version)
         field_names = [
@@ -283,6 +331,9 @@ class SageDesktopConnector:
         """
         Sync commitment items from Sage Desktop SDK to your application
         """
+        if self.is_upper_sync_limit_reached_in_cache('COMMITMENT_ITEM', self.workspace_id):
+            return []
+
         commitments = DestinationAttribute.objects.filter(
             workspace_id=self.workspace_id,
             attribute_type='COMMITMENT'
@@ -301,6 +352,9 @@ class SageDesktopConnector:
         """
         Synchronize cost codes from Sage Desktop SDK to your application
         """
+        if self.is_upper_sync_limit_reached_in_cache('COST_CODE', self.workspace_id):
+            return []
+
         version = Version.objects.get(workspace_id=self.workspace_id).cost_code
         cost_codes = self.connection.cost_codes.get_all_costcodes(version=version)
         distinct_job_ids = DestinationAttribute.objects.filter(
@@ -318,15 +372,29 @@ class SageDesktopConnector:
         """
          Synchronize categories from Sage Desktop SDK to your application
         """
+        if self.is_upper_sync_limit_reached_in_cache('COST_CATEGORY', self.workspace_id):
+            return []
+
         version = Version.objects.get(workspace_id=self.workspace_id)
         cost_categories_generator = self.connection.categories.get_all_categories(version=version.cost_category)
 
-        for cost_categories in cost_categories_generator:
-            for categories in cost_categories:
-                latest_version = max([int(category['Version']) for category in categories])
-                CostCategory.bulk_create_or_update(categories, self.workspace_id)
-                version.cost_category = latest_version
-                version.save()
+        upper_sync_limit = UPPER_SYNC_LIMITS.get('COST_CATEGORY')
+        attribute_processed_count = 0
+
+        with transaction.atomic():
+            for cost_categories in cost_categories_generator:
+                for categories in cost_categories:
+                    attribute_processed_count += len(categories)
+                    if attribute_processed_count >= upper_sync_limit:
+                        transaction.set_rollback(True)
+                        logger.info(f'Upper sync limit reached for COST_CATEGORY in workspace_id {self.workspace_id}')
+                        cache.set(f'COST_CATEGORY_SYNC_LIMIT_REACHED_{self.workspace_id}', True, timeout=60 * 60 * 24)
+                        return
+
+                    latest_version = max([int(category['Version']) for category in categories])
+                    CostCategory.bulk_create_or_update(categories, self.workspace_id)
+                    version.cost_category = latest_version
+                    version.save()
 
     def get_source_type(self, attribute_type, workspace_id):
         """
@@ -371,3 +439,16 @@ class SageDesktopConnector:
                 is_import_to_fyle_enabled = True
 
         return is_import_to_fyle_enabled
+
+    def is_upper_sync_limit_reached_in_cache(self, attribute_type, workspace_id):
+        """
+        Check if the upper sync limit is reached in cache
+        :param attribute_type: Type of the attribute
+        :param workspace_id: ID of the workspace
+        :return: Whether the upper sync limit is reached
+        """
+        if cache.get(f'{attribute_type}_SYNC_LIMIT_REACHED_{workspace_id}'):
+            logger.info(f"Found Cache for {attribute_type} in workspace_id {workspace_id} | Upper Sync Limit Reached")
+            return True
+
+        return False

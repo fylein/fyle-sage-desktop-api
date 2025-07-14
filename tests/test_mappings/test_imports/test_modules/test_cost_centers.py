@@ -1,12 +1,14 @@
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute, MappingSetting
-from fyle_integrations_imports.modules.cost_centers import CostCenter, disable_cost_centers
+
 from apps.workspaces.models import ImportSetting
-from .fixtures import data
+from fyle_integrations_imports.modules.cost_centers import CostCenter, disable_cost_centers
+from tests.test_mappings.test_imports.test_modules.fixtures import data
 
 
 def test_construct_fyle_payload(api_client, test_connection, mocker, create_temp_workspace, add_sage300_creds, add_fyle_credentials, add_cost_center_mappings):
     cost_center = CostCenter(1, 'COST_CENTER', None, sdk_connection=mocker.Mock(), destination_sync_methods=['jobs'], is_auto_sync_enabled=True)
 
+    ExpenseAttribute.objects.filter(workspace_id=1, attribute_type='COST_CENTER').delete()
     # create new case
     paginated_destination_attributes = DestinationAttribute.objects.filter(workspace_id=1, attribute_type='COST_CENTER')
 
@@ -67,6 +69,8 @@ def test_construct_fyle_payload_with_code(
     )
 
     assert fyle_payload == []
+
+    ExpenseAttribute.objects.filter(workspace_id=1, attribute_type='COST_CENTER').delete()
 
     # create new case
     existing_fyle_attributes_map = {}
