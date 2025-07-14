@@ -23,14 +23,14 @@ ATTRIBUTE_CALLBACK_MAP = {
 }
 
 UPPER_SYNC_LIMITS = {
-    'JOB': 10000,
+    'JOB': 5000,
     'VENDOR': 5000,
     'ACCOUNT': 5000,
-    'COST_CODE': 100000,
-    'COST_CATEGORY': 500000,
-    'COMMITMENT': 1000,
+    'COST_CODE': 500000,
+    'COST_CATEGORY': 1000000,
+    'COMMITMENT': 5000,
     'STANDARD_COST_CODE': 10000,
-    'STANDARD_CATEGORY': 5000,
+    'STANDARD_CATEGORY': 2000,
     'COMMITMENT_ITEM': 5000,
 }
 
@@ -187,7 +187,7 @@ class SageDesktopConnector:
                         if attribute_processed_count >= upper_sync_limit:
                             transaction.set_rollback(True)
                             logger.info(f'Upper sync limit reached for {attribute_type} in workspace_id {workspace_id}')
-                            cache.set(f'{attribute_type}_SYNC_LIMIT_REACHED_{workspace_id}', True, timeout=60 * 60 * 24)
+                            cache.set(f'{attribute_type}_SYNC_LIMIT_REACHED_{workspace_id}', True, timeout=60 * 60 * 24 * 2)
                             return
 
                         if source_type in ATTRIBUTE_CALLBACK_MAP.keys():
@@ -215,7 +215,7 @@ class SageDesktopConnector:
                 if attribute_processed_count >= upper_sync_limit:
                     transaction.set_rollback(True)
                     logger.info(f'Upper sync limit reached for {attribute_type} in workspace_id {workspace_id}')
-                    cache.set(f'{attribute_type}_SYNC_LIMIT_REACHED_{workspace_id}', True, timeout=60 * 60 * 24)
+                    cache.set(f'{attribute_type}_SYNC_LIMIT_REACHED_{workspace_id}', True, timeout=60 * 60 * 24 * 2)
                     return
 
                 DestinationAttribute.bulk_create_or_update_destination_attributes(
