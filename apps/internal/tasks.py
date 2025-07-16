@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 logger.level = logging.INFO
 
 
+target_func = ['apps.sage300.exports.direct_cost.tasks.create_direct_cost', 'apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice']
+
+
 def re_export_stuck_exports():
     """
     Re-exports stuck accounting exports that have been in ENQUEUED or IN_PROGRESS state
@@ -48,9 +51,9 @@ def re_export_stuck_exports():
             continue
 
         for chain in task_data['chain']:
-            if (len(chain) > 1 and isinstance(chain[1], list) and isinstance(chain[1][0], AccountingExport) and chain[1][0].id in accounting_export_ids):
-                logger.info('Skipping Re Export For Expense Log %s', chain[1][0].id)
-                accounting_export_ids.remove(chain[1][0].id)
+            if (len(chain) > 1 and chain[0] in target_func and isinstance(chain[1][0], int)):
+                logger.info('Skipping Re Export For Expense Log %s', chain[1][0])
+                accounting_export_ids.remove(chain[1][0])
 
     logger.info('Re-exporting Accouting Export IDs: %s', accounting_export_ids)
     # Update status of exports to be re-exported
