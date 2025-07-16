@@ -1,8 +1,8 @@
-from apps.workspaces.models import ImportSetting
 from fyle_accounting_mappings.models import CategoryMapping, DestinationAttribute, ExpenseAttribute
+
+from apps.workspaces.models import ImportSetting
 from fyle_integrations_imports.modules.categories import Category, disable_categories
 from tests.test_mappings.test_imports.test_modules.fixtures import data as destination_attributes_data
-from .fixtures import data
 
 
 def test_construct_fyle_payload(
@@ -145,7 +145,7 @@ def test_construct_fyle_payload_with_code(
         existing_fyle_attributes_map,
     )
 
-    assert fyle_payload == data["create_fyle_category_payload_with_code_create_new_case"]
+    assert fyle_payload == destination_attributes_data["create_fyle_category_payload_with_code_create_new_case"]
 
 
 def test_disable_categories(
@@ -176,10 +176,19 @@ def test_disable_categories(
         active=True
     )
 
+    DestinationAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='ACCOUNT',
+        display_name='Account',
+        value='old_category',
+        destination_id='old_category_code',
+        code='old_category_code'
+    )
+
     mock_platform = mocker.patch('fyle_integrations_imports.modules.categories.PlatformConnector')
     bulk_post_call = mocker.patch.object(mock_platform.return_value.categories, 'post_bulk')
 
-    disable_categories(workspace_id, categories_to_disable, is_import_to_fyle_enabled=True)
+    disable_categories(workspace_id, categories_to_disable, is_import_to_fyle_enabled=True, attribute_type='ACCOUNT')
 
     assert bulk_post_call.call_count == 1
 
@@ -192,7 +201,7 @@ def test_disable_categories(
         }
     }
 
-    disable_categories(workspace_id, categories_to_disable, is_import_to_fyle_enabled=True)
+    disable_categories(workspace_id, categories_to_disable, is_import_to_fyle_enabled=True, attribute_type='ACCOUNT')
     assert bulk_post_call.call_count == 1
 
     # Test disable projects with code in naming
@@ -225,5 +234,5 @@ def test_disable_categories(
         'id': 'source_id_123'
     }]
 
-    bulk_payload = disable_categories(workspace_id, categories_to_disable, is_import_to_fyle_enabled=True)
+    bulk_payload = disable_categories(workspace_id, categories_to_disable, is_import_to_fyle_enabled=True, attribute_type='ACCOUNT')
     assert bulk_payload == payload

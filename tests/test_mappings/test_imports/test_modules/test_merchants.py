@@ -1,7 +1,8 @@
-from fyle_integrations_imports.models import ImportLog
-from apps.workspaces.models import ImportSetting
-from fyle_integrations_imports.modules.merchants import Merchant, disable_merchants
 from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
+
+from apps.workspaces.models import ImportSetting
+from fyle_integrations_imports.models import ImportLog
+from fyle_integrations_imports.modules.merchants import Merchant, disable_merchants
 
 
 def test_construct_fyle_payload(api_client, test_connection, mocker, create_temp_workspace, add_sage300_creds, add_fyle_credentials, add_merchant_mappings):
@@ -157,10 +158,19 @@ def test_disable_merchants(
         active=True
     )
 
+    DestinationAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='VENDOR',
+        display_name='Vendor',
+        value='old_merchant',
+        destination_id='old_merchant_code',
+        code='old_merchant_code'
+    )
+
     mock_platform = mocker.patch('fyle_integrations_imports.modules.merchants.PlatformConnector')
     bulk_post_call = mocker.patch.object(mock_platform.return_value.merchants, 'post')
 
-    disable_merchants(workspace_id, merchants_to_disable, is_import_to_fyle_enabled=True)
+    disable_merchants(workspace_id, merchants_to_disable, is_import_to_fyle_enabled=True, attribute_type='VENDOR')
 
     assert bulk_post_call.call_count == 1
 
@@ -173,7 +183,7 @@ def test_disable_merchants(
         }
     }
 
-    disable_merchants(workspace_id, merchants_to_disable, is_import_to_fyle_enabled=True)
+    disable_merchants(workspace_id, merchants_to_disable, is_import_to_fyle_enabled=True, attribute_type='VENDOR')
     assert bulk_post_call.call_count == 1
 
     # Test disable projects with code in naming
@@ -201,5 +211,5 @@ def test_disable_merchants(
 
     payload = ['old_merchant_code: old_merchant']
 
-    bulk_payload = disable_merchants(workspace_id, merchants_to_disable, is_import_to_fyle_enabled=True)
+    bulk_payload = disable_merchants(workspace_id, merchants_to_disable, is_import_to_fyle_enabled=True, attribute_type='VENDOR')
     assert bulk_payload[0] == payload[0]

@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import List
 
+from django.db import transaction
 from django.db.models import Q
 from django.utils.module_loading import import_string
 from django_q.models import Schedule
@@ -29,53 +30,57 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
     """
 
     fyle_credentials = FyleCredential.objects.filter(workspace_id=workspace_id).first()
+    with transaction.atomic():
+        ids_to_lock = list(AccountingExport.objects.filter(
+            ~Q(status__in=['ENQUEUED', 'IN_PROGRESS', 'COMPLETE', 'EXPORT_QUEUED']),
+            workspace_id=workspace_id,
+            id__in=accounting_export_ids,
+            directcost__id__isnull=True,
+            exported_at__isnull=True
+        ).values_list('id', flat=True))
 
-    accounting_exports = AccountingExport.objects.filter(
-        ~Q(status__in=['IN_PROGRESS', 'COMPLETE', 'EXPORT_QUEUED']),
-        workspace_id=workspace_id, id__in=accounting_export_ids, directcost__id__isnull=True,
-        exported_at__isnull=True
-    ).all()
+        accounting_exports = AccountingExport.objects.select_for_update().filter(id__in=ids_to_lock).all()
 
-    errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, accounting_export_id__in=accounting_export_ids).all()
+        errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, accounting_export_id__in=accounting_export_ids).all()
 
-    chain_tasks = []
-    for index, accounting_export_group in enumerate(accounting_exports):
-        error = errors.filter(workspace_id=workspace_id, accounting_export=accounting_export_group, is_resolved=False).first()
-        skip_export = validate_failing_export(is_auto_export, interval_hours, error)
-        if skip_export:
-            logger.info('Skipping expense group %s as it has %s errors for workspace_id %s', accounting_export_group.id, error.repetition_count, workspace_id)
-            continue
+        chain_tasks = []
+        for index, accounting_export_group in enumerate(accounting_exports):
+            error = errors.filter(workspace_id=workspace_id, accounting_export=accounting_export_group, is_resolved=False).first()
+            skip_export = validate_failing_export(is_auto_export, interval_hours, error)
+            if skip_export:
+                logger.info('Skipping expense group %s as it has %s errors for workspace_id %s', accounting_export_group.id, error.repetition_count, workspace_id)
+                continue
 
-        accounting_export, _ = AccountingExport.objects.update_or_create(
-            workspace_id=accounting_export_group.workspace_id,
-            id=accounting_export_group.id,
-            defaults={
-                'status': 'ENQUEUED',
-                'type': 'DIRECT_COST',
-                'triggered_by': triggered_by
-            }
-        )
+            accounting_export, _ = AccountingExport.objects.update_or_create(
+                workspace_id=accounting_export_group.workspace_id,
+                id=accounting_export_group.id,
+                defaults={
+                    'status': 'ENQUEUED',
+                    'type': 'DIRECT_COST',
+                    'triggered_by': triggered_by
+                }
+            )
 
-        if accounting_export.status not in ['IN_PROGRESS', 'ENQUEUED']:
-            accounting_export.status = 'ENQUEUED'
-            if accounting_export.triggered_by != triggered_by:
-                accounting_export.triggered_by = triggered_by
-            accounting_export.save()
+            if accounting_export.status not in ['IN_PROGRESS', 'ENQUEUED']:
+                accounting_export.status = 'ENQUEUED'
+                if accounting_export.triggered_by != triggered_by:
+                    accounting_export.triggered_by = triggered_by
+                accounting_export.save()
 
-        is_last_export = False
-        if accounting_exports.count() == index + 1:
-            is_last_export = True
+            is_last_export = False
+            if accounting_exports.count() == index + 1:
+                is_last_export = True
 
-        chain_tasks.append(Task(
-            target='apps.sage300.exports.direct_cost.tasks.create_direct_cost',
-            args=[accounting_export.id, is_last_export]
-        ))
-
-        if is_last_export:
             chain_tasks.append(Task(
-                target='apps.sage300.exports.direct_cost.queues.create_schedule_for_polling',
-                args=[workspace_id]
+                target='apps.sage300.exports.direct_cost.tasks.create_direct_cost',
+                args=[accounting_export.id, is_last_export]
             ))
+
+            if is_last_export:
+                chain_tasks.append(Task(
+                    target='apps.sage300.exports.direct_cost.queues.create_schedule_for_polling',
+                    args=[workspace_id]
+                ))
 
     if len(chain_tasks) > 0:
         if run_in_rabbitmq_worker:

@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import List
 
+from django.db import transaction
 from django.db.models import Q
 from django.utils.module_loading import import_string
 from django_q.models import Schedule
@@ -36,53 +37,59 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
     """
     fyle_credentials = FyleCredential.objects.filter(workspace_id=workspace_id).first()
 
-    accounting_exports = AccountingExport.objects.filter(
-        ~Q(status__in=['ENQUEUED', 'IN_PROGRESS', 'COMPLETE', 'EXPORT_QUEUED']),
-        workspace_id=workspace_id, id__in=accounting_export_ids, purchaseinvoice__id__isnull=True,
-        exported_at__isnull=True
-    ).all()
+    with transaction.atomic():
 
-    errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, accounting_export_id__in=accounting_export_ids).all()
+        ids_to_lock = list(AccountingExport.objects.filter(
+            ~Q(status__in=['ENQUEUED', 'IN_PROGRESS', 'COMPLETE', 'EXPORT_QUEUED']),
+            workspace_id=workspace_id,
+            id__in=accounting_export_ids,
+            purchaseinvoice__id__isnull=True,
+            exported_at__isnull=True
+        ).values_list('id', flat=True))
 
-    chain_tasks = []
+        accounting_exports = AccountingExport.objects.select_for_update().filter(id__in=ids_to_lock).all()
 
-    for index, accounting_export_group in enumerate(accounting_exports):
-        error = errors.filter(workspace_id=workspace_id, accounting_export=accounting_export_group, is_resolved=False).first()
-        skip_export = validate_failing_export(is_auto_export, interval_hours, error)
-        if skip_export:
-            logger.info('Skipping expense group %s as it has %s errors for workspace_id %s', accounting_export_group.id, error.repetition_count, workspace_id)
-            continue
+        errors = Error.objects.filter(workspace_id=workspace_id, is_resolved=False, accounting_export_id__in=accounting_export_ids).all()
 
-        accounting_export, _ = AccountingExport.objects.get_or_create(
-            workspace_id=accounting_export_group.workspace_id,
-            id=accounting_export_group.id,
-            defaults={
-                'status': 'ENQUEUED',
-                'type': 'PURCHASE_INVOICE',
-                'triggered_by': triggered_by
-            }
-        )
+        chain_tasks = []
 
-        if accounting_export.status not in ['IN_PROGRESS', 'ENQUEUED']:
-            accounting_export.status = 'ENQUEUED'
-            if accounting_export.triggered_by != triggered_by:
-                accounting_export.triggered_by = triggered_by
-            accounting_export.save()
+        for index, accounting_export_group in enumerate(accounting_exports):
+            error = errors.filter(workspace_id=workspace_id, accounting_export=accounting_export_group, is_resolved=False).first()
+            skip_export = validate_failing_export(is_auto_export, interval_hours, error)
+            if skip_export:
+                logger.info('Skipping expense group %s as it has %s errors for workspace_id %s', accounting_export_group.id, error.repetition_count, workspace_id)
+                continue
 
-        is_last_export = False
-        if accounting_exports.count() == index + 1:
-            is_last_export = True
+            accounting_export, _ = AccountingExport.objects.get_or_create(
+                workspace_id=accounting_export_group.workspace_id,
+                id=accounting_export_group.id,
+                defaults={
+                    'status': 'ENQUEUED',
+                    'type': 'PURCHASE_INVOICE',
+                    'triggered_by': triggered_by
+                }
+            )
 
-        chain_tasks.append(Task(
-            target='apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice',
-            args=[accounting_export.id, is_last_export]
-        ))
+            if accounting_export.status not in ['IN_PROGRESS', 'ENQUEUED']:
+                accounting_export.status = 'ENQUEUED'
+                if accounting_export.triggered_by != triggered_by:
+                    accounting_export.triggered_by = triggered_by
+                accounting_export.save()
 
-        if is_last_export:
+            is_last_export = False
+            if accounting_exports.count() == index + 1:
+                is_last_export = True
+
             chain_tasks.append(Task(
-                target='apps.sage300.exports.purchase_invoice.queues.create_schedule_for_polling',
-                args=[workspace_id]
+                target='apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice',
+                args=[accounting_export.id, is_last_export]
             ))
+
+            if is_last_export:
+                chain_tasks.append(Task(
+                    target='apps.sage300.exports.purchase_invoice.queues.create_schedule_for_polling',
+                    args=[workspace_id]
+                ))
 
     if len(chain_tasks) > 0:
         if run_in_rabbitmq_worker:
