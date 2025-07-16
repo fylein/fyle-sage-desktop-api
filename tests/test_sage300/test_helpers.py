@@ -1,14 +1,13 @@
 from datetime import datetime, timedelta, timezone
-from apps.sage300.helpers import (
-    check_interval_and_sync_dimension,
-    sync_dimensions,
-)
-from apps.workspaces.models import Workspace, Sage300Credential, ImportSetting
-from fyle_accounting_mappings.models import ExpenseAttribute
+
+from fyle_accounting_mappings.models import DestinationAttribute, ExpenseAttribute
+
 from apps.fyle.models import DependentFieldSetting
-from apps.sage300.models import CostCategory
-from fyle_integrations_imports.modules.projects import disable_projects
 from apps.sage300.dependent_fields import update_and_disable_cost_code
+from apps.sage300.helpers import check_interval_and_sync_dimension, sync_dimensions
+from apps.sage300.models import CostCategory
+from apps.workspaces.models import ImportSetting, Sage300Credential, Workspace
+from fyle_integrations_imports.modules.projects import disable_projects
 from tests.helper import dict_compare_keys
 
 
@@ -119,13 +118,22 @@ def test_disable_projects(
         active=True
     )
 
+    DestinationAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='PROJECT',
+        display_name='Project',
+        value='old_project',
+        destination_id='old_project_code',
+        code='old_project_code'
+    )
+
     mock_platform = mocker.patch('fyle_integrations_imports.modules.projects.PlatformConnector')
     bulk_post_call = mocker.patch.object(mock_platform.return_value.projects, 'post_bulk')
     sync_call = mocker.patch.object(mock_platform.return_value.projects, 'sync')
 
     disable_cost_code_call = mocker.patch('apps.sage300.dependent_fields.update_and_disable_cost_code')
 
-    disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True)
+    disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True, attribute_type='PROJECT')
 
     assert bulk_post_call.call_count == 1
     assert sync_call.call_count == 2
@@ -140,7 +148,7 @@ def test_disable_projects(
         }
     }
 
-    disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True)
+    disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True, attribute_type='PROJECT')
     assert bulk_post_call.call_count == 1
     assert sync_call.call_count == 3
     disable_cost_code_call.call_count == 1
@@ -179,7 +187,7 @@ def test_disable_projects(
         'id': 'source_id_123'
     }]
 
-    response_payload = disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True)
+    response_payload = disable_projects(workspace_id, projects_to_disable, is_import_to_fyle_enabled=True, attribute_type='PROJECT')
 
     assert dict_compare_keys(response_payload, payload) == [], 'Response payload does not match expected payload'
 

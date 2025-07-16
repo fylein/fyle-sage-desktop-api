@@ -118,10 +118,19 @@ def test_disable_cost_centers(
         active=True
     )
 
+    DestinationAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='JOB',
+        display_name='Job',
+        value='old_cost_center',
+        destination_id='old_cost_center_code',
+        code='old_cost_center_code'
+    )
+
     mock_platform = mocker.patch('fyle_integrations_imports.modules.cost_centers.PlatformConnector')
     bulk_post_call = mocker.patch.object(mock_platform.return_value.cost_centers, 'post_bulk')
 
-    disable_cost_centers(workspace_id, cost_centers_to_disable, is_import_to_fyle_enabled=True)
+    disable_cost_centers(workspace_id, cost_centers_to_disable, is_import_to_fyle_enabled=True, attribute_type='JOB')
 
     assert bulk_post_call.call_count == 1
 
@@ -134,7 +143,7 @@ def test_disable_cost_centers(
         }
     }
 
-    disable_cost_centers(workspace_id, cost_centers_to_disable, is_import_to_fyle_enabled=True)
+    disable_cost_centers(workspace_id, cost_centers_to_disable, is_import_to_fyle_enabled=True, attribute_type='JOB')
     assert bulk_post_call.call_count == 1
 
     # Test disable projects with code in naming
@@ -170,5 +179,5 @@ def test_disable_cost_centers(
         }
     ]
 
-    bulk_payload = disable_cost_centers(workspace_id, cost_centers_to_disable, is_import_to_fyle_enabled=True)
+    bulk_payload = disable_cost_centers(workspace_id, cost_centers_to_disable, is_import_to_fyle_enabled=True, attribute_type='JOB')
     assert bulk_payload == payload
