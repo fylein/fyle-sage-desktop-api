@@ -1,4 +1,5 @@
 import logging
+import traceback
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -203,10 +204,12 @@ class TokenHealthView(generics.RetrieveAPIView):
                     sage300_connection.connection.vendors.get_vendor_types()
                     cache.set(cache_key, True, timeout=timedelta(hours=24).total_seconds())
             except InvalidUserCredentials:
+                logger.info(f"Sage300 connection expired for workspace {workspace_id}")
                 invalidate_sage300_credentials(workspace_id, sage300_credentials)
                 status_code = status.HTTP_400_BAD_REQUEST
                 message = "Sage300 connection expired"
             except Exception:
+                logger.error(f"Something went wrong for workspace {workspace_id}, error: {traceback.format_exc()}")
                 status_code = status.HTTP_400_BAD_REQUEST
                 message = "Something went wrong"
 
