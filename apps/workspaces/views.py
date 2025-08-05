@@ -1,36 +1,29 @@
 import logging
+import traceback
+from datetime import timedelta
 
-from rest_framework import generics
-from rest_framework.views import Response, status
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from datetime import timedelta
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
-
-from fyle_rest_auth.utils import AuthUtils
-
 from fyle_accounting_mappings.models import MappingSetting
-
-from fyle_integrations_imports.models import ImportLog
+from fyle_rest_auth.utils import AuthUtils
+from rest_framework import generics
+from rest_framework.views import Response, status
 
 from apps.sage300.utils import SageDesktopConnector
-
-from sage_desktop_api.utils import assert_valid, invalidate_sage300_credentials
-from apps.workspaces.tasks import export_to_sage300
-from apps.workspaces.models import (
-    Workspace,
-    Sage300Credential,
-    ExportSetting,
-    AdvancedSetting
-)
+from apps.workspaces.models import AdvancedSetting, ExportSetting, Sage300Credential, Workspace
 from apps.workspaces.serializers import (
-    WorkspaceSerializer,
-    Sage300CredentialSerializer,
+    AdvancedSettingSerializer,
     ExportSettingsSerializer,
     ImportSettingsSerializer,
-    AdvancedSettingSerializer,
-    WorkspaceAdminSerializer
+    Sage300CredentialSerializer,
+    WorkspaceAdminSerializer,
+    WorkspaceSerializer,
 )
+from apps.workspaces.tasks import export_to_sage300
+from fyle_integrations_imports.models import ImportLog
+from sage_desktop_api.utils import assert_valid, invalidate_sage300_credentials
+from sage_desktop_sdk.exceptions import InvalidUserCredentials
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -210,9 +203,14 @@ class TokenHealthView(generics.RetrieveAPIView):
                     sage300_connection = SageDesktopConnector(credentials_object=sage300_credentials, workspace_id=workspace_id)
                     sage300_connection.connection.vendors.get_vendor_types()
                     cache.set(cache_key, True, timeout=timedelta(hours=24).total_seconds())
-            except Exception:
+            except InvalidUserCredentials:
+                logger.info(f"Sage300 connection expired for workspace {workspace_id}")
                 invalidate_sage300_credentials(workspace_id, sage300_credentials)
                 status_code = status.HTTP_400_BAD_REQUEST
                 message = "Sage300 connection expired"
+            except Exception:
+                logger.error(f"Something went wrong for workspace {workspace_id}, error: {traceback.format_exc()}")
+                status_code = status.HTTP_400_BAD_REQUEST
+                message = "Something went wrong"
 
         return Response({"message": message}, status=status_code)
