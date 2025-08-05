@@ -1,17 +1,14 @@
 import json
-from django_q.models import Schedule
+
 import pytest  # noqa
 from django.urls import reverse
+from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
-from apps.workspaces.models import (
-    Workspace,
-    Sage300Credential,
-    ExportSetting,
-    AdvancedSetting
-)
+from apps.workspaces.models import AdvancedSetting, ExportSetting, Sage300Credential, Workspace
 from fyle_integrations_imports.models import ImportLog
+from sage_desktop_sdk.exceptions.hh2_exceptions import InvalidUserCredentials
 from tests.helper import dict_compare_keys
 from tests.test_fyle.fixtures import fixtures as data
 
@@ -750,10 +747,17 @@ def test_sage300_health_check_view(db, mocker, api_client, test_connection, crea
     assert response.status_code == 200
     assert response.data['message'] == 'Sage300 connection is active'
 
-    # Test case 5: Connection fails
-    mock_connector.connection.vendors.get_vendor_types.side_effect = Exception('Connection failed')
+    # Test case 5: Connection fails due to InvalidUserCredentials
+    mock_connector.connection.vendors.get_vendor_types.side_effect = InvalidUserCredentials('Connection failed')
     mocker.patch('apps.workspaces.views.invalidate_sage300_credentials')
 
     response = api_client.get(url)
     assert response.status_code == 400
     assert response.data['message'] == 'Sage300 connection expired'
+
+    # Test case 6: Connection fails due to other exception
+    mock_connector.connection.vendors.get_vendor_types.side_effect = Exception('Connection failed')
+
+    response = api_client.get(url)
+    assert response.status_code == 400
+    assert response.data['message'] == 'Something went wrong'
