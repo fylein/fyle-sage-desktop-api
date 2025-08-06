@@ -25,7 +25,7 @@ TYPE_CHOICES = (
     ('PURCHASE_INVOICE', 'PURCHASE_INVOICE'),
     ('DIRECT_COST', 'DIRECT_COST'),
     ('FETCHING_REIMBURSABLE_EXPENSES', 'FETCHING_REIMBURSABLE_EXPENSES'),
-    ('FETCHING_CREDIT_CARD_EXPENENSES', 'FETCHING_CREDIT_CARD_EXPENENSES')
+    ('FETCHING_CREDIT_CARD_EXPENSES', 'FETCHING_CREDIT_CARD_EXPENSES')
 )
 
 ERROR_TYPE_CHOICES = (('EMPLOYEE_MAPPING', 'EMPLOYEE_MAPPING'), ('CATEGORY_MAPPING', 'CATEGORY_MAPPING'), ('SAGE300_ERROR', 'SAGE300_ERROR'))
@@ -102,6 +102,7 @@ class AccountingExport(BaseForeignWorkspaceModel):
     export_id = StringNullField(help_text='id of the exported expense')
     exported_at = CustomDateTimeField(help_text='time of export')
     triggered_by = StringOptionsField(max_length=255, help_text="Triggered by", choices=IMPORTED_FROM_CHOICES)
+    re_attempt_export = models.BooleanField(default=False, help_text='Is re-attempt export')
 
     class Meta:
         db_table = 'accounting_exports'

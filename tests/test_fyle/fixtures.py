@@ -334,13 +334,14 @@ fixtures = {
                 "workspace":1,
                 "export_id": 123,
                 "expenses":[],
-                "triggered_by": None
+                "triggered_by": None,
+                "re_attempt_export": False
             },
             {
                 "id":1,
                 "created_at":"2023-10-26T03:24:43.511973Z",
                 "updated_at":"2023-10-26T03:24:43.511978Z",
-                "type":"FETCHING_CREDIT_CARD_EXPENENSES",
+                "type":"FETCHING_CREDIT_CARD_EXPENSES",
                 "fund_source":"",
                 "mapping_errors":"None",
                 "task_id":"None",
@@ -352,7 +353,8 @@ fixtures = {
                 "export_id": 123,
                 "workspace":1,
                 "expenses":[],
-                "triggered_by": None
+                "triggered_by": None,
+                "re_attempt_export": False
             }
         ]
     },
