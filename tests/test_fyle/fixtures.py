@@ -341,7 +341,7 @@ fixtures = {
                 "id":1,
                 "created_at":"2023-10-26T03:24:43.511973Z",
                 "updated_at":"2023-10-26T03:24:43.511978Z",
-                "type":"FETCHING_CREDIT_CARD_EXPENSES",
+                "type":"FETCHING_CREDIT_CARD_EXPENENSES",
                 "fund_source":"",
                 "mapping_errors":"None",
                 "task_id":"None",

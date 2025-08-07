@@ -321,60 +321,18 @@ def add_accounting_export_summary():
 
 @pytest.fixture()
 @pytest.mark.django_db(databases=['default'])
-def setup_complete_fetching_export():
+def add_basic_retry_exports():
     """
-    Pytest fixture to set up COMPLETE FETCHING exports for both reimbursable and credit card
-    """
-    workspace_id = 1
-
-    # Set up reimbursable FETCHING export
-    reimbursable_export = AccountingExport.objects.filter(
-        workspace_id=workspace_id,
-        type='FETCHING_REIMBURSABLE_EXPENSES'
-    ).first()
-    if reimbursable_export:
-        reimbursable_export.status = 'COMPLETE'
-        reimbursable_export.save()
-
-    # Set up credit card FETCHING export
-    credit_card_export = AccountingExport.objects.filter(
-        workspace_id=workspace_id,
-        type='FETCHING_CREDIT_CARD_EXPENSES'
-    ).first()
-    if credit_card_export:
-        credit_card_export.status = 'COMPLETE'
-        credit_card_export.save()
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def clean_slate_exports():
-    """
-    Pytest fixture to remove default fixture exports and provide a clean slate
-    """
-    workspace_id = 1
-    # Remove fixture exports so tests can create their own specific ones
-    AccountingExport.objects.filter(
-        workspace_id=workspace_id,
-        type__in=['PURCHASE_INVOICE', 'DIRECT_COST']
-    ).delete()
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def mixed_retry_exports():
-    """
-    Pytest fixture for testing retry logic with mixed export statuses
-    Creates exports that should and shouldn't be retried
+    Creates basic exports for retry logic testing - tests can modify as needed
     """
     workspace_id = 1
 
-    # Reimbursable exports
+    # Create basic reimbursable exports
     AccountingExport.objects.create(
         workspace_id=workspace_id,
         fund_source='PERSONAL',
         type='PURCHASE_INVOICE',
-        status='FAILED',
+        status='EXPORT_READY',
         re_attempt_export=False,
         exported_at=None
     )
@@ -383,7 +341,8 @@ def mixed_retry_exports():
         workspace_id=workspace_id,
         fund_source='PERSONAL',
         type='PURCHASE_INVOICE',
-        status='EXPORT_READY',
+        status='FAILED',
+        re_attempt_export=False,
         exported_at=None
     )
 
@@ -396,130 +355,23 @@ def mixed_retry_exports():
         exported_at=None
     )
 
-    # Credit card exports
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='CCC',
-        type='DIRECT_COST',
-        status='FAILED',
-        re_attempt_export=False,
-        exported_at=None
-    )
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_basic_credit_card_exports():
+    """
+    Creates basic credit card exports for testing
+    """
+    workspace_id = 1
 
     AccountingExport.objects.create(
         workspace_id=workspace_id,
         fund_source='CCC',
         type='DIRECT_COST',
         status='EXPORT_READY',
-        exported_at=None
-    )
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='CCC',
-        type='DIRECT_COST',
-        status='FAILED',
-        re_attempt_export=True,
-        exported_at=None
-    )
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def only_failed_no_retry_exports():
-    """
-    Pytest fixture for testing scenario where all exports are failed with no retry
-    """
-    workspace_id = 1
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='FAILED',
         re_attempt_export=False,
         exported_at=None
     )
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='FAILED',
-        re_attempt_export=False,
-        exported_at=None
-    )
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def only_failed_with_retry_exports():
-    """
-    Pytest fixture for testing scenario where all exports are failed but should be retried
-    """
-    workspace_id = 1
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='FAILED',
-        re_attempt_export=True,
-        exported_at=None
-    )
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='FAILED',
-        re_attempt_export=True,
-        exported_at=None
-    )
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def add_failed_accounting_exports_for_retry_tests():
-    """
-    Pytest fixture to add failed accounting exports with different re_attempt_export values
-    """
-    workspace_id = 1
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='FAILED',
-        re_attempt_export=False,
-        exported_at=None
-    )
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='EXPORT_READY',
-        exported_at=None
-    )
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='FAILED',
-        re_attempt_export=True,
-        exported_at=None
-    )
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def add_failed_accounting_exports_credit_card():
-    """
-    Pytest fixture to add failed credit card accounting exports with different re_attempt_export values
-    """
-    workspace_id = 1
 
     AccountingExport.objects.create(
         workspace_id=workspace_id,
@@ -534,116 +386,10 @@ def add_failed_accounting_exports_credit_card():
         workspace_id=workspace_id,
         fund_source='CCC',
         type='DIRECT_COST',
-        status='EXPORT_READY',
-        exported_at=None
-    )
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='CCC',
-        type='DIRECT_COST',
         status='FAILED',
         re_attempt_export=True,
         exported_at=None
     )
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def add_only_failed_exports_no_retry():
-    """
-    Pytest fixture to add only failed exports with re_attempt_export=False (for testing no exports scenario)
-    """
-    workspace_id = 1
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='FAILED',
-        re_attempt_export=False,
-        exported_at=None
-    )
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='FAILED',
-        re_attempt_export=False,
-        exported_at=None
-    )
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def add_only_failed_exports_with_retry():
-    """
-    Pytest fixture to add only failed exports with re_attempt_export=True
-    """
-    workspace_id = 1
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='FAILED',
-        re_attempt_export=True,
-        exported_at=None
-    )
-
-    AccountingExport.objects.create(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        type='PURCHASE_INVOICE',
-        status='FAILED',
-        re_attempt_export=True,
-        exported_at=None
-    )
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def setup_complete_fetching_reimbursable_export():
-    """
-    Pytest fixture to set up a COMPLETE FETCHING_REIMBURSABLE_EXPENSES export
-    """
-    workspace_id = 1
-    accounting_export = AccountingExport.objects.filter(
-        workspace_id=workspace_id,
-        type='FETCHING_REIMBURSABLE_EXPENSES'
-    ).first()
-    accounting_export.status = 'COMPLETE'
-    accounting_export.save()
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def setup_complete_fetching_credit_card_export():
-    """
-    Pytest fixture to set up a COMPLETE FETCHING_CREDIT_CARD_EXPENSES export
-    """
-    workspace_id = 1
-    accounting_export = AccountingExport.objects.filter(
-        workspace_id=workspace_id,
-        type='FETCHING_CREDIT_CARD_EXPENSES'
-    ).first()
-    accounting_export.status = 'COMPLETE'
-    accounting_export.save()
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def remove_fixture_exports():
-    """
-    Pytest fixture to remove the default fixture exports that might interfere with specific tests
-    """
-    workspace_id = 1
-
-    AccountingExport.objects.filter(
-        workspace_id=workspace_id,
-        type__in=['PURCHASE_INVOICE', 'DIRECT_COST']
-    ).delete()
 
 
 @pytest.fixture()
@@ -1160,28 +906,6 @@ def add_direct_cost_objects(
         accounting_export=accounting_export,
         advance_setting=AdvancedSetting.objects.get(workspace_id=1)
     )
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
-def add_clean_accounting_export_summary():
-    """
-    Pytest fixture to add accounting export summary with last_exported_at=None
-    Used for testing scenarios where no exports should be processed
-    """
-    workspace_ids = [
-        1, 2, 3
-    ]
-    for workspace_id in workspace_ids:
-        AccountingExportSummary.objects.create(
-            workspace_id=workspace_id,
-            last_exported_at=None,
-            next_export_at=None,
-            export_mode='MANUAL',
-            total_accounting_export_count=0,
-            successful_accounting_export_count=0,
-            failed_accounting_export_count=0
-        )
 
 
 @pytest.fixture(autouse=True)
