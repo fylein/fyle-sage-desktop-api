@@ -56,14 +56,11 @@ def run_import_export(workspace_id: int, export_mode = None):
         )
 
         if accounting_export.status == 'COMPLETE':
-            # Always exclude failed exports from previous attempts
             accounting_export_ids = AccountingExport.objects.filter(
+                Q(status='EXPORT_READY') | Q(type__in=['PURCHASE_INVOICE', 'DIRECT_COST']),
                 fund_source='PERSONAL',
                 exported_at__isnull=True,
                 workspace_id=workspace_id
-            ).filter(
-                Q(status='EXPORT_READY')
-                | Q(type__in=['PURCHASE_INVOICE', 'DIRECT_COST'])
             ).exclude(
                 status='FAILED',
                 re_attempt_export=False
@@ -82,14 +79,11 @@ def run_import_export(workspace_id: int, export_mode = None):
             type='FETCHING_CREDIT_CARD_EXPENSES'
         )
         if accounting_export.status == 'COMPLETE':
-            # Always exclude failed exports from previous attempts
             accounting_export_ids = AccountingExport.objects.filter(
+                Q(status='EXPORT_READY') | Q(type__in=['PURCHASE_INVOICE', 'DIRECT_COST']),
                 fund_source='CCC',
                 exported_at__isnull=True,
                 workspace_id=workspace_id
-            ).filter(
-                Q(status='EXPORT_READY')
-                | Q(type__in=['PURCHASE_INVOICE', 'DIRECT_COST'])
             ).exclude(
                 status='FAILED',
                 re_attempt_export=False
