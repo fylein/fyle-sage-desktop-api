@@ -1,21 +1,17 @@
-name: Continuous Deployment
+name: Deploy to DrStrange
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
     types: [labeled]
 
 jobs:
   staging_deploy:
-    if: (github.event_name != 'pull_request') || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'deploy')
+    if: (github.event_name != 'pull_request') || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'drstrange_deploy')
     runs-on: ubuntu-latest
-    environment: Staging
+    environment: drstrange
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0
           submodules: recursive
       - name: push to dockerhub
         uses: fylein/docker-release-action@master
@@ -41,12 +37,6 @@ jobs:
       - name: Update Image Tag
         run: |
           NEW_TAG="v$(git rev-parse --short HEAD)"
-          cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.STAGING_DEPLOY_DIR }}/staging/integrations
-          kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_sage-desktop-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_sage-desktop-api:$NEW_TAG
-
-      - name: Update Image Tag - drstrange staging
-        run: |
-          NEW_TAG="v$(git rev-parse --short HEAD)"
           cd ${{ vars.STAGING_DEPLOY_REPO }}/${{ vars.STAGING_DEPLOY_DIR }}/drstrange/integrations
           kustomize edit set image docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_sage-desktop-api=docker.io/${{ secrets.DOCKERHUB_USERNAME }}/fyle_sage-desktop-api:$NEW_TAG
 
@@ -56,26 +46,7 @@ jobs:
           git config --global user.email "integrations@fylehq.com"
           git config --global user.name "GitHub Actions"
           git add .
-          git commit -m "Deployed sage-desktop-api:$NEW_TAG to staging"
+          git commit -m "Deployed fyle_sage-desktop-api-drstrange:$NEW_TAG to staging"
           git remote set-url origin https://x-access-token:${{ secrets.DEPLOY_GIT_ACCESS_TOKEN }}@github.com/${{ vars.STAGING_DEPLOY_REPO }}
           git pull origin master
           git push origin master
-
-      - name: Create new Sentry release
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: fyle-technologies-private-limi
-          SENTRY_PROJECT: sage-desktop-api
-          SENTRY_DEPLOY_ENVIRONMENT: staging
-        run: |
-          # Install Sentry CLI
-          curl -sL https://sentry.io/get-cli/ | bash
-
-          # Create new Sentry release
-          export SENTRY_RELEASE=$(sentry-cli releases propose-version)
-          sentry-cli releases new -p $SENTRY_PROJECT $SENTRY_RELEASE
-          sentry-cli releases set-commits --auto $SENTRY_RELEASE --ignore-missing
-          sentry-cli releases finalize $SENTRY_RELEASE
-
-          # Create new deploy for this Sentry release
-          sentry-cli releases deploys $SENTRY_RELEASE new -e $SENTRY_DEPLOY_ENVIRONMENT
