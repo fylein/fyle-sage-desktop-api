@@ -226,15 +226,17 @@ def add_accounting_export_expenses():
             workspace_id=workspace_id,
             type='FETCHING_REIMBURSABLE_EXPENSES',
             defaults={
-                'status': 'IN_PROGRESS'
+                'status': 'IN_PROGRESS',
+                're_attempt_export': False
             }
         )
 
         AccountingExport.objects.update_or_create(
             workspace_id=workspace_id,
-            type='FETCHING_CREDIT_CARD_EXPENENSES',
+            type='FETCHING_CREDIT_CARD_EXPENSES',
             defaults={
-                'status': 'IN_PROGRESS'
+                'status': 'IN_PROGRESS',
+                're_attempt_export': False
             }
         )
 
@@ -243,8 +245,10 @@ def add_accounting_export_expenses():
             type='PURCHASE_INVOICE',
             defaults={
                 'status': 'EXPORT_QUEUED',
+                'fund_source': 'PERSONAL',
                 'detail': {'export_id': '123'},
-                'export_id': 1234
+                'export_id': 1234,
+                're_attempt_export': False
             }
         )
 
@@ -253,8 +257,10 @@ def add_accounting_export_expenses():
             type='DIRECT_COST',
             defaults={
                 'status': 'EXPORT_QUEUED',
+                'fund_source': 'CCC',
                 'detail': {'export_id': '123'},
-                'export_id': 1234
+                'export_id': 1234,
+                're_attempt_export': False
             }
         )
 
@@ -311,6 +317,79 @@ def add_accounting_export_summary():
             successful_accounting_export_count = 5,
             failed_accounting_export_count = 5
         )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_basic_retry_exports():
+    """
+    Creates basic exports for retry logic testing - tests can modify as needed
+    """
+    workspace_id = 1
+
+    # Create basic reimbursable exports
+    AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        fund_source='PERSONAL',
+        type='PURCHASE_INVOICE',
+        status='EXPORT_READY',
+        re_attempt_export=False,
+        exported_at=None
+    )
+
+    AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        fund_source='PERSONAL',
+        type='PURCHASE_INVOICE',
+        status='FAILED',
+        re_attempt_export=False,
+        exported_at=None
+    )
+
+    AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        fund_source='PERSONAL',
+        type='PURCHASE_INVOICE',
+        status='FAILED',
+        re_attempt_export=True,
+        exported_at=None
+    )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_basic_credit_card_exports():
+    """
+    Creates basic credit card exports for testing
+    """
+    workspace_id = 1
+
+    AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        fund_source='CCC',
+        type='DIRECT_COST',
+        status='EXPORT_READY',
+        re_attempt_export=False,
+        exported_at=None
+    )
+
+    AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        fund_source='CCC',
+        type='DIRECT_COST',
+        status='FAILED',
+        re_attempt_export=False,
+        exported_at=None
+    )
+
+    AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        fund_source='CCC',
+        type='DIRECT_COST',
+        status='FAILED',
+        re_attempt_export=True,
+        exported_at=None
+    )
 
 
 @pytest.fixture()
