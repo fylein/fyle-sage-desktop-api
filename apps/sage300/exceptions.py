@@ -25,6 +25,7 @@ def handle_sage300_error(exception, accounting_export: AccountingExport, export_
     error.increase_repetition_count_by_one()
 
     accounting_export.status = 'FAILED'
+    accounting_export.re_attempt_export = False
     accounting_export.detail = None
     accounting_export.sage300_errors = sage300_error
     accounting_export.save()
@@ -41,13 +42,14 @@ def handle_sage300_exceptions():
                 logger.info('Fyle credentials not found for workspace_id %s', accounting_export.workspace_id)
                 accounting_export.detail = {'message': 'Fyle credentials do not exist in workspace'}
                 accounting_export.status = 'FAILED'
-
+                accounting_export.re_attempt_export = False
                 accounting_export.save()
 
             except Sage300Credential.DoesNotExist:
                 logger.info('Sage300 Account not connected / token expired for workspace_id %s / accounting export %s', accounting_export.workspace_id, accounting_export.id)
                 detail = {'accounting_export_id': accounting_export.id, 'message': 'Sage300 Account not connected / token expired'}
                 accounting_export.status = 'FAILED'
+                accounting_export.re_attempt_export = False
                 accounting_export.detail = detail
 
                 accounting_export.save()
@@ -59,6 +61,7 @@ def handle_sage300_exceptions():
                 logger.info(exception.response)
                 detail = exception.response
                 accounting_export.status = 'FAILED'
+                accounting_export.re_attempt_export = False
                 accounting_export.detail = detail
 
                 accounting_export.save()
