@@ -179,6 +179,7 @@ def poll_operation_status(workspace_id: int):
                 # Update the accounting export object with Sage 300 errors and status
                 accounting_export.sage300_errors = sage300_errors
                 accounting_export.status = 'FAILED'
+                accounting_export.re_attempt_export = False
 
                 # Save the updated accounting export
                 accounting_export.save()

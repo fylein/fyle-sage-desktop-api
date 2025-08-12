@@ -44,7 +44,10 @@ def test_run_import_export_with_reimbursable_expense(
     add_accounting_export_expenses
 ):
     workspace_id = 1
-    AccountingExportSummary.objects.create(workspace_id=workspace_id)
+    accounting_summary, created = AccountingExportSummary.objects.get_or_create(
+        workspace_id=workspace_id,
+        defaults={'export_mode': 'MANUAL'}
+    )
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
 
     advanced_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
@@ -95,8 +98,15 @@ def test_run_import_export_with_credit_card_expense(
     add_accounting_export_expenses
 ):
     workspace_id = 1
-    AccountingExportSummary.objects.create(workspace_id=workspace_id)
-    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+    accounting_summary, created = AccountingExportSummary.objects.get_or_create(
+        workspace_id=workspace_id,
+        defaults={'export_mode': 'MANUAL'}
+    )
+    # Get the specific FETCHING export and set it up
+    accounting_export = AccountingExport.objects.filter(
+        workspace_id=workspace_id,
+        type='FETCHING_CREDIT_CARD_EXPENSES'
+    ).first()
 
     advanced_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
     advanced_settings.interval_hours = 5
@@ -109,7 +119,6 @@ def test_run_import_export_with_credit_card_expense(
 
     accounting_export.status = 'COMPLETE'
     accounting_export.fund_source = 'CCC'
-    accounting_export.type = 'FETCHING_CREDIT_CARD_EXPENSES'
     accounting_export.exported_at = None
     accounting_export.save()
 
@@ -360,3 +369,201 @@ def test_async_create_admin_subcriptions_2(
 
     mock_api.side_effect = Exception('Error')
     reverse('webhook-callback', kwargs={'workspace_id': workspace_id})
+
+
+def test_run_import_export_exclude_failed_exports_reimbursable(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_advanced_settings,
+    add_accounting_export_summary,
+    add_basic_retry_exports
+):
+    """
+    Test run_import_export excludes failed reimbursable exports with re_attempt_export=False
+    """
+    workspace_id = 1
+
+    AccountingExport.objects.update_or_create(
+        workspace_id=workspace_id,
+        type='FETCHING_REIMBURSABLE_EXPENSES',
+        defaults={'status': 'COMPLETE'}
+    )
+
+    export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_settings.reimbursable_expenses_export_type = 'PURCHASE_INVOICE'
+    export_settings.credit_card_expense_export_type = None
+    export_settings.save()
+
+    mocker.patch('apps.workspaces.tasks.queue_import_reimbursable_expenses')
+    mock_export_instance = mocker.Mock()
+    mocker.patch('apps.workspaces.tasks.ExportPurchaseInvoice', return_value=mock_export_instance)
+
+    run_import_export(workspace_id=workspace_id)
+
+    mock_export_instance.trigger_export.assert_called_once()
+    call_args = mock_export_instance.trigger_export.call_args
+    accounting_export_ids = call_args[1]['accounting_export_ids']
+
+    ready_export = AccountingExport.objects.get(workspace_id=workspace_id, fund_source='PERSONAL', status='EXPORT_READY', type='PURCHASE_INVOICE')
+    retry_export = AccountingExport.objects.get(workspace_id=workspace_id, fund_source='PERSONAL', status='FAILED', re_attempt_export=True, type='PURCHASE_INVOICE')
+    failed_export = AccountingExport.objects.get(workspace_id=workspace_id, fund_source='PERSONAL', status='FAILED', re_attempt_export=False, type='PURCHASE_INVOICE')
+
+    expected_ids = [ready_export.id, retry_export.id]
+    assert set(accounting_export_ids) == set(expected_ids)
+    assert failed_export.id not in accounting_export_ids
+
+    failed_export.refresh_from_db()
+    assert failed_export.status == 'FAILED'
+    assert failed_export.re_attempt_export == False
+
+
+def test_run_import_export_exclude_failed_exports_credit_card(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_advanced_settings,
+    add_accounting_export_summary,
+    add_basic_credit_card_exports
+):
+    """
+    Test run_import_export excludes failed credit card exports with re_attempt_export=False
+    """
+    workspace_id = 1
+
+    AccountingExport.objects.update_or_create(
+        workspace_id=workspace_id,
+        type='FETCHING_CREDIT_CARD_EXPENSES',
+        defaults={'status': 'COMPLETE'}
+    )
+
+    export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_settings.reimbursable_expenses_export_type = None
+    export_settings.credit_card_expense_export_type = 'DIRECT_COST'
+    export_settings.save()
+
+    mocker.patch('apps.workspaces.tasks.queue_import_credit_card_expenses')
+    mock_export_instance = mocker.Mock()
+    mocker.patch('apps.workspaces.tasks.ExportDirectCost', return_value=mock_export_instance)
+
+    run_import_export(workspace_id=workspace_id)
+
+    mock_export_instance.trigger_export.assert_called_once()
+    call_args = mock_export_instance.trigger_export.call_args
+    accounting_export_ids = call_args[1]['accounting_export_ids']
+
+    ready_export = AccountingExport.objects.get(workspace_id=workspace_id, fund_source='CCC', status='EXPORT_READY', type='DIRECT_COST')
+    retry_export = AccountingExport.objects.get(workspace_id=workspace_id, fund_source='CCC', status='FAILED', re_attempt_export=True, type='DIRECT_COST')
+    failed_export = AccountingExport.objects.get(workspace_id=workspace_id, fund_source='CCC', status='FAILED', re_attempt_export=False, type='DIRECT_COST')
+
+    expected_ids = [ready_export.id, retry_export.id]
+    assert set(accounting_export_ids) == set(expected_ids)
+    assert failed_export.id not in accounting_export_ids
+
+    # Verify excluded export remains unchanged
+    failed_export.refresh_from_db()
+    assert failed_export.status == 'FAILED'
+    assert failed_export.re_attempt_export == False
+
+
+def test_run_import_export_no_exports_when_all_failed_no_retry(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_advanced_settings,
+    add_accounting_export_summary,
+    add_basic_retry_exports
+):
+    """
+    Test run_import_export doesn't trigger export when all exports are failed with re_attempt_export=False
+    """
+    workspace_id = 1
+
+    summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
+    summary.last_exported_at = None
+    summary.save()
+
+    AccountingExport.objects.update_or_create(
+        workspace_id=workspace_id,
+        type='FETCHING_REIMBURSABLE_EXPENSES',
+        defaults={'status': 'COMPLETE'}
+    )
+
+    AccountingExport.objects.filter(
+        workspace_id=workspace_id,
+        fund_source='PERSONAL',
+        type='PURCHASE_INVOICE'
+    ).exclude(status='FAILED', re_attempt_export=False).delete()
+
+    export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_settings.reimbursable_expenses_export_type = 'PURCHASE_INVOICE'
+    export_settings.credit_card_expense_export_type = None
+    export_settings.save()
+
+    mocker.patch('apps.workspaces.tasks.queue_import_reimbursable_expenses')
+    mock_export_instance = mocker.Mock()
+    mocker.patch('apps.workspaces.tasks.ExportPurchaseInvoice', return_value=mock_export_instance)
+
+    run_import_export(workspace_id=workspace_id)
+
+    mock_export_instance.trigger_export.assert_not_called()
+
+    accounting_summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
+    assert accounting_summary.last_exported_at is None
+
+    failed_export = AccountingExport.objects.get(workspace_id=workspace_id, fund_source='PERSONAL', status='FAILED', re_attempt_export=False, type='PURCHASE_INVOICE')
+    assert failed_export.status == 'FAILED'
+    assert failed_export.re_attempt_export == False
+
+
+def test_run_import_export_include_failed_exports_with_retry_flag(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_advanced_settings,
+    add_accounting_export_summary,
+    add_basic_retry_exports
+):
+    """
+    Test run_import_export includes failed exports when re_attempt_export=True
+    """
+    workspace_id = 1
+
+    AccountingExport.objects.update_or_create(
+        workspace_id=workspace_id,
+        type='FETCHING_REIMBURSABLE_EXPENSES',
+        defaults={'status': 'COMPLETE'}
+    )
+
+    AccountingExport.objects.filter(
+        workspace_id=workspace_id,
+        fund_source='PERSONAL',
+        type='PURCHASE_INVOICE'
+    ).exclude(status='FAILED', re_attempt_export=True).delete()
+
+    export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_settings.reimbursable_expenses_export_type = 'PURCHASE_INVOICE'
+    export_settings.credit_card_expense_export_type = None
+    export_settings.save()
+
+    mocker.patch('apps.workspaces.tasks.queue_import_reimbursable_expenses')
+    mock_export_instance = mocker.Mock()
+    mocker.patch('apps.workspaces.tasks.ExportPurchaseInvoice', return_value=mock_export_instance)
+
+    run_import_export(workspace_id=workspace_id)
+
+    mock_export_instance.trigger_export.assert_called_once()
+    call_args = mock_export_instance.trigger_export.call_args
+    accounting_export_ids = call_args[1]['accounting_export_ids']
+
+    retry_export = AccountingExport.objects.get(workspace_id=workspace_id, fund_source='PERSONAL', status='FAILED', re_attempt_export=True, type='PURCHASE_INVOICE')
+    expected_ids = [retry_export.id]
+    assert set(accounting_export_ids) == set(expected_ids)

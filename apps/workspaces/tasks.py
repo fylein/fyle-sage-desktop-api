@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import List
 
+from django.db.models import Q
 from django.conf import settings
 from django_q.models import Schedule
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
@@ -56,7 +57,14 @@ def run_import_export(workspace_id: int, export_mode = None):
 
         if accounting_export.status == 'COMPLETE':
             accounting_export_ids = AccountingExport.objects.filter(
-                fund_source='PERSONAL', exported_at__isnull=True, workspace_id=workspace_id).values_list('id', flat=True)
+                Q(status='EXPORT_READY') | Q(type__in=['PURCHASE_INVOICE', 'DIRECT_COST']),
+                fund_source='PERSONAL',
+                exported_at__isnull=True,
+                workspace_id=workspace_id
+            ).exclude(
+                status='FAILED',
+                re_attempt_export=False
+            ).values_list('id', flat=True).distinct()
 
             if len(accounting_export_ids):
                 is_expenses_exported = True
@@ -72,7 +80,14 @@ def run_import_export(workspace_id: int, export_mode = None):
         )
         if accounting_export.status == 'COMPLETE':
             accounting_export_ids = AccountingExport.objects.filter(
-                fund_source='CCC', exported_at__isnull=True, workspace_id=workspace_id).values_list('id', flat=True)
+                Q(status='EXPORT_READY') | Q(type__in=['PURCHASE_INVOICE', 'DIRECT_COST']),
+                fund_source='CCC',
+                exported_at__isnull=True,
+                workspace_id=workspace_id
+            ).exclude(
+                status='FAILED',
+                re_attempt_export=False
+            ).values_list('id', flat=True).distinct()
 
             if len(accounting_export_ids):
                 is_expenses_exported = True
