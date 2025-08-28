@@ -1,9 +1,10 @@
 import pytest
 from unittest.mock import patch
 
-from apps.accounting_exports.models import AccountingExport, Error
+from apps.accounting_exports.models import AccountingExport, AccountingExportSummary, Error
 from apps.workspaces.helpers import clear_workspace_errors_on_export_type_change
 from apps.workspaces.models import ExportSetting
+from apps.workspaces.triggers import ExportSettingsTrigger
 
 
 def test_clear_workspace_errors_no_changes(
@@ -369,3 +370,74 @@ def test_clear_workspace_errors_exported_accounting_exports_unchanged(
 
     unexported_export.refresh_from_db()
     assert unexported_export.status == 'EXPORT_READY'
+
+
+def test_clear_workspace_errors_with_accounting_export_errors(
+    db,
+    create_temp_workspace,
+    add_accounting_export_expenses,
+    add_export_settings
+):
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(
+        workspace_id=workspace_id,
+        fund_source='PERSONAL',
+        exported_at__isnull=True
+    ).first()
+
+    Error.objects.create(
+        workspace_id=workspace_id,
+        type='SAGE300_ERROR',
+        accounting_export=accounting_export,
+        error_title='Accounting Export Error',
+        error_detail='Export failed',
+        is_resolved=False
+    )
+
+    old_export_settings = {
+        'reimbursable_expenses_export_type': 'DIRECT_COST',
+        'credit_card_expense_export_type': 'DIRECT_COST'
+    }
+
+    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+
+    clear_workspace_errors_on_export_type_change(
+        workspace_id=workspace_id,
+        old_export_settings=old_export_settings,
+        new_export_settings=export_setting
+    )
+
+    accounting_export_errors = Error.objects.filter(
+        workspace_id=workspace_id,
+        accounting_export=accounting_export
+    )
+    assert accounting_export_errors.count() == 0
+
+
+@patch('apps.workspaces.triggers.update_accounting_export_summary')
+def test_export_settings_trigger_with_last_exported_at(
+    mock_update_summary,
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    add_accounting_export_summary
+):
+    workspace_id = 1
+    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+
+    summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
+    summary.last_exported_at = '2024-01-01T00:00:00Z'
+    summary.save()
+
+    old_configurations = {
+        'reimbursable_expenses_export_type': 'DIRECT_COST',
+        'credit_card_expense_export_type': 'PURCHASE_INVOICE'
+    }
+
+    ExportSettingsTrigger.post_save_workspace_general_settings(
+        workspace_id=workspace_id,
+        export_settings=export_setting,
+        old_configurations=old_configurations
+    )
+
+    mock_update_summary.assert_called_once_with(workspace_id)
