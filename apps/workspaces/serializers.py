@@ -12,6 +12,7 @@ from rest_framework import serializers
 
 from apps.accounting_exports.models import AccountingExportSummary
 from apps.fyle.helpers import get_cluster_domain
+from apps.workspaces.triggers import ExportSettingsTrigger
 from apps.fyle.models import DependentFieldSetting
 from apps.mappings.models import Version
 from apps.users.models import User
@@ -207,9 +208,28 @@ class ExportSettingsSerializer(serializers.ModelSerializer):
         assert_valid(validated_data, 'Body cannot be null')
         workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
 
+        existing_export_settings = ExportSetting.objects.filter(workspace_id=workspace_id).first()
+        old_export_settings = {}
+        if existing_export_settings:
+            old_export_settings = {
+                'reimbursable_expenses_export_type': existing_export_settings.reimbursable_expenses_export_type,
+                'credit_card_expense_export_type': existing_export_settings.credit_card_expense_export_type,
+            }
+        else:
+            old_export_settings = {
+                'reimbursable_expenses_export_type': None,
+                'credit_card_expense_export_type': None,
+            }
+
         export_settings, _ = ExportSetting.objects.update_or_create(
             workspace_id=workspace_id,
             defaults=validated_data
+        )
+
+        ExportSettingsTrigger.post_save_workspace_general_settings(
+            workspace_id=workspace_id,
+            export_settings=export_settings,
+            old_configurations=old_export_settings
         )
 
         # Update workspace onboarding state
