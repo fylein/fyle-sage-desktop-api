@@ -82,12 +82,14 @@ def clear_workspace_errors_on_export_type_change(
             if affected_fund_sources:
                 logger.info("Export type changed for fund sources %s in workspace %s", affected_fund_sources, workspace_id)
 
-                affected_accounting_export_ids = list(AccountingExport.objects.filter(
+                affected_accounting_exports = AccountingExport.objects.select_for_update().filter(
                     workspace_id=workspace_id,
                     exported_at__isnull=True,
                     status__in=['FAILED', 'FATAL', 'EXPORT_QUEUED'],
                     fund_source__in=affected_fund_sources
-                ).values_list('id', flat=True))
+                )
+
+                affected_accounting_export_ids = list(affected_accounting_exports.values_list('id', flat=True))
 
                 if affected_accounting_export_ids:
                     logger.info("Found %s affected accounting exports", len(affected_accounting_export_ids))
@@ -112,9 +114,7 @@ def clear_workspace_errors_on_export_type_change(
                         total_deleted_errors += deleted_mapping_errors_count
                         logger.info("Cleared %s mapping errors (all EMPLOYEE_MAPPING and CATEGORY_MAPPING errors)", deleted_mapping_errors_count)
 
-                    updated_exports = AccountingExport.objects.filter(
-                        workspace_id=workspace_id,
-                        id__in=affected_accounting_export_ids,
+                    updated_exports = affected_accounting_exports.filter(
                         status__in=['FAILED', 'FATAL', 'EXPORT_QUEUED']
                     ).update(status='EXPORT_READY', sage300_errors=None, detail=None, mapping_errors=None)
 
