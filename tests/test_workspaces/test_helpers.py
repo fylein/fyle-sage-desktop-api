@@ -1,10 +1,9 @@
 import pytest
 from unittest.mock import patch
 
-from apps.accounting_exports.models import AccountingExport, AccountingExportSummary, Error
+from apps.accounting_exports.models import AccountingExport, Error
 from apps.workspaces.helpers import clear_workspace_errors_on_export_type_change
 from apps.workspaces.models import ExportSetting
-from apps.workspaces.triggers import ExportSettingsTrigger
 
 
 def test_clear_workspace_errors_no_changes(
@@ -414,30 +413,49 @@ def test_clear_workspace_errors_with_accounting_export_errors(
     assert accounting_export_errors.count() == 0
 
 
-@patch('apps.workspaces.triggers.update_accounting_export_summary')
-def test_export_settings_trigger_with_last_exported_at(
+@patch('apps.workspaces.signals.clear_workspace_errors_on_export_type_change')
+@patch('apps.workspaces.signals.update_accounting_export_summary')
+def test_export_settings_signal_with_last_exported_at(
     mock_update_summary,
+    mock_clear_errors,
     db,
-    create_temp_workspace,
-    add_export_settings,
-    add_accounting_export_summary
+    simple_export_settings,
+    simple_accounting_export_summary
 ):
     workspace_id = 1
-    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
 
-    summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
-    summary.last_exported_at = '2024-01-01T00:00:00Z'
-    summary.save()
+    simple_export_settings.reimbursable_expenses_export_type = 'DIRECT_COST'
+    simple_export_settings.save()
 
-    old_configurations = {
-        'reimbursable_expenses_export_type': 'DIRECT_COST',
-        'credit_card_expense_export_type': 'PURCHASE_INVOICE'
-    }
-
-    ExportSettingsTrigger.post_save_workspace_general_settings(
-        workspace_id=workspace_id,
-        export_settings=export_setting,
-        old_configurations=old_configurations
-    )
-
+    mock_clear_errors.assert_called_once()
     mock_update_summary.assert_called_once_with(workspace_id)
+
+
+@patch('apps.workspaces.signals.clear_workspace_errors_on_export_type_change')
+def test_signal_debug(mock_clear_errors, db, create_temp_workspace):
+    workspace_id = 1
+
+    export_setting = ExportSetting(
+        workspace_id=workspace_id,
+        reimbursable_expenses_export_type='PURCHASE_INVOICE',
+        credit_card_expense_export_type='DIRECT_COST',
+        default_bank_account_name='Test Account',
+        default_back_account_id='1',
+        reimbursable_expense_state='PAYMENT_PROCESSING',
+        reimbursable_expense_date='SPENT_AT',
+        reimbursable_expense_grouped_by='REPORT',
+        credit_card_expense_state='PAYMENT_PROCESSING',
+        default_ccc_credit_card_account_name='Visa',
+        default_ccc_credit_card_account_id='12',
+        credit_card_expense_grouped_by='REPORT',
+        credit_card_expense_date='SPENT_AT',
+        default_vendor_id='1',
+    )
+    export_setting.save()
+
+    mock_clear_errors.reset_mock()
+
+    export_setting.reimbursable_expenses_export_type = 'DIRECT_COST'
+    export_setting.save()
+
+    mock_clear_errors.assert_called_once()

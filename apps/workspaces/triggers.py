@@ -4,14 +4,11 @@ from typing import Dict, List
 
 from django.conf import settings
 from django.db.models import Q
-from apps.accounting_exports.models import AccountingExportSummary
-from apps.sage300.actions import update_accounting_export_summary
-from apps.workspaces.helpers import clear_workspace_errors_on_export_type_change
 from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
 
 from apps.fyle.helpers import post_request
 from apps.mappings.schedules import schedule_or_delete_fyle_import_tasks
-from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential, ImportSetting, Workspace
+from apps.workspaces.models import AdvancedSetting, FyleCredential, ImportSetting, Workspace
 from apps.workspaces.tasks import schedule_sync
 from fyle_integrations_imports.models import ImportLog
 
@@ -157,23 +154,3 @@ class AdvancedSettingsTriggers:
 
         except Exception as error:
             logger.error(error)
-
-
-class ExportSettingsTrigger:
-    """
-    Class containing all triggers for export_settings
-    """
-    @staticmethod
-    def post_save_workspace_general_settings(workspace_id: int, export_settings: ExportSetting, old_configurations: Dict):
-        """
-        Post save action for workspace general settings
-        """
-
-        export_settings: ExportSetting = ExportSetting.objects.filter(workspace_id=workspace_id).first()
-
-        if old_configurations and export_settings:
-            clear_workspace_errors_on_export_type_change(workspace_id, old_configurations, export_settings)
-
-            last_export_detail = AccountingExportSummary.objects.filter(workspace_id=workspace_id).first()
-            if last_export_detail.last_exported_at:
-                update_accounting_export_summary(workspace_id)
