@@ -4,6 +4,7 @@ from unittest.mock import patch
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.workspaces.helpers import clear_workspace_errors_on_export_type_change
 from apps.workspaces.models import ExportSetting
+from apps.workspaces.signals import run_post_save_export_settings_triggers
 
 
 def test_clear_workspace_errors_no_changes(
@@ -289,3 +290,40 @@ def test_export_settings_signal_with_last_exported_at(
 
     mock_clear_errors.assert_called_once()
     mock_update_summary.assert_called_once_with(workspace_id)
+
+
+@patch('apps.workspaces.signals.update_accounting_export_summary')
+@patch('apps.workspaces.signals.clear_workspace_errors_on_export_type_change')
+def test_export_settings_signal_fallback_case(
+    mock_clear_errors,
+    mock_update_summary,
+    db,
+    create_temp_workspace
+):
+    """
+    Test post_save signal fallback case when _pre_save_old_export_settings is not available
+    """
+    workspace_id = 1
+
+    export_setting = ExportSetting(
+        workspace_id=workspace_id,
+        reimbursable_expenses_export_type='PURCHASE_INVOICE',
+        credit_card_expense_export_type=None
+    )
+
+    run_post_save_export_settings_triggers(
+        sender=ExportSetting,
+        instance=export_setting,
+        created=True
+    )
+
+    expected_old_settings = {
+        'reimbursable_expenses_export_type': None,
+        'credit_card_expense_export_type': None,
+    }
+
+    mock_clear_errors.assert_called_once_with(
+        workspace_id=workspace_id,
+        old_export_settings=expected_old_settings,
+        new_export_settings=export_setting
+    )
