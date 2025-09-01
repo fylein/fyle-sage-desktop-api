@@ -564,7 +564,6 @@ def add_export_settings():
         1, 2, 3
     ]
 
-    # Temporarily disconnect the signals to avoid triggering error clearing during test setup
     post_save.disconnect(run_post_save_export_settings_triggers, sender=ExportSetting)
     pre_save.disconnect(run_pre_save_export_settings_triggers, sender=ExportSetting)
 
