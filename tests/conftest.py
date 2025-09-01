@@ -567,13 +567,13 @@ def add_export_settings():
         for workspace_id in workspace_ids:
             ExportSetting.objects.create(
                 workspace_id=workspace_id,
-                reimbursable_expenses_export_type='PURCHASE_INVOICE' if workspace_id in [1, 2] else 'DIRECT_COST',
+                reimbursable_expenses_export_type='PURCHASE_INVOICE',
                 default_bank_account_name='Accounts Payable',
                 default_back_account_id='1',
                 reimbursable_expense_state='PAYMENT_PROCESSING',
                 reimbursable_expense_date='SPENT_AT' if workspace_id == 1 else 'LAST_SPENT_AT',
                 reimbursable_expense_grouped_by='REPORT' if workspace_id == 1 else 'EXPENSE',
-                credit_card_expense_export_type='DIRECT_COST' if workspace_id in [1, 2] else 'PURCHASE_INVOICE',
+                credit_card_expense_export_type=None,
                 credit_card_expense_state='PAYMENT_PROCESSING',
                 default_ccc_credit_card_account_name='Visa',
                 default_ccc_credit_card_account_id='12',
@@ -597,7 +597,7 @@ def simple_export_settings(create_temp_workspace):
     export_setting = ExportSetting.objects.create(
         workspace_id=workspace_id,
         reimbursable_expenses_export_type='PURCHASE_INVOICE',
-        credit_card_expense_export_type='DIRECT_COST',
+        credit_card_expense_export_type='PURCHASE_INVOICE',
         default_bank_account_name='Test Account',
         default_back_account_id='1',
         reimbursable_expense_state='PAYMENT_PROCESSING',
