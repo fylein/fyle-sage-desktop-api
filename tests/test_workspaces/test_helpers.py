@@ -31,8 +31,8 @@ def test_clear_workspace_errors_no_changes(
 
     assert Error.objects.filter(workspace_id=workspace_id).count() == initial_error_count
 
-    personal_export = AccountingExport.objects.filter(fund_source='PERSONAL').first()
-    ccc_export = AccountingExport.objects.filter(fund_source='CCC').first()
+    personal_export = AccountingExport.objects.filter(workspace_id=workspace_id, fund_source='PERSONAL').first()
+    ccc_export = AccountingExport.objects.filter(workspace_id=workspace_id, fund_source='CCC').first()
     assert personal_export.status == 'EXPORT_QUEUED'
     assert ccc_export.status == 'EXPORT_QUEUED'
 

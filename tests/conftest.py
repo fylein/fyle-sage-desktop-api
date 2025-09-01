@@ -365,6 +365,11 @@ def add_basic_credit_card_exports():
     Creates basic credit card exports for testing
     """
     workspace_id = 1
+    AccountingExport.objects.filter(
+        workspace_id=workspace_id,
+        fund_source='CCC',
+        type='DIRECT_COST'
+    ).delete()
 
     AccountingExport.objects.create(
         workspace_id=workspace_id,

@@ -441,10 +441,23 @@ def test_run_import_export_exclude_failed_exports_credit_card(
         defaults={'status': 'COMPLETE'}
     )
 
-    export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
-    export_settings.reimbursable_expenses_export_type = None
-    export_settings.credit_card_expense_export_type = 'DIRECT_COST'
-    export_settings.save()
+    # Temporarily disconnect signals to prevent interference with test data
+    from django.db.models.signals import post_save, pre_save
+    from apps.workspaces.models import ExportSetting
+    from apps.workspaces.signals import run_post_save_export_settings_triggers, run_pre_save_export_settings_triggers
+    
+    post_save.disconnect(run_post_save_export_settings_triggers, sender=ExportSetting)
+    pre_save.disconnect(run_pre_save_export_settings_triggers, sender=ExportSetting)
+    
+    try:
+        export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
+        export_settings.reimbursable_expenses_export_type = None
+        export_settings.credit_card_expense_export_type = 'DIRECT_COST'
+        export_settings.save()
+    finally:
+        # Reconnect signals
+        post_save.connect(run_post_save_export_settings_triggers, sender=ExportSetting)
+        pre_save.connect(run_pre_save_export_settings_triggers, sender=ExportSetting)
 
     mocker.patch('apps.workspaces.tasks.queue_import_credit_card_expenses')
     mock_export_instance = mocker.Mock()
