@@ -85,6 +85,7 @@ def clear_workspace_errors_on_export_type_change(
                 affected_accounting_export_ids = list(AccountingExport.objects.filter(
                     workspace_id=workspace_id,
                     exported_at__isnull=True,
+                    status__in=['FAILED', 'FATAL', 'EXPORT_QUEUED'],
                     fund_source__in=affected_fund_sources
                 ).values_list('id', flat=True))
 

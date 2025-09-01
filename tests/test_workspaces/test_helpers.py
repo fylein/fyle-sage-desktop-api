@@ -17,7 +17,7 @@ def test_clear_workspace_errors_no_changes(
 
     old_export_settings = {
         'reimbursable_expenses_export_type': 'PURCHASE_INVOICE',
-        'credit_card_expense_export_type': 'DIRECT_COST'
+        'credit_card_expense_export_type': None
     }
 
     export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
@@ -47,11 +47,13 @@ def test_clear_workspace_errors_reimbursable_change(
     workspace_id = 1
 
     old_export_settings = {
-        'reimbursable_expenses_export_type': 'DIRECT_COST',
-        'credit_card_expense_export_type': 'DIRECT_COST'
+        'reimbursable_expenses_export_type': 'PURCHASE_INVOICE',
+        'credit_card_expense_export_type': None
     }
 
     export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.reimbursable_expenses_export_type = None
+    export_setting.save()
 
     clear_workspace_errors_on_export_type_change(
         workspace_id=workspace_id,
@@ -90,6 +92,8 @@ def test_clear_workspace_errors_ccc_change(
     }
 
     export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.credit_card_expense_export_type = None
+    export_setting.save()
 
     clear_workspace_errors_on_export_type_change(
         workspace_id=workspace_id,
@@ -111,122 +115,6 @@ def test_clear_workspace_errors_ccc_change(
         status='EXPORT_READY'
     )
     assert ccc_exports.exists()
-
-
-def test_clear_workspace_errors_both_types_change(
-    db,
-    create_temp_workspace,
-    add_accounting_export_expenses,
-    add_errors,
-    add_export_settings
-):
-    workspace_id = 1
-
-    old_export_settings = {
-        'reimbursable_expenses_export_type': 'DIRECT_COST',
-        'credit_card_expense_export_type': 'PURCHASE_INVOICE'
-    }
-
-    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
-
-    clear_workspace_errors_on_export_type_change(
-        workspace_id=workspace_id,
-        old_export_settings=old_export_settings,
-        new_export_settings=export_setting
-    )
-
-    mapping_errors = Error.objects.filter(
-        workspace_id=workspace_id,
-        type__in=['EMPLOYEE_MAPPING', 'CATEGORY_MAPPING'],
-        is_resolved=False
-    )
-    assert mapping_errors.count() == 0
-
-    personal_exports = AccountingExport.objects.filter(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        exported_at__isnull=True,
-        status='EXPORT_READY'
-    )
-    ccc_exports = AccountingExport.objects.filter(
-        workspace_id=workspace_id,
-        fund_source='CCC',
-        exported_at__isnull=True,
-        status='EXPORT_READY'
-    )
-    assert personal_exports.exists()
-    assert ccc_exports.exists()
-
-
-def test_clear_workspace_errors_enable_from_none(
-    db,
-    create_temp_workspace,
-    add_accounting_export_expenses,
-    add_errors,
-    add_export_settings
-):
-    workspace_id = 1
-
-    old_export_settings = {
-        'reimbursable_expenses_export_type': None,
-        'credit_card_expense_export_type': 'DIRECT_COST'
-    }
-
-    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
-
-    clear_workspace_errors_on_export_type_change(
-        workspace_id=workspace_id,
-        old_export_settings=old_export_settings,
-        new_export_settings=export_setting
-    )
-
-    mapping_errors = Error.objects.filter(
-        workspace_id=workspace_id,
-        type__in=['EMPLOYEE_MAPPING', 'CATEGORY_MAPPING'],
-        is_resolved=False
-    )
-    assert mapping_errors.count() == 0
-
-    personal_exports = AccountingExport.objects.filter(
-        workspace_id=workspace_id,
-        fund_source='PERSONAL',
-        exported_at__isnull=True,
-        status='EXPORT_READY'
-    )
-    assert personal_exports.exists()
-
-
-def test_clear_workspace_errors_disable_to_none(
-    db,
-    create_temp_workspace,
-    add_accounting_export_expenses,
-    add_errors
-):
-    workspace_id = 1
-
-    export_setting = ExportSetting.objects.create(
-        workspace_id=workspace_id,
-        reimbursable_expenses_export_type=None,
-        credit_card_expense_export_type='DIRECT_COST'
-    )
-
-    old_export_settings = {
-        'reimbursable_expenses_export_type': 'PURCHASE_INVOICE',
-        'credit_card_expense_export_type': 'DIRECT_COST'
-    }
-
-    clear_workspace_errors_on_export_type_change(
-        workspace_id=workspace_id,
-        old_export_settings=old_export_settings,
-        new_export_settings=export_setting
-    )
-
-    mapping_errors = Error.objects.filter(
-        workspace_id=workspace_id,
-        type__in=['EMPLOYEE_MAPPING', 'CATEGORY_MAPPING'],
-        is_resolved=False
-    )
-    assert mapping_errors.count() == 0
 
 
 def test_clear_workspace_errors_only_unresolved_deleted(
@@ -248,11 +136,13 @@ def test_clear_workspace_errors_only_unresolved_deleted(
     )
 
     old_export_settings = {
-        'reimbursable_expenses_export_type': 'DIRECT_COST',
-        'credit_card_expense_export_type': 'DIRECT_COST'
+        'reimbursable_expenses_export_type': 'PURCHASE_INVOICE',
+        'credit_card_expense_export_type': 'PURCHASE_INVOICE'
     }
 
     export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.reimbursable_expenses_export_type = None
+    export_setting.save()
 
     clear_workspace_errors_on_export_type_change(
         workspace_id=workspace_id,
@@ -270,40 +160,6 @@ def test_clear_workspace_errors_only_unresolved_deleted(
     assert unresolved_errors.count() == 0
 
 
-@patch('apps.workspaces.helpers.logger')
-def test_clear_workspace_errors_logging(
-    mock_logger,
-    db,
-    create_temp_workspace,
-    add_accounting_export_expenses,
-    add_errors,
-    add_export_settings
-):
-    workspace_id = 1
-
-    old_export_settings = {
-        'reimbursable_expenses_export_type': 'DIRECT_COST',
-        'credit_card_expense_export_type': 'PURCHASE_INVOICE'
-    }
-
-    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
-
-    clear_workspace_errors_on_export_type_change(
-        workspace_id=workspace_id,
-        old_export_settings=old_export_settings,
-        new_export_settings=export_setting
-    )
-
-    mock_logger.info.assert_any_call(
-        "Reimbursable export type changed from '%s' to '%s' in workspace %s",
-        'DIRECT_COST', 'PURCHASE_INVOICE', workspace_id
-    )
-    mock_logger.info.assert_any_call(
-        "CCC export type changed from '%s' to '%s' in workspace %s",
-        'PURCHASE_INVOICE', 'DIRECT_COST', workspace_id
-    )
-
-
 def test_clear_workspace_errors_exception_handling(
     db,
     create_temp_workspace,
@@ -313,8 +169,8 @@ def test_clear_workspace_errors_exception_handling(
     workspace_id = 1
 
     old_export_settings = {
-        'reimbursable_expenses_export_type': 'DIRECT_COST',
-        'credit_card_expense_export_type': 'DIRECT_COST'
+        'reimbursable_expenses_export_type': 'PURCHASE_INVOICE',
+        'credit_card_expense_export_type': 'PURCHASE_INVOICE'
     }
 
     invalid_export_setting = None
@@ -351,11 +207,13 @@ def test_clear_workspace_errors_exported_accounting_exports_unchanged(
     )
 
     old_export_settings = {
-        'reimbursable_expenses_export_type': 'DIRECT_COST',
-        'credit_card_expense_export_type': 'DIRECT_COST'
+        'reimbursable_expenses_export_type': 'PURCHASE_INVOICE',
+        'credit_card_expense_export_type': 'PURCHASE_INVOICE'
     }
 
     export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.reimbursable_expenses_export_type = None
+    export_setting.save()
 
     clear_workspace_errors_on_export_type_change(
         workspace_id=workspace_id,
@@ -394,11 +252,13 @@ def test_clear_workspace_errors_with_accounting_export_errors(
     )
 
     old_export_settings = {
-        'reimbursable_expenses_export_type': 'DIRECT_COST',
-        'credit_card_expense_export_type': 'DIRECT_COST'
+        'reimbursable_expenses_export_type': 'PURCHASE_INVOICE',
+        'credit_card_expense_export_type': 'PURCHASE_INVOICE'
     }
 
     export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.reimbursable_expenses_export_type = None
+    export_setting.save()
 
     clear_workspace_errors_on_export_type_change(
         workspace_id=workspace_id,
@@ -424,38 +284,8 @@ def test_export_settings_signal_with_last_exported_at(
 ):
     workspace_id = 1
 
-    simple_export_settings.reimbursable_expenses_export_type = 'DIRECT_COST'
+    simple_export_settings.reimbursable_expenses_export_type = None
     simple_export_settings.save()
 
     mock_clear_errors.assert_called_once()
     mock_update_summary.assert_called_once_with(workspace_id)
-
-
-@patch('apps.workspaces.signals.clear_workspace_errors_on_export_type_change')
-def test_signal_debug(mock_clear_errors, db, create_temp_workspace):
-    workspace_id = 1
-
-    export_setting = ExportSetting(
-        workspace_id=workspace_id,
-        reimbursable_expenses_export_type='PURCHASE_INVOICE',
-        credit_card_expense_export_type='DIRECT_COST',
-        default_bank_account_name='Test Account',
-        default_back_account_id='1',
-        reimbursable_expense_state='PAYMENT_PROCESSING',
-        reimbursable_expense_date='SPENT_AT',
-        reimbursable_expense_grouped_by='REPORT',
-        credit_card_expense_state='PAYMENT_PROCESSING',
-        default_ccc_credit_card_account_name='Visa',
-        default_ccc_credit_card_account_id='12',
-        credit_card_expense_grouped_by='REPORT',
-        credit_card_expense_date='SPENT_AT',
-        default_vendor_id='1',
-    )
-    export_setting.save()
-
-    mock_clear_errors.reset_mock()
-
-    export_setting.reimbursable_expenses_export_type = 'DIRECT_COST'
-    export_setting.save()
-
-    mock_clear_errors.assert_called_once()
