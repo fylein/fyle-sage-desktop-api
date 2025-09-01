@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
 
 from django.conf import settings
+from django.db.models.signals import post_save, pre_save
 from django.urls import reverse
 from django_q.models import Schedule
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
 from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential
+from apps.workspaces.signals import run_post_save_export_settings_triggers, run_pre_save_export_settings_triggers
 from apps.workspaces.tasks import (
     async_create_admin_subcriptions,
     async_update_fyle_credentials,
@@ -441,14 +443,9 @@ def test_run_import_export_exclude_failed_exports_credit_card(
         defaults={'status': 'COMPLETE'}
     )
 
-    # Temporarily disconnect signals to prevent interference with test data
-    from django.db.models.signals import post_save, pre_save
-    from apps.workspaces.models import ExportSetting
-    from apps.workspaces.signals import run_post_save_export_settings_triggers, run_pre_save_export_settings_triggers
-    
     post_save.disconnect(run_post_save_export_settings_triggers, sender=ExportSetting)
     pre_save.disconnect(run_pre_save_export_settings_triggers, sender=ExportSetting)
-    
+
     try:
         export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
         export_settings.reimbursable_expenses_export_type = None
