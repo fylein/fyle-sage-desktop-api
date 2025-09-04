@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from unittest import mock
 
 import pytest
+from django.db.models.signals import post_save, pre_save
 from fyle.platform.platform import Platform
 from fyle_accounting_mappings.models import (
     CategoryMapping,
@@ -31,6 +32,7 @@ from apps.workspaces.models import (
     Sage300Credential,
     Workspace,
 )
+from apps.workspaces.signals import run_post_save_export_settings_triggers, run_pre_save_export_settings_triggers
 from sage_desktop_api.tests import settings
 from tests.test_fyle.fixtures import fixtures as fyle_fixtures
 
@@ -363,6 +365,11 @@ def add_basic_credit_card_exports():
     Creates basic credit card exports for testing
     """
     workspace_id = 1
+    AccountingExport.objects.filter(
+        workspace_id=workspace_id,
+        fund_source='CCC',
+        type='DIRECT_COST'
+    ).delete()
 
     AccountingExport.objects.create(
         workspace_id=workspace_id,
@@ -553,28 +560,79 @@ def add_export_settings():
     """
     Pytest fixtue to add export_settings to a workspace
     """
-
     workspace_ids = [
         1, 2, 3
     ]
 
-    for workspace_id in workspace_ids:
-        ExportSetting.objects.create(
-            workspace_id=workspace_id,
-            reimbursable_expenses_export_type='PURCHASE_INVOICE' if workspace_id in [1, 2] else 'DIRECT_COST',
-            default_bank_account_name='Accounts Payable',
-            default_back_account_id='1',
-            reimbursable_expense_state='PAYMENT_PROCESSING',
-            reimbursable_expense_date='SPENT_AT' if workspace_id == 1 else 'LAST_SPENT_AT',
-            reimbursable_expense_grouped_by='REPORT' if workspace_id == 1 else 'EXPENSE',
-            credit_card_expense_export_type='DIRECT_COST' if workspace_id in [1, 2] else 'PURCHASE_INVOICE',
-            credit_card_expense_state='PAYMENT_PROCESSING',
-            default_ccc_credit_card_account_name='Visa',
-            default_ccc_credit_card_account_id='12',
-            credit_card_expense_grouped_by='EXPENSE' if workspace_id == 3 else 'REPORT',
-            credit_card_expense_date='SPENT_AT',
-            default_vendor_id='1',
-        )
+    post_save.disconnect(run_post_save_export_settings_triggers, sender=ExportSetting)
+    pre_save.disconnect(run_pre_save_export_settings_triggers, sender=ExportSetting)
+
+    try:
+        for workspace_id in workspace_ids:
+            ExportSetting.objects.create(
+                workspace_id=workspace_id,
+                reimbursable_expenses_export_type='PURCHASE_INVOICE',
+                default_bank_account_name='Accounts Payable',
+                default_back_account_id='1',
+                reimbursable_expense_state='PAYMENT_PROCESSING',
+                reimbursable_expense_date='SPENT_AT' if workspace_id == 1 else 'LAST_SPENT_AT',
+                reimbursable_expense_grouped_by='REPORT' if workspace_id == 1 else 'EXPENSE',
+                credit_card_expense_export_type=None,
+                credit_card_expense_state='PAYMENT_PROCESSING',
+                default_ccc_credit_card_account_name='Visa',
+                default_ccc_credit_card_account_id='12',
+                credit_card_expense_grouped_by='EXPENSE' if workspace_id == 3 else 'REPORT',
+                credit_card_expense_date='SPENT_AT',
+                default_vendor_id='1',
+            )
+    finally:
+        # Reconnect the signals after creating the test data
+        post_save.connect(run_post_save_export_settings_triggers, sender=ExportSetting)
+        pre_save.connect(run_pre_save_export_settings_triggers, sender=ExportSetting)
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def simple_export_settings(create_temp_workspace):
+    """
+    Simple fixture to create export settings without triggering signals
+    """
+    workspace_id = 1
+    export_setting = ExportSetting.objects.create(
+        workspace_id=workspace_id,
+        reimbursable_expenses_export_type='PURCHASE_INVOICE',
+        credit_card_expense_export_type='PURCHASE_INVOICE',
+        default_bank_account_name='Test Account',
+        default_back_account_id='1',
+        reimbursable_expense_state='PAYMENT_PROCESSING',
+        reimbursable_expense_date='SPENT_AT',
+        reimbursable_expense_grouped_by='REPORT',
+        credit_card_expense_state='PAYMENT_PROCESSING',
+        default_ccc_credit_card_account_name='Visa',
+        default_ccc_credit_card_account_id='12',
+        credit_card_expense_grouped_by='REPORT',
+        credit_card_expense_date='SPENT_AT',
+        default_vendor_id='1',
+    )
+    return export_setting
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def simple_accounting_export_summary(create_temp_workspace):
+    """
+    Simple fixture to create accounting export summary
+    """
+    workspace_id = 1
+    summary = AccountingExportSummary.objects.create(
+        workspace_id=workspace_id,
+        last_exported_at='2024-01-01T00:00:00Z',
+        export_mode='AUTO',
+        total_accounting_export_count=0,
+        successful_accounting_export_count=0,
+        failed_accounting_export_count=0
+    )
+    return summary
 
 
 @pytest.fixture()
