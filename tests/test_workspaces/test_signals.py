@@ -34,6 +34,7 @@ def test_run_pre_save_export_settings_triggers_ccc_state_change(db, mocker, crea
     workspace_id = 2
 
     existing_export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    existing_export_setting.credit_card_expense_export_type = 'PURCHASE_INVOICE'
     existing_export_setting.credit_card_expense_state = ExpenseStateEnum.PAID
     existing_export_setting.save()
 
@@ -58,6 +59,7 @@ def test_run_pre_save_export_settings_triggers_both_state_changes(db, mocker, cr
     workspace_id = 3
 
     existing_export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    existing_export_setting.credit_card_expense_export_type = 'PURCHASE_INVOICE'
     existing_export_setting.reimbursable_expense_state = ExpenseStateEnum.PAID
     existing_export_setting.credit_card_expense_state = ExpenseStateEnum.PAID
     existing_export_setting.save()
