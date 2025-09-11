@@ -2,8 +2,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import List
 
-from django.db.models import Q
 from django.conf import settings
+from django.db.models import Q
 from django_q.models import Schedule
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 from fyle_integrations_platform_connector import PlatformConnector
@@ -245,7 +245,20 @@ def async_create_admin_subcriptions(workspace_id: int) -> None:
     platform = PlatformConnector(fyle_credentials)
     payload = {
         'is_enabled': True,
-        'webhook_url': '{}/workspaces/{}/fyle/webhook_callback/'.format(settings.API_URL, workspace_id)
+        'webhook_url': '{}/workspaces/{}/fyle/webhook_callback/'.format(settings.API_URL, workspace_id),
+        'subscribed_resources': [
+            'EXPENSE',
+            'REPORT',
+            'CATEGORY',
+            'PROJECT',
+            'COST_CENTER',
+            'EXPENSE_FIELD',
+            'DEPENDENT_EXPENSE_FIELD',
+            'CORPORATE_CARD',
+            'EMPLOYEE',
+            'TAX_GROUP',
+            'ORG_SETTING'
+        ]
     }
     platform.subscriptions.post(payload)
 
