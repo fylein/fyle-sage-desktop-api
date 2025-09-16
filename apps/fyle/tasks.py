@@ -4,13 +4,16 @@ All Tasks from which involve Fyle APIs
 1. Import Reimbursable Expenses from Fyle
 2. Import Credit Card Expenses from Fyle
 """
+import hashlib
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict, List
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.utils.module_loading import import_string
+from django_q.models import Schedule
+from django_q.tasks import schedule
 
 from fyle_integrations_platform_connector import PlatformConnector
 from fyle_integrations_platform_connector.apis.expenses import Expenses as FyleExpenses
@@ -20,14 +23,11 @@ from fyle_accounting_library.fyle_platform.branding import feature_configuration
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary, Error
 from apps.workspaces.models import ExportSetting, Workspace, FyleCredential, AdvancedSetting
-from apps.fyle.models import Expense, ExpenseFilter
+from apps.fyle.models import Expense, ExpenseFilter, SOURCE_ACCOUNT_MAP
 from apps.fyle.helpers import __bulk_update_expenses, construct_expense_filter_query
 from apps.fyle.exceptions import handle_exceptions
-
-SOURCE_ACCOUNT_MAP = {
-    'PERSONAL': 'PERSONAL_CASH_ACCOUNT',
-    'CCC': 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT'
-}
+from apps.workspaces.helpers import construct_filter_for_affected_accounting_exports
+from sage_desktop_api.logging_middleware import get_logger
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -138,6 +138,16 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
                 if imported_from != ExpenseImportSourceEnum.CONFIGURATION_UPDATE:
                     workspace.save()
 
+            # Handle fund source changes for state change events (report state changes)
+            if is_state_change_event and report_id:
+                try:
+                    expenses_count = Expense.objects.filter(workspace_id=workspace_id, report_id=report_id).count()
+                    if expenses_count > 0 and report_state in ('APPROVED', 'ADMIN_APPROVED'):
+                        logger.info("Handling expense fund source change for workspace_id: %s, report_id: %s", workspace_id, report_id)
+                        handle_expense_fund_source_change(workspace_id, report_id, platform)
+                except Exception as e:
+                    logger.exception("Error handling expense fund source change for workspace_id: %s, report_id: %s | ERROR: %s", workspace_id, report_id, e)
+
             expense_objects = Expense.create_expense_objects(expenses, workspace_id, imported_from=imported_from)
 
             expense_filters = ExpenseFilter.objects.filter(workspace_id=workspace_id).order_by('rank')
@@ -172,7 +182,7 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
 
         # Allow real time export if it's supported for the branded app and setting is enabled
         if is_real_time_export_enabled and feature_configuration.feature.real_time_export_1hr_orgs:
-            logger.info(f'Exporting expenses for workspace {workspace.id} with report id {report_id}, triggered by {imported_from}')
+            logger.info('Exporting expenses for workspace %s with report id %s, triggered by %s', workspace.id, report_id, imported_from)
             import_string('apps.workspaces.tasks.export_to_sage300')(workspace_id=workspace_id, triggered_by=triggered_by, accounting_export_filters={'expenses__report_id': report_id})
 
 
@@ -216,9 +226,22 @@ def update_non_exported_expenses(data: Dict) -> None:
             expense_obj = []
             expense_obj.append(data)
             expense_objects = FyleExpenses().construct_expense_object(expense_obj, expense.workspace_id)
+
+            old_fund_source = expense.fund_source
+            new_fund_source = SOURCE_ACCOUNT_MAP[expense_objects[0]['source_account_type']]
+
             Expense.create_expense_objects(
                 expense_objects, expense.workspace_id, skip_update=True
             )
+
+            if old_fund_source != new_fund_source:
+                logger.info("Fund source changed for expense %s from %s to %s in workspace %s", expense.id, old_fund_source, new_fund_source, expense.workspace_id)
+                handle_fund_source_changes_for_expense_ids(
+                    workspace_id=expense.workspace_id,
+                    changed_expense_ids=[expense.id],
+                    report_id=expense.report_id,
+                    affected_fund_source_expense_ids={old_fund_source: [expense.id]}
+                )
 
 
 def mark_expenses_as_skipped(final_query: Q, expenses_object_ids: List, workspace: Workspace) -> List[Expense]:
@@ -304,3 +327,297 @@ def re_run_skip_export_rule(workspace: Workspace) -> None:
                     (last_export_detail.total_accounting_export_count or 0) - deleted_total_accounting_export_count
                 )
                 last_export_detail.save()
+
+
+def handle_expense_fund_source_change(workspace_id: int, report_id: str, platform: PlatformConnector) -> None:
+    """
+    Handle expense fund source change
+    :param workspace_id: Workspace id
+    :param report_id: Report id
+    :param platform: Platform connector
+    :return: None
+    """
+    expenses = platform.expenses.get(
+        source_account_type=['PERSONAL_CASH_ACCOUNT', 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT'],
+        report_id=report_id,
+        filter_credit_expenses=False
+    )
+
+    expenses_to_update = []
+    expense_ids_changed = []
+    expenses_in_db = Expense.objects.filter(workspace_id=workspace_id, report_id=report_id).values_list('expense_id', 'fund_source', 'id')
+    expense_id_fund_source_map = {
+        expense[0]: {
+            'fund_source': expense[1],
+            'id': expense[2]
+        }
+        for expense in expenses_in_db
+    }
+
+    affected_fund_source_expense_ids = {
+        'PERSONAL': [],
+        'CCC': []
+    }
+
+    for expense in expenses:
+        if expense['id'] in expense_id_fund_source_map:
+            new_expense_fund_source = SOURCE_ACCOUNT_MAP[expense['source_account_type']]
+            old_expense_fund_source = expense_id_fund_source_map[expense['id']]['fund_source']
+            if new_expense_fund_source != old_expense_fund_source:
+                logger.info("Expense Fund Source changed for expense %s from %s to %s", expense['id'], old_expense_fund_source, new_expense_fund_source)
+                expenses_to_update.append(expense)
+                expense_ids_changed.append(expense_id_fund_source_map[expense['id']]['id'])
+                affected_fund_source_expense_ids[old_expense_fund_source].append(expense_id_fund_source_map[expense['id']]['id'])
+
+    if expenses_to_update:
+        logger.info("Updating Fund Source Change for expenses with report_id %s in workspace %s | COUNT %s", report_id, workspace_id, len(expenses_to_update))
+        Expense.create_expense_objects(expenses=expenses_to_update, workspace_id=workspace_id, skip_update=False)
+        handle_fund_source_changes_for_expense_ids(workspace_id=workspace_id, changed_expense_ids=expense_ids_changed, report_id=report_id, affected_fund_source_expense_ids=affected_fund_source_expense_ids)
+
+
+def handle_fund_source_changes_for_expense_ids(workspace_id: int, changed_expense_ids: List[int], report_id: str, affected_fund_source_expense_ids: dict, task_name: str = None) -> None:
+    """
+    Main entry point for handling fund_source changes for expense ids
+    :param workspace_id: workspace id
+    :param changed_expense_ids: List of expense IDs whose fund_source changed
+    :param report_id: Report id
+    :param affected_fund_source_expense_ids: Dict of affected fund sources and their expense ids
+    :param task_name: Name of the task to clean up
+    :return: None
+    """
+    worker_logger = get_logger()
+
+    filter_for_affected_accounting_exports = construct_filter_for_affected_accounting_exports(
+        workspace_id=workspace_id,
+        report_id=report_id,
+        changed_expense_ids=changed_expense_ids,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+
+    with transaction.atomic():
+        affected_exports = AccountingExport.objects.filter(
+            filter_for_affected_accounting_exports,
+            workspace_id=workspace_id,
+            exported_at__isnull=True
+        ).annotate(
+            expense_count=Count('expenses')
+        ).distinct()
+
+        if not affected_exports:
+            worker_logger.info("No accounting exports found for changed expenses: %s in workspace %s", changed_expense_ids, workspace_id)
+            return
+
+        affected_expense_ids = list(affected_exports.values_list('expenses__id', flat=True))
+        are_all_accounting_exports_exported = True
+
+        for export in affected_exports:
+            worker_logger.info("Processing fund source change for accounting export %s with %s expenses in workspace %s", export.id, export.expense_count, workspace_id)
+            is_accounting_export_processed = process_accounting_export_for_fund_source_update(
+                accounting_export=export,
+                changed_expense_ids=changed_expense_ids,
+                workspace_id=workspace_id,
+                report_id=report_id,
+                affected_fund_source_expense_ids=affected_fund_source_expense_ids
+            )
+
+            if not is_accounting_export_processed:
+                are_all_accounting_exports_exported = False
+
+        if are_all_accounting_exports_exported:
+            worker_logger.info("All accounting exports are exported, proceeding with recreation of accounting exports for changed expense ids %s in workspace %s", changed_expense_ids, workspace_id)
+            recreate_accounting_exports(workspace_id=workspace_id, expense_ids=affected_expense_ids)
+            if task_name:
+                cleanup_scheduled_task(task_name=task_name, workspace_id=workspace_id)
+        else:
+            worker_logger.info("Not all accounting exports are exported, scheduling task for fund source changes later for workspace %s", workspace_id)
+            schedule_task_for_expense_group_fund_source_change(
+                changed_expense_ids=changed_expense_ids,
+                workspace_id=workspace_id,
+                report_id=report_id,
+                affected_fund_source_expense_ids=affected_fund_source_expense_ids
+            )
+
+
+def process_accounting_export_for_fund_source_update(
+    accounting_export: AccountingExport,
+    changed_expense_ids: List[int],
+    workspace_id: int,
+    report_id: str,
+    affected_fund_source_expense_ids: dict
+) -> bool:
+    """
+    Process individual accounting export based on export state
+    :param accounting_export: Accounting export
+    :param changed_expense_ids: List of expense IDs whose fund_source changed
+    :param workspace_id: Workspace id
+    :param report_id: Report id
+    :param affected_fund_source_expense_ids: Dict of affected fund sources and their expense ids
+    :return: True if processed, False if already exported
+    """
+    if accounting_export.exported_at:
+        logger.info("Accounting export %s already exported, cannot modify", accounting_export.id)
+        return False
+
+    if accounting_export.status in ['ENQUEUED', 'IN_PROGRESS']:
+        logger.info("Accounting export %s is in %s state, skipping processing", accounting_export.id, accounting_export.status)
+        return False
+
+    if accounting_export.status == 'COMPLETE':
+        logger.info("Skipping accounting export %s - already exported successfully", accounting_export.id)
+        return False
+
+    logger.info("Proceeding with processing for accounting export %s in workspace %s", accounting_export.id, workspace_id)
+    delete_accounting_export_and_related_data(accounting_export=accounting_export, workspace_id=workspace_id)
+    return True
+
+
+def delete_accounting_export_and_related_data(accounting_export: AccountingExport, workspace_id: int) -> None:
+    """
+    Delete accounting export and all related data safely
+    :param accounting_export: Accounting export
+    :param workspace_id: Workspace id
+    :return: None
+    """
+    export_id = accounting_export.id
+
+    # Delete errors
+    errors_deleted = Error.objects.filter(
+        accounting_export_id=export_id,
+        workspace_id=workspace_id
+    ).delete()
+    logger.info("Deleted %s error logs for accounting export %s in workspace %s", errors_deleted[0], export_id, workspace_id)
+
+    # Delete the accounting export (this will also delete relationships)
+    accounting_export.delete()
+    logger.info("Deleted accounting export %s in workspace %s", export_id, workspace_id)
+
+
+def recreate_accounting_exports(workspace_id: int, expense_ids: List[int]) -> None:
+    """
+    Recreate accounting exports using standard grouping logic
+    :param workspace_id: Workspace id
+    :param expense_ids: List of expense IDs
+    :return: None
+    """
+    logger.info("Recreating accounting exports for %s expenses in workspace %s", len(expense_ids), workspace_id)
+
+    expenses = Expense.objects.filter(
+        id__in=expense_ids,
+        accountingexport__exported_at__isnull=True,
+        workspace_id=workspace_id
+    )
+
+    if not expenses:
+        logger.warning("No expenses found for recreation: %s in workspace %s", expense_ids, workspace_id)
+        return
+
+    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+
+    # Skip reimbursable expenses if reimbursable expense settings is not configured
+    if not export_setting.reimbursable_expenses_export_type:
+        reimbursable_expense_ids = [e.id for e in expenses if e.fund_source == 'PERSONAL']
+
+        if reimbursable_expense_ids:
+            expenses = [e for e in expenses if e.id not in reimbursable_expense_ids]
+            # Mark these expenses as skipped
+            Expense.objects.filter(id__in=reimbursable_expense_ids).update(is_skipped=True)
+
+    # Skip corporate credit card expenses if corporate credit card expense settings is not configured
+    if not export_setting.credit_card_expense_export_type:
+        ccc_expense_ids = [e.id for e in expenses if e.fund_source == 'CCC']
+
+        if ccc_expense_ids:
+            expenses = [e for e in expenses if e.id not in ccc_expense_ids]
+            # Mark these expenses as skipped
+            Expense.objects.filter(id__in=ccc_expense_ids).update(is_skipped=True)
+
+    expense_objects = expenses
+    filters = ExpenseFilter.objects.filter(workspace_id=workspace_id).order_by('rank')
+
+    if filters:
+        workspace = Workspace.objects.get(id=workspace_id)
+        expense_objects = get_filtered_expenses(workspace, list(expenses), filters)
+
+    # Group by fund source and create accounting exports
+    reimbursable_expenses = [exp for exp in expense_objects if exp.fund_source == 'PERSONAL']
+    credit_card_expenses = [exp for exp in expense_objects if exp.fund_source == 'CCC']
+
+    if reimbursable_expenses:
+        logger.info("Creating accounting exports for %s reimbursable expenses", len(reimbursable_expenses))
+        AccountingExport.create_accounting_export(
+            reimbursable_expenses,
+            fund_source='PERSONAL',
+            workspace_id=workspace_id
+        )
+
+    if credit_card_expenses:
+        logger.info("Creating accounting exports for %s credit card expenses", len(credit_card_expenses))
+        AccountingExport.create_accounting_export(
+            credit_card_expenses,
+            fund_source='CCC',
+            workspace_id=workspace_id
+        )
+
+    logger.info("Successfully recreated accounting exports for %s expenses in workspace %s", len(expense_ids), workspace_id)
+
+
+def schedule_task_for_expense_group_fund_source_change(changed_expense_ids: List[int], workspace_id: int, report_id: str, affected_fund_source_expense_ids: dict) -> None:
+    """
+    Schedule expense group for later processing when task logs are no longer active
+    :param changed_expense_ids: List of expense IDs whose fund_source changed
+    :param workspace_id: Workspace id
+    :param report_id: Report id
+    :param affected_fund_source_expense_ids: Dict of affected fund sources and their expense ids
+    :return: None
+    """
+    logger.info("Scheduling for later processing for changed expense ids %s in workspace %s", changed_expense_ids, workspace_id)
+
+    # generate some random string to avoid duplicate tasks
+    hashed_name = hashlib.md5(str(changed_expense_ids).encode('utf-8')).hexdigest()[0:6]
+
+    # Check if there's already a scheduled task for this expense group to avoid duplicates
+    task_name = f'fund_source_change_retry_{hashed_name}_{workspace_id}'
+    existing_schedule = Schedule.objects.filter(
+        func='apps.fyle.tasks.handle_fund_source_changes_for_expense_ids',
+        name=task_name
+    ).first()
+
+    if existing_schedule:
+        logger.info("Task already scheduled for changed expense ids %s in workspace %s", changed_expense_ids, workspace_id)
+        return
+
+    schedule_time = datetime.now() + timedelta(minutes=5)
+
+    schedule(
+        'apps.fyle.tasks.handle_fund_source_changes_for_expense_ids',
+        workspace_id,
+        changed_expense_ids,
+        report_id,
+        affected_fund_source_expense_ids,
+        task_name,
+        repeats=10,  # 10 retries
+        schedule_type='M',  # Minute
+        minutes=5,  # 5 minutes delay
+        timeout=300,  # 5 minutes timeout
+        next_run=schedule_time,
+        name=task_name
+    )
+
+    logger.info("Scheduled delayed processing for changed expense ids %s in workspace %s with name %s", changed_expense_ids, workspace_id, task_name)
+
+
+def cleanup_scheduled_task(task_name: str, workspace_id: int) -> None:
+    """
+    Clean up scheduled task
+    :param task_name: Name of the task to clean up
+    :param workspace_id: Workspace id
+    :return: None
+    """
+    logger.info("Cleaning up scheduled task %s in workspace %s", task_name, workspace_id)
+
+    schedule_obj = Schedule.objects.filter(name=task_name, func='apps.fyle.tasks.handle_fund_source_changes_for_expense_ids').first()
+    if schedule_obj:
+        schedule_obj.delete()
+        logger.info("Cleaned up scheduled task: %s", task_name)
+    else:
+        logger.info("No scheduled task found to clean up: %s", task_name)
