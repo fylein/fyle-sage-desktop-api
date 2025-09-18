@@ -458,7 +458,7 @@ def process_accounting_export_for_fund_source_update(
         logger.info("Accounting export %s already exported, cannot modify", accounting_export.id)
         return False
 
-    if accounting_export.status in ['ENQUEUED', 'IN_PROGRESS']:
+    if accounting_export.status in ['ENQUEUED', 'IN_PROGRESS', 'EXPORT_QUEUED']:
         logger.info("Accounting export %s is in %s state, skipping processing", accounting_export.id, accounting_export.status)
         return False
 
