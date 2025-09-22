@@ -531,3 +531,166 @@ def test_construct_filter_for_affected_accounting_exports(
     # Should still find exports because we have changed_expense_ids
     affected_exports = AccountingExport.objects.filter(filter_query, workspace_id=workspace_id)
     assert affected_exports.exists()
+
+
+def test_get_fund_source_export_setting_not_found(
+    db,
+    create_temp_workspace,
+    mocker
+):
+    """
+    Test get_fund_source when ExportSetting does not exist
+    """
+    workspace_id = 999  # Non-existent workspace
+    
+    # Mock logger
+    mock_logger = mocker.patch('apps.workspaces.helpers.logger')
+    
+    # Call the function
+    fund_sources = get_fund_source(workspace_id)
+    
+    # Should return empty list and log warning
+    assert fund_sources == []
+    mock_logger.warning.assert_called_with(
+        "ExportSetting not found for workspace %s, returning empty fund sources", 
+        workspace_id
+    )
+
+
+def test_get_grouping_types_export_setting_not_found(
+    db,
+    create_temp_workspace,
+    mocker
+):
+    """
+    Test get_grouping_types when ExportSetting does not exist
+    """
+    workspace_id = 999  # Non-existent workspace
+    
+    # Mock logger
+    mock_logger = mocker.patch('apps.workspaces.helpers.logger')
+    
+    # Call the function
+    grouping_types = get_grouping_types(workspace_id)
+    
+    # Should return empty dict and log warning
+    assert grouping_types == {}
+    mock_logger.warning.assert_called_with("ExportSetting not found for workspace %s", workspace_id)
+
+
+def test_construct_filter_mixed_grouping_personal_report_ccc_expense(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    add_accounting_export_expenses
+):
+    """
+    Test construct_filter_for_affected_accounting_exports with mixed grouping: PERSONAL=report, CCC=expense
+    """
+    workspace_id = 1
+    report_id = 'rpFundTest123'
+    
+    # Set mixed grouping: PERSONAL=report, CCC=expense
+    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.reimbursable_expenses_grouped_by = 'report'
+    export_setting.credit_card_expense_export_type = 'PURCHASE_INVOICE'
+    export_setting.credit_card_expenses_grouped_by = 'expense'
+    export_setting.save()
+    
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+    
+    # Create accounting exports
+    personal_expenses = [exp for exp in expense_objects if exp.fund_source == 'PERSONAL']
+    ccc_expenses = [exp for exp in expense_objects if exp.fund_source == 'CCC']
+    
+    if personal_expenses:
+        AccountingExport.create_accounting_export(
+            personal_expenses,
+            fund_source='PERSONAL',
+            workspace_id=workspace_id
+        )
+    
+    if ccc_expenses:
+        AccountingExport.create_accounting_export(
+            ccc_expenses,
+            fund_source='CCC',
+            workspace_id=workspace_id
+        )
+    
+    affected_fund_source_expense_ids = {
+        'PERSONAL': [expense_ids[0]],
+        'CCC': [expense_ids[1]]
+    }
+    
+    filter_query = construct_filter_for_affected_accounting_exports(
+        workspace_id=workspace_id,
+        changed_expense_ids=expense_ids,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+    
+    # Apply filter and verify results
+    affected_exports = AccountingExport.objects.filter(filter_query, workspace_id=workspace_id)
+    assert affected_exports.exists()
+
+
+def test_construct_filter_mixed_grouping_personal_expense_ccc_report(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    add_accounting_export_expenses
+):
+    """
+    Test construct_filter_for_affected_accounting_exports with mixed grouping: PERSONAL=expense, CCC=report
+    """
+    workspace_id = 1
+    report_id = 'rpFundTest123'
+    
+    # Set mixed grouping: PERSONAL=expense, CCC=report
+    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.reimbursable_expenses_grouped_by = 'expense'
+    export_setting.credit_card_expense_export_type = 'PURCHASE_INVOICE'
+    export_setting.credit_card_expenses_grouped_by = 'report'
+    export_setting.save()
+    
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+    
+    # Create accounting exports
+    personal_expenses = [exp for exp in expense_objects if exp.fund_source == 'PERSONAL']
+    ccc_expenses = [exp for exp in expense_objects if exp.fund_source == 'CCC']
+    
+    if personal_expenses:
+        AccountingExport.create_accounting_export(
+            personal_expenses,
+            fund_source='PERSONAL',
+            workspace_id=workspace_id
+        )
+    
+    if ccc_expenses:
+        AccountingExport.create_accounting_export(
+            ccc_expenses,
+            fund_source='CCC',
+            workspace_id=workspace_id
+        )
+    
+    affected_fund_source_expense_ids = {
+        'PERSONAL': [expense_ids[0]],
+        'CCC': [expense_ids[1]]
+    }
+    
+    filter_query = construct_filter_for_affected_accounting_exports(
+        workspace_id=workspace_id,
+        changed_expense_ids=expense_ids,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+    
+    # Apply filter and verify results
+    affected_exports = AccountingExport.objects.filter(filter_query, workspace_id=workspace_id)
+    assert affected_exports.exists()
