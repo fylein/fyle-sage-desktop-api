@@ -1,13 +1,26 @@
-from .fixtures import fixtures as data
+from datetime import datetime, timezone
 from django.urls import reverse
+from django_q.models import Schedule
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+
+from .fixtures import fixtures as data
+from tests.test_fyle.fixtures import fixtures as fyle_fixtures
 from apps.fyle.tasks import (
-    re_run_skip_export_rule, update_non_exported_expenses, import_expenses
+    re_run_skip_export_rule,
+    update_non_exported_expenses,
+    import_expenses,
+    handle_expense_fund_source_change,
+    handle_fund_source_changes_for_expense_ids,
+    process_accounting_export_for_fund_source_update,
+    delete_accounting_export_and_related_data,
+    recreate_accounting_exports,
+    schedule_task_for_expense_group_fund_source_change,
+    cleanup_scheduled_task
 )
 from apps.fyle.models import Expense, ExpenseFilter
-from apps.workspaces.models import Workspace
+from apps.workspaces.models import Workspace, ExportSetting
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary, Error
 
 
@@ -215,3 +228,1023 @@ def test_re_run_skip_export_rule(db, create_temp_workspace, mocker, api_client, 
         )
     except ValidationError as e:
         assert e.detail[0] == 'Failed to process expense filter'
+
+
+def test_handle_expense_fund_source_change_no_changes(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test handle_expense_fund_source_change when no fund source changes are detected
+    """
+
+    workspace_id = 1
+    report_id = 'rpFundTest123'
+
+    # Mock platform connector
+    mock_platform_connector = mocker.patch('apps.fyle.tasks.PlatformConnector')
+    mock_platform_instance = mock_platform_connector.return_value
+
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    mock_platform_instance.expenses.get.return_value = fund_source_expenses
+
+    # Create matching expenses in DB (no changes)
+    Expense.create_expense_objects(fund_source_expenses, workspace_id)
+
+    # Mock the handler function
+    mock_handle_changes = mocker.patch('apps.fyle.tasks.handle_fund_source_changes_for_expense_ids')
+
+    handle_expense_fund_source_change(workspace_id, report_id, mock_platform_instance)
+
+    # Should not call the handler since no changes detected
+    mock_handle_changes.assert_not_called()
+
+
+def test_handle_expense_fund_source_change_with_changes(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test handle_expense_fund_source_change when fund source changes are detected
+    """
+
+    workspace_id = 1
+    report_id = 'rpFundTest123'
+
+    # Mock platform connector
+    mock_platform_connector = mocker.patch('apps.fyle.tasks.PlatformConnector')
+    mock_platform_instance = mock_platform_connector.return_value
+
+    # Create original expenses in DB
+    original_expenses = fyle_fixtures['fund_source_change_expenses']
+    Expense.create_expense_objects(original_expenses, workspace_id)
+
+    # Mock platform to return expenses with fund source changes
+    updated_expenses = fyle_fixtures['updated_fund_source_expenses']
+    mock_platform_instance.expenses.get.return_value = updated_expenses
+
+    # Mock the handler function
+    mock_handle_changes = mocker.patch('apps.fyle.tasks.handle_fund_source_changes_for_expense_ids')
+
+    handle_expense_fund_source_change(workspace_id, report_id, mock_platform_instance)
+
+    # Should call the handler with changed expense IDs
+    mock_handle_changes.assert_called_once()
+    call_args = mock_handle_changes.call_args[1]
+    assert call_args['workspace_id'] == workspace_id
+    assert call_args['report_id'] == report_id
+    assert len(call_args['changed_expense_ids']) == 1  # Only txFundSource1 changed
+    assert 'PERSONAL' in call_args['affected_fund_source_expense_ids']
+    assert 'CCC' in call_args['affected_fund_source_expense_ids']
+
+
+def test_handle_fund_source_changes_for_expense_ids_all_processed(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    add_accounting_export_expenses,
+    mocker
+):
+    """
+    Test handle_fund_source_changes_for_expense_ids when all accounting exports can be processed immediately
+    """
+
+    workspace_id = 1
+    report_id = 'rpFundTest123'
+
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+
+    # Create accounting exports in EXPORT_READY state
+    personal_expenses = [exp for exp in expense_objects if exp.fund_source == 'PERSONAL']
+    ccc_expenses = [exp for exp in expense_objects if exp.fund_source == 'CCC']
+
+    if personal_expenses:
+        AccountingExport.create_accounting_export(
+            personal_expenses,
+            fund_source='PERSONAL',
+            workspace_id=workspace_id
+        )
+
+    if ccc_expenses:
+        AccountingExport.create_accounting_export(
+            ccc_expenses,
+            fund_source='CCC',
+            workspace_id=workspace_id
+        )
+
+    # Mock dependencies
+    mock_recreate = mocker.patch('apps.fyle.tasks.recreate_accounting_exports')
+    mock_cleanup = mocker.patch('apps.fyle.tasks.cleanup_scheduled_task')
+    mock_schedule = mocker.patch('apps.fyle.tasks.schedule_task_for_expense_group_fund_source_change')
+
+    affected_fund_source_expense_ids = {
+        'PERSONAL': [expense_ids[0]],
+        'CCC': [expense_ids[1]]
+    }
+
+    handle_fund_source_changes_for_expense_ids(
+        workspace_id=workspace_id,
+        changed_expense_ids=expense_ids,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+
+    # Should recreate accounting exports, not schedule
+    mock_recreate.assert_called_once()
+    call_kwargs = mock_recreate.call_args[1]
+    assert call_kwargs['workspace_id'] == workspace_id
+    assert set(call_kwargs['expense_ids']) == set(expense_ids)
+    # cleanup_scheduled_task is not called because task_name is None
+    mock_cleanup.assert_not_called()
+    mock_schedule.assert_not_called()
+
+
+def test_handle_fund_source_changes_for_expense_ids_some_skipped(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    add_accounting_export_expenses,
+    mocker
+):
+    """
+    Test handle_fund_source_changes_for_expense_ids when some accounting exports need to be skipped
+    """
+
+    workspace_id = 1
+    report_id = 'rpFundTest123'
+
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+
+    # Create accounting exports - one in EXPORT_READY, one in IN_PROGRESS
+    personal_expenses = [exp for exp in expense_objects if exp.fund_source == 'PERSONAL']
+    ccc_expenses = [exp for exp in expense_objects if exp.fund_source == 'CCC']
+
+    if personal_expenses:
+        AccountingExport.create_accounting_export(
+            personal_expenses,
+            fund_source='PERSONAL',
+            workspace_id=workspace_id
+        )
+
+        if ccc_expenses:
+            AccountingExport.create_accounting_export(
+                ccc_expenses,
+                fund_source='CCC',
+                workspace_id=workspace_id
+            )
+            # Set one to IN_PROGRESS status - this should cause the function to schedule a retry
+            accounting_export_ccc = AccountingExport.objects.filter(
+                workspace_id=workspace_id, fund_source='CCC'
+            ).first()
+            # Manually add the CCC expenses to the accounting export
+            accounting_export_ccc.expenses.add(*ccc_expenses)
+            accounting_export_ccc.status = 'IN_PROGRESS'
+            accounting_export_ccc.save()
+
+    # Mock dependencies
+    mock_recreate = mocker.patch('apps.fyle.tasks.recreate_accounting_exports')
+    mock_cleanup = mocker.patch('apps.fyle.tasks.cleanup_scheduled_task')
+    mock_schedule = mocker.patch('apps.fyle.tasks.schedule_task_for_expense_group_fund_source_change')
+
+    affected_fund_source_expense_ids = {
+        'PERSONAL': [expense_ids[0]],
+        'CCC': [expense_ids[1]]
+    }
+
+    handle_fund_source_changes_for_expense_ids(
+        workspace_id=workspace_id,
+        changed_expense_ids=expense_ids,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+
+    # Should schedule retry instead of recreating
+    mock_schedule.assert_called_once()
+    mock_recreate.assert_not_called()
+    mock_cleanup.assert_not_called()
+
+
+def test_process_accounting_export_for_fund_source_update_export_ready(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test process_accounting_export_for_fund_source_update with EXPORT_READY status
+    """
+
+    workspace_id = 1
+    report_id = 'rpFundTest123'
+
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses'][:1]  # Just one expense
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+
+    # Create accounting export in EXPORT_READY state
+    AccountingExport.create_accounting_export(
+        expense_objects,
+        fund_source='PERSONAL',
+        workspace_id=workspace_id
+    )
+    accounting_export = AccountingExport.objects.filter(
+        workspace_id=workspace_id, fund_source='PERSONAL'
+    ).first()
+
+    # Mock delete function
+    mock_delete = mocker.patch('apps.fyle.tasks.delete_accounting_export_and_related_data')
+
+    affected_fund_source_expense_ids = {'PERSONAL': expense_ids}
+
+    result = process_accounting_export_for_fund_source_update(
+        accounting_export=accounting_export,
+        changed_expense_ids=expense_ids,
+        workspace_id=workspace_id,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+
+    # Should process and delete the accounting export
+    assert result is True
+    mock_delete.assert_called_once_with(accounting_export=accounting_export, workspace_id=workspace_id)
+
+
+def test_process_accounting_export_for_fund_source_update_in_progress(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test process_accounting_export_for_fund_source_update with IN_PROGRESS status
+    """
+
+    workspace_id = 1
+    report_id = 'rpFundTest123'
+
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses'][:1]
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+
+    # Create accounting export in IN_PROGRESS state
+    AccountingExport.create_accounting_export(
+        expense_objects,
+        fund_source='PERSONAL',
+        workspace_id=workspace_id
+    )
+    accounting_export = AccountingExport.objects.filter(
+        workspace_id=workspace_id, fund_source='PERSONAL'
+    ).first()
+    accounting_export.status = 'IN_PROGRESS'
+    accounting_export.save()
+
+    # Mock delete function
+    mock_delete = mocker.patch('apps.fyle.tasks.delete_accounting_export_and_related_data')
+
+    affected_fund_source_expense_ids = {'PERSONAL': expense_ids}
+
+    result = process_accounting_export_for_fund_source_update(
+        accounting_export=accounting_export,
+        changed_expense_ids=expense_ids,
+        workspace_id=workspace_id,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+
+    # Should skip processing
+    assert result is False
+    mock_delete.assert_not_called()
+
+
+def test_process_accounting_export_for_fund_source_update_already_exported(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test process_accounting_export_for_fund_source_update with already exported accounting export
+    """
+
+    workspace_id = 1
+    report_id = 'rpFundTest123'
+
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses'][:1]
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+
+    # Create accounting export that's already exported
+    AccountingExport.create_accounting_export(
+        expense_objects,
+        fund_source='PERSONAL',
+        workspace_id=workspace_id
+    )
+    accounting_export = AccountingExport.objects.filter(
+        workspace_id=workspace_id, fund_source='PERSONAL'
+    ).first()
+    accounting_export.exported_at = datetime.now(timezone.utc)
+    accounting_export.save()
+
+    # Mock delete function
+    mock_delete = mocker.patch('apps.fyle.tasks.delete_accounting_export_and_related_data')
+
+    affected_fund_source_expense_ids = {'PERSONAL': expense_ids}
+
+    result = process_accounting_export_for_fund_source_update(
+        accounting_export=accounting_export,
+        changed_expense_ids=expense_ids,
+        workspace_id=workspace_id,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+
+    # Should skip processing
+    assert result is False
+    mock_delete.assert_not_called()
+
+
+def test_delete_accounting_export_and_related_data(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    add_accounting_export_expenses
+):
+    """
+    Test delete_accounting_export_and_related_data function
+    """
+
+    workspace_id = 1
+
+    # Get existing accounting export from fixture
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+
+    # Create an error for this accounting export
+    error = Error.objects.create(
+        workspace_id=workspace_id,
+        type='SAGE300_ERROR',
+        error_title='Test error',
+        error_detail='Test error detail',
+        accounting_export=accounting_export
+    )
+
+    # Verify initial state
+    assert AccountingExport.objects.filter(id=accounting_export.id).exists()
+    assert Error.objects.filter(id=error.id).exists()
+
+    delete_accounting_export_and_related_data(accounting_export, workspace_id)
+
+    # Verify accounting export and related error are deleted
+    assert not AccountingExport.objects.filter(id=accounting_export.id).exists()
+    assert not Error.objects.filter(id=error.id).exists()
+
+
+def test_recreate_accounting_exports(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test recreate_accounting_exports function
+    """
+    workspace_id = 1
+
+    # Enable both reimbursable and credit card exports
+    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.credit_card_expense_export_type = 'PURCHASE_INVOICE'
+    export_setting.save()
+
+    # Create test expenses with mixed fund sources
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+
+    # Mock expense filtering functions
+    mock_get_filtered_expenses = mocker.patch('apps.fyle.tasks.get_filtered_expenses')
+    mock_get_filtered_expenses.return_value = expense_objects
+
+    # Mock AccountingExport.create_accounting_export
+    mock_create_export = mocker.patch.object(AccountingExport, 'create_accounting_export')
+
+    recreate_accounting_exports(workspace_id, expense_ids)
+
+    # Should call create_accounting_export for both PERSONAL and CCC expenses
+    assert mock_create_export.call_count == 2
+
+    # Verify the calls
+    call_args_list = mock_create_export.call_args_list
+    fund_sources_called = [call[1]['fund_source'] for call in call_args_list]
+    assert 'PERSONAL' in fund_sources_called
+    assert 'CCC' in fund_sources_called
+
+
+def test_schedule_task_for_expense_group_fund_source_change(
+    db,
+    create_temp_workspace,
+    mocker
+):
+    """
+    Test schedule_task_for_expense_group_fund_source_change function
+    """
+
+    workspace_id = 1
+    changed_expense_ids = [1, 2, 3]
+    report_id = 'rpTest123'
+    affected_fund_source_expense_ids = {'PERSONAL': [1, 2], 'CCC': [3]}
+
+    # Mock django-q schedule function
+    mock_schedule_function = mocker.patch('apps.fyle.tasks.schedule')
+
+    schedule_task_for_expense_group_fund_source_change(
+        workspace_id=workspace_id,
+        changed_expense_ids=changed_expense_ids,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+
+    # Verify schedule was called with correct parameters
+    mock_schedule_function.assert_called_once()
+    call_args = mock_schedule_function.call_args[0]  # positional args
+    call_kwargs = mock_schedule_function.call_args[1]  # keyword args
+
+    # Check positional arguments
+    assert call_args[0] == 'apps.fyle.tasks.handle_fund_source_changes_for_expense_ids'
+    assert call_args[1] == workspace_id
+    assert call_args[2] == changed_expense_ids
+    assert call_args[3] == report_id
+    assert call_args[4] == affected_fund_source_expense_ids
+
+    # Check keyword arguments
+    assert call_kwargs['repeats'] == 10
+    assert call_kwargs['schedule_type'] == 'M'
+    assert call_kwargs['minutes'] == 5
+    assert 'name' in call_kwargs
+
+
+def test_cleanup_scheduled_task(
+    db,
+    create_temp_workspace,
+    mocker
+):
+    """
+    Test cleanup_scheduled_task function
+    """
+
+    workspace_id = 1
+    task_name = 'test_task_123'
+
+    # Create a mock schedule
+    mock_schedule = mocker.Mock()
+    mock_schedule_filter = mocker.patch.object(Schedule.objects, 'filter')
+    mock_schedule_filter.return_value.first.return_value = mock_schedule
+
+    cleanup_scheduled_task(task_name, workspace_id)
+
+    # Verify schedule was queried and deleted
+    mock_schedule_filter.assert_called_once_with(name=task_name, func='apps.fyle.tasks.handle_fund_source_changes_for_expense_ids')
+    mock_schedule.delete.assert_called_once()
+
+
+def test_update_non_exported_expenses_fund_source_change(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test update_non_exported_expenses with fund source change detection
+    """
+
+    # Setup test data
+    original_expense_data = fyle_fixtures['fund_source_change_expenses'][0]
+    updated_expense_data = fyle_fixtures['updated_fund_source_expenses'][0]
+
+    org_id = original_expense_data['org_id']
+    workspace_id = 1
+
+    # Create workspace with correct org_id
+    workspace = Workspace.objects.get(id=workspace_id)
+    workspace.org_id = org_id
+    workspace.save()
+
+    # Create original expense in DB
+    expense_created, _ = Expense.objects.update_or_create(
+        org_id=org_id,
+        expense_id=original_expense_data['id'],
+        workspace_id=workspace_id,
+        defaults={
+            'fund_source': original_expense_data['fund_source'],
+            'category': original_expense_data['category'],
+            'amount': original_expense_data['amount'],
+            'currency': original_expense_data['currency'],
+            'employee_email': original_expense_data['employee_email'],
+            'report_id': original_expense_data['report_id']
+        }
+    )
+
+    # Create an accounting export for this expense so it can be processed
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source=original_expense_data['fund_source'],
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense_created)
+
+    # Mock the fund source change handler
+    mock_handle_changes = mocker.patch('apps.fyle.tasks.handle_fund_source_changes_for_expense_ids')
+
+    # Mock FyleExpenses constructor to avoid complex field requirements
+    mock_fyle_expenses = mocker.patch('apps.fyle.tasks.FyleExpenses.construct_expense_object')
+    mock_fyle_expenses.return_value = [{'source_account_type': updated_expense_data['source_account_type']}]
+
+    # Mock Expense.create_expense_objects to simulate expense update
+    mock_create_expense = mocker.patch('apps.fyle.tasks.Expense.create_expense_objects')
+
+    # Mock the expense update to actually update the fund_source in the database
+    def mock_update_expense(expense_objects, workspace_id, skip_update=False):
+        # Update the expense in the database to simulate the fund source change
+        expense_created.fund_source = updated_expense_data['fund_source']
+        expense_created.save()
+
+    mock_create_expense.side_effect = mock_update_expense
+
+    # Update expense with fund source change
+    update_non_exported_expenses(updated_expense_data)
+
+    # Verify expense was updated
+    updated_expense = Expense.objects.get(expense_id=original_expense_data['id'], org_id=org_id)
+    assert updated_expense.fund_source == updated_expense_data['fund_source']
+
+    # Verify fund source change handler was called
+    mock_handle_changes.assert_called_once()
+    call_args = mock_handle_changes.call_args[1]
+    assert call_args['workspace_id'] == workspace_id
+    assert call_args['report_id'] == original_expense_data['report_id']
+    assert updated_expense.id in call_args['changed_expense_ids']
+
+
+def test_import_expenses_fund_source_change_exception(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    add_fyle_credentials,
+    mocker
+):
+    """
+    Test import_expenses handles exception in fund source change detection
+    """
+    workspace_id = 1
+    report_id = 'rpTest123'
+
+    # Mock platform connector
+    mock_platform_connector = mocker.patch('apps.fyle.tasks.PlatformConnector')
+    mock_platform_instance = mock_platform_connector.return_value
+    # Return some expenses so the fund source change logic gets executed
+    mock_platform_instance.expenses.get.return_value = [{'id': 'tx123', 'report_id': report_id}]
+
+    # Mock Expense.objects.filter for fund source check
+    mock_expense_filter = mocker.patch('apps.fyle.tasks.Expense.objects.filter')
+    # Set up the mock to return expenses for the specific report_id
+    mock_queryset = mocker.Mock()
+    mock_queryset.count.return_value = 1  # Has expenses for this report
+    mock_expense_filter.return_value = mock_queryset
+
+    # Mock handle_expense_fund_source_change to raise exception
+    mock_handle_fund_source = mocker.patch('apps.fyle.tasks.handle_expense_fund_source_change')
+    mock_handle_fund_source.side_effect = Exception("Test exception")
+
+    # Mock Expense.create_expense_objects
+    mock_create_expense = mocker.patch('apps.fyle.tasks.Expense.create_expense_objects')
+    mock_create_expense.return_value = []
+
+    # Mock other dependencies
+    mock_expense_filter_queryset = mocker.Mock()
+    mock_expense_filter_queryset.order_by.return_value = []
+    mocker.patch('apps.fyle.tasks.ExpenseFilter.objects.filter').return_value = mock_expense_filter_queryset
+    mocker.patch('apps.fyle.tasks.AccountingExport.create_accounting_export')
+    mocker.patch('apps.fyle.tasks.filter_expenses_based_on_state').return_value = [{'id': 'tx123', 'report_id': report_id}]
+    mocker.patch('apps.fyle.tasks.get_expense_import_states').return_value = ['APPROVED']
+    mocker.patch('apps.fyle.tasks.get_source_account_types_based_on_export_modules').return_value = ['PERSONAL_CASH_ACCOUNT']
+    # Mock transaction.atomic as a context manager
+    mock_atomic = mocker.patch('apps.fyle.tasks.transaction.atomic')
+    mock_atomic.return_value.__enter__ = mocker.Mock()
+    mock_atomic.return_value.__exit__ = mocker.Mock(return_value=None)
+
+    # Call import_expenses with state change event
+    import_expenses(
+        workspace_id=workspace_id,
+        is_state_change_event=True,
+        report_id=report_id,
+        report_state='APPROVED'
+    )
+
+    # Verify exception was handled gracefully (should not crash the function)
+    mock_handle_fund_source.assert_called_once()
+
+
+def test_import_expenses_no_expenses_for_fund_source_check(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test import_expenses when no expenses exist for fund source check
+    """
+    workspace_id = 1
+    report_id = 'rpTest123'
+
+    # Mock platform connector
+    mock_platform_connector = mocker.patch('apps.fyle.tasks.PlatformConnector')
+    mock_platform_instance = mock_platform_connector.return_value
+    mock_platform_instance.expenses.get.return_value = []
+
+    # Mock Expense.objects.filter to return 0 count
+    mock_expense_filter = mocker.patch('apps.fyle.tasks.Expense.objects.filter')
+    mock_expense_filter.return_value.count.return_value = 0
+
+    # Mock handle_expense_fund_source_change
+    mock_handle_fund_source = mocker.patch('apps.fyle.tasks.handle_expense_fund_source_change')
+
+    # Mock other dependencies
+    mock_create_expense = mocker.patch('apps.fyle.tasks.Expense.create_expense_objects')
+    mock_create_expense.return_value = []
+    mocker.patch('apps.fyle.tasks.ExpenseFilter.objects.filter').return_value = []
+    mocker.patch('apps.fyle.tasks.AccountingExport.create_accounting_export')
+
+    # Call import_expenses with state change event
+    import_expenses(
+        workspace_id=workspace_id,
+        is_state_change_event=True,
+        report_id=report_id,
+        report_state='APPROVED'
+    )
+
+    # Verify fund source change was not called due to no expenses
+    mock_handle_fund_source.assert_not_called()
+
+
+def test_handle_fund_source_changes_no_affected_exports(
+    db,
+    create_temp_workspace,
+    mocker
+):
+    """
+    Test handle_fund_source_changes_for_expense_ids when no affected exports found
+    """
+    workspace_id = 1
+    changed_expense_ids = [1, 2, 3]
+    report_id = 'rpTest123'
+    affected_fund_source_expense_ids = {'PERSONAL': [1], 'CCC': [2, 3]}
+
+    # Mock construct_filter_for_affected_accounting_exports
+    mock_construct_filter = mocker.patch('apps.fyle.tasks.construct_filter_for_affected_accounting_exports')
+    mock_filter = mocker.Mock()
+    mock_construct_filter.return_value = mock_filter
+
+    # Mock AccountingExport.objects.filter to return empty queryset
+    mock_accounting_export_filter = mocker.patch('apps.fyle.tasks.AccountingExport.objects.filter')
+    mock_queryset = mocker.Mock()
+    mock_queryset.annotate.return_value.distinct.return_value = []  # Empty queryset after annotate/distinct
+    mock_accounting_export_filter.return_value = mock_queryset
+
+    # Mock get_logger
+    mock_get_logger = mocker.patch('apps.fyle.tasks.get_logger')
+    mock_logger = mocker.Mock()
+    mock_get_logger.return_value = mock_logger
+
+    # Call the function
+    handle_fund_source_changes_for_expense_ids(
+        workspace_id=workspace_id,
+        changed_expense_ids=changed_expense_ids,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+
+    # Verify that it logs and returns early
+    mock_logger.info.assert_called_with(
+        "No accounting exports found for changed expenses: %s in workspace %s",
+        changed_expense_ids,
+        workspace_id
+    )
+
+
+def test_handle_fund_source_changes_with_task_name_cleanup(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test handle_fund_source_changes_for_expense_ids with task_name cleanup
+    """
+    workspace_id = 1
+    expense_ids = [5, 6]
+    report_id = 'rpFundTest123'
+    task_name = 'test_task_cleanup'
+    affected_fund_source_expense_ids = {'PERSONAL': [5], 'CCC': [6]}
+
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+
+    # Create accounting exports in EXPORT_READY state (can be processed)
+    personal_expenses = [exp for exp in expense_objects if exp.fund_source == 'PERSONAL']
+    ccc_expenses = [exp for exp in expense_objects if exp.fund_source == 'CCC']
+
+    if personal_expenses:
+        AccountingExport.create_accounting_export(
+            personal_expenses,
+            fund_source='PERSONAL',
+            workspace_id=workspace_id
+        )
+
+    if ccc_expenses:
+        AccountingExport.create_accounting_export(
+            ccc_expenses,
+            fund_source='CCC',
+            workspace_id=workspace_id
+        )
+
+    # Mock functions
+    mock_recreate = mocker.patch('apps.fyle.tasks.recreate_accounting_exports')
+    mock_cleanup = mocker.patch('apps.fyle.tasks.cleanup_scheduled_task')
+    mock_schedule = mocker.patch('apps.fyle.tasks.schedule_task_for_expense_group_fund_source_change')
+
+    # Call the function with task_name
+    handle_fund_source_changes_for_expense_ids(
+        workspace_id=workspace_id,
+        changed_expense_ids=expense_ids,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids,
+        task_name=task_name
+    )
+
+    # Should recreate accounting exports and cleanup task
+    mock_recreate.assert_called_once()
+    mock_cleanup.assert_called_once_with(task_name=task_name, workspace_id=workspace_id)
+    mock_schedule.assert_not_called()
+
+
+def test_process_accounting_export_complete_status(
+    db,
+    create_temp_workspace,
+    add_export_settings
+):
+    """
+    Test process_accounting_export_for_fund_source_update with COMPLETE status
+    """
+    workspace_id = 1
+
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    personal_expenses = [exp for exp in expense_objects if exp.fund_source == 'PERSONAL']
+
+    # Create accounting export
+    AccountingExport.create_accounting_export(
+        personal_expenses,
+        fund_source='PERSONAL',
+        workspace_id=workspace_id
+    )
+
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+    accounting_export.status = 'COMPLETE'
+    accounting_export.save()
+
+    # Call the function
+    result = process_accounting_export_for_fund_source_update(
+        accounting_export=accounting_export,
+        changed_expense_ids=[1, 2],
+        workspace_id=workspace_id,
+        report_id='rpTest123',
+        affected_fund_source_expense_ids={'PERSONAL': [1], 'CCC': [2]}
+    )
+
+    # Should return False (skipped)
+    assert result is False
+
+
+def test_recreate_accounting_exports_no_expenses(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test recreate_accounting_exports when no expenses found
+    """
+    workspace_id = 1
+    expense_ids = [999, 998]  # Non-existent expense IDs
+
+    # Mock logger
+    mock_logger = mocker.patch('apps.fyle.tasks.logger')
+
+    # Call the function
+    recreate_accounting_exports(workspace_id, expense_ids)
+
+    # Should log warning and return early
+    mock_logger.warning.assert_called_with(
+        "No expenses found for recreation: %s in workspace %s",
+        expense_ids,
+        workspace_id
+    )
+
+
+def test_recreate_accounting_exports_skip_reimbursable_expenses(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test recreate_accounting_exports skipping reimbursable expenses when not configured
+    """
+    workspace_id = 1
+
+    # Disable reimbursable expenses export
+    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.reimbursable_expenses_export_type = None
+    export_setting.save()
+
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+
+    # Mock expense filtering functions
+    mock_get_filtered_expenses = mocker.patch('apps.fyle.tasks.get_filtered_expenses')
+    mock_get_filtered_expenses.return_value = expense_objects
+
+    # Mock AccountingExport.create_accounting_export
+    mocker.patch.object(AccountingExport, 'create_accounting_export')
+
+    # Call the function
+    recreate_accounting_exports(workspace_id, expense_ids)
+
+    # Should skip reimbursable expenses and mark them as skipped
+    personal_expenses = [exp for exp in expense_objects if exp.fund_source == 'PERSONAL']
+    if personal_expenses:
+        for exp in personal_expenses:
+            exp.refresh_from_db()
+            assert exp.is_skipped is True
+
+
+def test_recreate_accounting_exports_skip_ccc_expenses(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test recreate_accounting_exports skipping CCC expenses when not configured
+    """
+    workspace_id = 1
+
+    # Disable CCC expenses export (keep reimbursable enabled)
+    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.credit_card_expense_export_type = None
+    export_setting.save()
+
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+
+    # Mock expense filtering functions
+    mock_get_filtered_expenses = mocker.patch('apps.fyle.tasks.get_filtered_expenses')
+    mock_get_filtered_expenses.return_value = expense_objects
+
+    # Mock AccountingExport.create_accounting_export
+    mocker.patch.object(AccountingExport, 'create_accounting_export')
+
+    # Call the function
+    recreate_accounting_exports(workspace_id, expense_ids)
+
+    # Should skip CCC expenses and mark them as skipped
+    ccc_expenses = [exp for exp in expense_objects if exp.fund_source == 'CCC']
+    if ccc_expenses:
+        for exp in ccc_expenses:
+            exp.refresh_from_db()
+            assert exp.is_skipped is True
+
+
+def test_recreate_accounting_exports_with_expense_filters(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test recreate_accounting_exports with expense filters
+    """
+    workspace_id = 1
+
+    # Enable both fund sources
+    export_setting = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_setting.credit_card_expense_export_type = 'PURCHASE_INVOICE'
+    export_setting.save()
+
+    # Create test expenses
+    fund_source_expenses = fyle_fixtures['fund_source_change_expenses']
+    expense_objects = Expense.create_expense_objects(fund_source_expenses, workspace_id)
+    expense_ids = [expense.id for expense in expense_objects]
+
+    # Create mock expense filters
+    mock_filters = mocker.Mock()
+    mock_expense_filter = mocker.patch('apps.fyle.tasks.ExpenseFilter.objects.filter')
+    mock_expense_filter.return_value.order_by.return_value = [mock_filters]
+
+    # Mock workspace and get_filtered_expenses
+    mock_workspace = mocker.patch('apps.fyle.tasks.Workspace.objects.get')
+    mock_workspace.return_value = mocker.Mock()
+
+    mock_get_filtered_expenses = mocker.patch('apps.fyle.tasks.get_filtered_expenses')
+    mock_get_filtered_expenses.return_value = expense_objects
+
+    # Mock AccountingExport.create_accounting_export
+    mocker.patch.object(AccountingExport, 'create_accounting_export')
+
+    # Call the function
+    recreate_accounting_exports(workspace_id, expense_ids)
+
+    # Should call get_filtered_expenses when filters exist
+    mock_get_filtered_expenses.assert_called_once()
+    mock_workspace.assert_called_once_with(id=workspace_id)
+
+
+def test_schedule_task_already_exists(
+    db,
+    create_temp_workspace,
+    mocker
+):
+    """
+    Test schedule_task_for_expense_group_fund_source_change when task already exists
+    """
+    workspace_id = 1
+    changed_expense_ids = [1, 2, 3]
+    report_id = 'rpTest123'
+    affected_fund_source_expense_ids = {'PERSONAL': [1], 'CCC': [2, 3]}
+
+    # Mock existing schedule
+    mock_existing_schedule = mocker.Mock()
+    mock_schedule_filter = mocker.patch('apps.fyle.tasks.Schedule.objects.filter')
+    mock_schedule_filter.return_value.first.return_value = mock_existing_schedule
+
+    # Mock logger
+    mock_logger = mocker.patch('apps.fyle.tasks.logger')
+
+    # Call the function
+    schedule_task_for_expense_group_fund_source_change(
+        workspace_id=workspace_id,
+        changed_expense_ids=changed_expense_ids,
+        report_id=report_id,
+        affected_fund_source_expense_ids=affected_fund_source_expense_ids
+    )
+
+    # Should log and return early
+    mock_logger.info.assert_called_with(
+        "Task already scheduled for changed expense ids %s in workspace %s",
+        changed_expense_ids,
+        workspace_id
+    )
+
+
+def test_cleanup_scheduled_task_not_found(
+    db,
+    create_temp_workspace,
+    mocker
+):
+    """
+    Test cleanup_scheduled_task when no task found
+    """
+    workspace_id = 1
+    task_name = 'non_existent_task'
+
+    # Mock Schedule.objects.filter to return None
+    mock_schedule_filter = mocker.patch.object(Schedule.objects, 'filter')
+    mock_schedule_filter.return_value.first.return_value = None
+
+    # Mock logger
+    mock_logger = mocker.patch('apps.fyle.tasks.logger')
+
+    # Call the function
+    cleanup_scheduled_task(task_name, workspace_id)
+
+    # Should log that no task was found
+    mock_logger.info.assert_called_with("No scheduled task found to clean up: %s", task_name)

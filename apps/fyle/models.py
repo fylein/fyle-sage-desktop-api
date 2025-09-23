@@ -54,6 +54,12 @@ SOURCE_ACCOUNT_MAP = {
     'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT': 'CCC'
 }
 
+# Reverse mapping for API calls
+EXPENSE_SOURCE_ACCOUNT_MAP = {
+    'PERSONAL': 'PERSONAL_CASH_ACCOUNT',
+    'CCC': 'PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT'
+}
+
 
 class ExpenseFilter(BaseForeignWorkspaceModel):
     """
@@ -225,4 +231,3 @@ class Reimbursement:
     Creating a dummy class to be able to user
     fyle_integrations_platform_connector correctly
     """
-    pass
