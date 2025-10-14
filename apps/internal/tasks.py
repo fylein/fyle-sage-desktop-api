@@ -1,5 +1,5 @@
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.db.models import Q
 from django.utils import timezone
@@ -59,7 +59,7 @@ def re_export_stuck_exports():
     # Update status of exports to be re-exported
     AccountingExport.objects.filter(id__in=accounting_export_ids).update(
         status='FAILED',
-        updated_at=timezone.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         re_attempt_export=True
     )
 
