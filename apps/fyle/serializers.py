@@ -13,7 +13,7 @@ from rest_framework.views import status
 from apps.fyle.helpers import check_interval_and_sync_dimension, get_expense_fields
 from apps.fyle.models import DependentFieldSetting, ExpenseFilter
 from apps.mappings.tasks import construct_tasks_and_chain_import_fields_to_fyle
-from apps.workspaces.models import FyleCredential
+from apps.workspaces.models import FeatureConfig, FyleCredential, Workspace
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -31,6 +31,13 @@ class ImportFyleAttributesSerializer(serializers.Serializer):
         try:
             workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
             refresh = self.context['request'].data.get('refresh')
+
+            fyle_webhook_sync_enabled = FeatureConfig.get_feature_config(workspace_id=workspace_id, key='fyle_webhook_sync_enabled')
+            workspace = Workspace.objects.get(pk=workspace_id)
+
+            if fyle_webhook_sync_enabled and workspace.source_synced_at is not None:
+                logger.info(f"Skipping sync_dimensions for workspace {workspace_id} as webhook sync is enabled")
+                return Response(status=status.HTTP_200_OK)
 
             if refresh:
                 construct_tasks_and_chain_import_fields_to_fyle(workspace_id=workspace_id)

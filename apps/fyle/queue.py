@@ -4,18 +4,17 @@ All the tasks which are queued into django-q
     * Schedule Triggered Async Tasks
 """
 import logging
-from django_q.tasks import async_task
 
-from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum, RoutingKeyEnum
+from django_q.tasks import async_task
+from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum, RoutingKeyEnum, WebhookAttributeActionEnum
 from fyle_accounting_library.rabbitmq.connector import RabbitMQConnection
 from fyle_accounting_library.rabbitmq.data_class import RabbitMQData
 
-from apps.fyle.tasks import (
-    import_credit_card_expenses,
-    import_reimbursable_expenses
-)
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.helpers import assert_valid_request
+from apps.fyle.tasks import import_credit_card_expenses, import_reimbursable_expenses
+from apps.workspaces.models import FeatureConfig
+from fyle_integrations_imports.modules.webhook_attributes import WebhookAttributeProcessor
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -76,11 +75,15 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
     :return: None
     """
     logger.info('Received webhook callback for workspace_id: {}, payload: {}'.format(workspace_id, body))
+    action = body.get('action')
+    resource = body.get('resource')
+    data = body.get('data')
+
     rabbitmq = RabbitMQConnection.get_instance('sage_desktop_exchange')
-    if body.get('action') in ('ADMIN_APPROVED', 'APPROVED', 'STATE_CHANGE_PAYMENT_PROCESSING', 'PAID') and body.get('data'):
-        report_id = body['data']['id']
-        org_id = body['data']['org_id']
-        state = body['data']['state']
+    if action in ('ADMIN_APPROVED', 'APPROVED', 'STATE_CHANGE_PAYMENT_PROCESSING', 'PAID') and data:
+        report_id = data['id']
+        org_id = data['org_id']
+        state = data['state']
         assert_valid_request(workspace_id=workspace_id, org_id=org_id)
 
         payload = {
@@ -100,11 +103,21 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
         )
         rabbitmq.publish(RoutingKeyEnum.EXPORT, data)
 
-    elif body.get('action') == 'ACCOUNTING_EXPORT_INITIATED' and body.get('data'):
+    elif action == 'ACCOUNTING_EXPORT_INITIATED' and data:
         # No direct export for Sage 300
         pass
 
-    elif body.get('action') == 'UPDATED_AFTER_APPROVAL' and body.get('data') and body.get('resource') == 'EXPENSE':
-        org_id = body['data']['org_id']
+    elif action == 'UPDATED_AFTER_APPROVAL' and data and resource == 'EXPENSE':
+        org_id = data['org_id']
         assert_valid_request(workspace_id=workspace_id, org_id=org_id)
-        async_task('apps.fyle.tasks.update_non_exported_expenses', body['data'])
+        async_task('apps.fyle.tasks.update_non_exported_expenses', data)
+
+    elif action in (WebhookAttributeActionEnum.CREATED, WebhookAttributeActionEnum.UPDATED, WebhookAttributeActionEnum.DELETED):
+        try:
+            fyle_webhook_sync_enabled = FeatureConfig.get_feature_config(workspace_id=workspace_id, key='fyle_webhook_sync_enabled')
+            if fyle_webhook_sync_enabled:
+                logger.info("| Processing attribute webhook | Content: {{WORKSPACE_ID: {} Payload: {}}}".format(workspace_id, body))
+                processor = WebhookAttributeProcessor(workspace_id)
+                processor.process_webhook(body)
+        except Exception as e:
+            logger.error(f"Error processing attribute webhook for workspace {workspace_id}: {str(e)}")

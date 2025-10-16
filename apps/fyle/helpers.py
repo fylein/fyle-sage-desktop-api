@@ -4,7 +4,9 @@ from typing import List
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Q
+from fyle_accounting_library.fyle_platform.enums import CacheKeyEnum
 from fyle_integrations_platform_connector import PlatformConnector
 from rest_framework.exceptions import ValidationError
 
@@ -284,14 +286,26 @@ def get_exportable_accounting_exports_ids(workspace_id: int):
     return accounting_export_ids
 
 
-def assert_valid_request(workspace_id:int, org_id:str):
+def assert_valid_request(workspace_id: int, org_id: str):
     """
     Assert if the request is valid by checking
     the url_workspace_id and fyle_org_id workspace
     """
-    workspace = Workspace.objects.get(org_id=org_id)
-    if workspace.id != workspace_id:
-        raise ValidationError('Workspace mismatch')
+    cache_key = CacheKeyEnum.WORKSPACE_VALIDATION.value.format(workspace_id=workspace_id, fyle_org_id=org_id)
+
+    cached_result = cache.get(cache_key)
+    if cached_result:
+        return
+
+    try:
+        workspace = Workspace.objects.get(org_id=org_id)
+        if workspace.id == workspace_id:
+            cache.set(cache_key, True, 2592000)
+            return
+        else:
+            raise ValidationError('Workspace mismatch')
+    except Workspace.DoesNotExist:
+        raise ValidationError('Workspace not found')
 
 
 def __bulk_update_expenses(expense_to_be_updated: List[Expense]) -> None:
