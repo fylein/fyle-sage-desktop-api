@@ -1311,7 +1311,7 @@ def test_delete_accounting_exports_for_report_basic(db, mocker, add_expense_repo
     assert mock_delete.called
 
 
-def test_delete_accounting_exports_for_report_no_expenses(db, mocker):
+def test_delete_accounting_exports_for_report_no_expenses(db, mocker, create_temp_workspace):
     """
     Test _delete_accounting_exports_for_report with no expenses in database
     Case: Non-existent report_id
@@ -1455,7 +1455,7 @@ def test_handle_expense_ejected_from_report_with_active_export(db, add_expense_r
     assert expense in accounting_export.expenses.all()
 
 
-def test_handle_expense_report_change_ejected_expense_not_found(db, mocker):
+def test_handle_expense_report_change_ejected_expense_not_found(db, mocker, create_temp_workspace):
     """
     Test handle_expense_report_change when expense doesn't exist in workspace (EJECTED_FROM_REPORT)
     """
