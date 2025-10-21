@@ -76,12 +76,15 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
     :return: None
     """
     logger.info('Received webhook callback for workspace_id: %s, payload: %s', workspace_id, body)
+
+    if body.get('data') and body['data'].get('org_id'):
+        org_id = body['data']['org_id']
+        assert_valid_request(workspace_id=workspace_id, org_id=org_id)
+
     rabbitmq = RabbitMQConnection.get_instance('sage_desktop_exchange')
     if body.get('action') in ('ADMIN_APPROVED', 'APPROVED', 'STATE_CHANGE_PAYMENT_PROCESSING', 'PAID') and body.get('data'):
         report_id = body['data']['id']
-        org_id = body['data']['org_id']
         state = body['data']['state']
-        assert_valid_request(workspace_id=workspace_id, org_id=org_id)
 
         payload = {
             'data': {
@@ -105,14 +108,10 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
         pass
 
     elif body.get('action') == 'UPDATED_AFTER_APPROVAL' and body.get('data') and body.get('resource') == 'EXPENSE':
-        org_id = body['data']['org_id']
-        assert_valid_request(workspace_id=workspace_id, org_id=org_id)
         async_task('apps.fyle.tasks.update_non_exported_expenses', body['data'])
 
     elif body.get('action') in ('EJECTED_FROM_REPORT', 'ADDED_TO_REPORT') and body.get('data') and body.get('resource') == 'EXPENSE':
-        org_id = body['data']['org_id']
         expense_id = body['data']['id']
         action = body.get('action')
         logger.info("| Handling expense %s | Content: {WORKSPACE_ID: %s EXPENSE_ID: %s Payload: %s}", action.lower().replace('_', ' '), workspace_id, expense_id, body.get('data'))
-        assert_valid_request(workspace_id=workspace_id, org_id=org_id)
         async_task('apps.fyle.tasks.handle_expense_report_change', body['data'], action)
