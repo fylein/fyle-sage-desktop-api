@@ -621,3 +621,129 @@ def cleanup_scheduled_task(task_name: str, workspace_id: int) -> None:
         logger.info("Cleaned up scheduled task: %s", task_name)
     else:
         logger.info("No scheduled task found to clean up: %s", task_name)
+
+
+def handle_expense_report_change(expense_data: dict, action_type: str) -> None:
+    """
+    Handle expense report changes (EJECTED_FROM_REPORT, ADDED_TO_REPORT)
+    :param expense_data: Expense data from webhook
+    :param action_type: Type of action (EJECTED_FROM_REPORT or ADDED_TO_REPORT)
+    :return: None
+    """
+    worker_logger = get_logger()
+    org_id = expense_data['org_id']
+    expense_id = expense_data['id']
+    workspace = Workspace.objects.get(org_id=org_id)
+
+    if action_type == 'ADDED_TO_REPORT':
+        report_id = expense_data.get('report_id')
+
+        worker_logger.info("Processing ADDED_TO_REPORT for expense %s in workspace %s, report_id: %s", expense_id, workspace.id, report_id)
+        _delete_accounting_exports_for_report(report_id, workspace)
+        return
+
+    elif action_type == 'EJECTED_FROM_REPORT':
+        expense = Expense.objects.filter(workspace_id=workspace.id, expense_id=expense_id).first()
+
+        if not expense:
+            worker_logger.warning("Expense %s not found in workspace %s for action %s", expense_id, workspace.id, action_type)
+            return
+
+        accounting_export = AccountingExport.objects.filter(
+            expenses=expense,
+            workspace_id=workspace.id,
+            exported_at__isnull=False
+        ).first()
+
+        if accounting_export:
+            worker_logger.info("Skipping %s for expense %s as it's part of exported accounting export %s", action_type, expense_id, accounting_export.id)
+            return
+
+        worker_logger.info("Processing %s for expense %s in workspace %s", action_type, expense_id, workspace.id)
+        _handle_expense_ejected_from_report(expense, expense_data, workspace)
+
+
+def _delete_accounting_exports_for_report(report_id: str, workspace: Workspace) -> None:
+    """
+    Delete all non-exported accounting exports for a report
+    When expenses are added to a report, the report goes to SUBMITTED state which is not importable.
+    This function deletes all accounting exports for the report so they can be recreated when the report
+    changes to an importable state (APPROVED/PAYMENT_PROCESSING/PAID) via state change webhook.
+
+    :param report_id: Report ID
+    :param workspace: Workspace object
+    :return: None
+    """
+    worker_logger = get_logger()
+    worker_logger.info("Deleting accounting exports for report %s in workspace %s", report_id, workspace.id)
+
+    expense_ids = Expense.objects.filter(
+        workspace_id=workspace.id,
+        report_id=report_id
+    ).values_list('id', flat=True)
+
+    if not expense_ids:
+        worker_logger.info("No expenses found for report %s in workspace %s", report_id, workspace.id)
+        return
+
+    accounting_exports = AccountingExport.objects.filter(
+        expenses__id__in=expense_ids,
+        workspace_id=workspace.id,
+        exported_at__isnull=True
+    ).distinct()
+
+    deleted_count = 0
+    skipped_count = 0
+
+    for accounting_export in accounting_exports:
+        if accounting_export.status in ['ENQUEUED', 'IN_PROGRESS', 'EXPORT_QUEUED']:
+            worker_logger.warning("Skipping deletion of accounting export %s - status is %s", accounting_export.id, accounting_export.status)
+            skipped_count += 1
+            continue
+
+        worker_logger.info("Deleting accounting export %s for report %s", accounting_export.id, report_id)
+
+        with transaction.atomic():
+            delete_accounting_export_and_related_data(accounting_export, workspace.id)
+
+        deleted_count += 1
+
+    worker_logger.info("Completed deletion for report %s in workspace %s - deleted: %s, skipped: %s",
+                report_id, workspace.id, deleted_count, skipped_count)
+
+
+def _handle_expense_ejected_from_report(expense: Expense, expense_data: dict, workspace: Workspace) -> None:
+    """
+    Handle expense ejected from report
+    :param expense: Expense object
+    :param expense_data: Expense data from webhook
+    :param workspace: Workspace object
+    :return: None
+    """
+    worker_logger = get_logger()
+    worker_logger.info("Handling expense %s ejected from report in workspace %s", expense.expense_id, workspace.id)
+
+    accounting_export = AccountingExport.objects.filter(
+        expenses=expense,
+        workspace_id=workspace.id,
+        exported_at__isnull=True
+    ).first()
+
+    if not accounting_export:
+        worker_logger.info("No accounting export found for expense %s in workspace %s", expense.expense_id, workspace.id)
+        return
+
+    worker_logger.info("Removing expense %s from accounting export %s", expense.expense_id, accounting_export.id)
+
+    if accounting_export.status in ['ENQUEUED', 'IN_PROGRESS', 'EXPORT_QUEUED']:
+        worker_logger.warning("Cannot remove expense %s from export %s - status is %s", expense.expense_id, accounting_export.id, accounting_export.status)
+        return
+
+    with transaction.atomic():
+        accounting_export.expenses.remove(expense)
+
+        if not accounting_export.expenses.exists():
+            worker_logger.info("Deleting empty accounting export %s after removing expense %s", accounting_export.id, expense.expense_id)
+            delete_accounting_export_and_related_data(accounting_export, workspace.id)
+        else:
+            worker_logger.info("Accounting export %s still has expenses after removing %s", accounting_export.id, expense.expense_id)
