@@ -6,7 +6,7 @@ from django_q.models import Schedule
 from fyle_accounting_mappings.models import MappingSetting
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
-from apps.workspaces.models import AdvancedSetting, ExportSetting, Sage300Credential, Workspace
+from apps.workspaces.models import AdvancedSetting, ExportSetting, FeatureConfig, Sage300Credential, Workspace
 from fyle_integrations_imports.models import ImportLog
 from sage_desktop_sdk.exceptions.hh2_exceptions import InvalidUserCredentials
 from tests.helper import dict_compare_keys
@@ -761,3 +761,26 @@ def test_sage300_health_check_view(db, mocker, api_client, test_connection, crea
     response = api_client.get(url)
     assert response.status_code == 400
     assert response.data['message'] == 'Something went wrong'
+
+
+def test_feature_config_get_feature_config(db, mocker, create_temp_workspace, add_feature_config):
+    """
+    Test FeatureConfig.get_feature_config method for cache hit and cache miss scenarios
+    """
+    workspace_id = 1
+
+    cache_mock = mocker.patch('apps.workspaces.models.cache')
+    cache_mock.get.return_value = None
+    result = FeatureConfig.get_feature_config(workspace_id, 'export_via_rabbitmq')
+
+    assert result == True
+    cache_mock.get.assert_called_once()
+    cache_mock.set.assert_called_once()
+
+    cache_mock.reset_mock()
+    cache_mock.get.return_value = False
+
+    result = FeatureConfig.get_feature_config(workspace_id, 'fyle_webhook_sync_enabled')
+    assert result == False
+    cache_mock.get.assert_called_once()
+    cache_mock.set.assert_not_called()

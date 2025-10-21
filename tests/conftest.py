@@ -27,6 +27,7 @@ from apps.sage300.models import CostCategory
 from apps.workspaces.models import (
     AdvancedSetting,
     ExportSetting,
+    FeatureConfig,
     FyleCredential,
     ImportSetting,
     Sage300Credential,
@@ -678,6 +679,23 @@ def create_project_mapping_settings():
 def add_advanced_settings():
     advanced_settings_data = fyle_fixtures['advanced_setting']
     AdvancedSetting.objects.create(**advanced_settings_data)
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_feature_config():
+    """
+    Pytest fixture to add feature config to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        FeatureConfig.objects.create(
+            workspace_id=workspace_id,
+            export_via_rabbitmq=True,
+            fyle_webhook_sync_enabled=False
+        )
 
 
 @pytest.fixture()
