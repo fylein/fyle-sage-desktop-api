@@ -17,7 +17,10 @@ from apps.fyle.tasks import (
     delete_accounting_export_and_related_data,
     recreate_accounting_exports,
     schedule_task_for_expense_group_fund_source_change,
-    cleanup_scheduled_task
+    cleanup_scheduled_task,
+    handle_expense_report_change,
+    _delete_accounting_exports_for_report,
+    _handle_expense_ejected_from_report
 )
 from apps.fyle.models import Expense, ExpenseFilter
 from apps.workspaces.models import Workspace, ExportSetting
@@ -1248,3 +1251,243 @@ def test_cleanup_scheduled_task_not_found(
 
     # Should log that no task was found
     mock_logger.info.assert_called_with("No scheduled task found to clean up: %s", task_name)
+
+
+def test_handle_expense_report_change_added_to_report(db, mocker, add_expense_report_data):
+    """
+    Test handle_expense_report_change with ADDED_TO_REPORT action
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    expense_data = {
+        'id': 'tx1234567890',
+        'org_id': workspace.org_id,
+        'report_id': 'rp1234567890'
+    }
+
+    mock_delete = mocker.patch('apps.fyle.tasks._delete_accounting_exports_for_report')
+
+    handle_expense_report_change(expense_data, 'ADDED_TO_REPORT')
+
+    mock_delete.assert_called_once()
+    args = mock_delete.call_args[0]
+    assert args[0] == 'rp1234567890'
+    assert args[1].id == workspace.id
+
+
+def test_handle_expense_report_change_ejected_from_report(db, mocker, add_expense_report_data):
+    """
+    Test handle_expense_report_change with EJECTED_FROM_REPORT action
+    """
+    workspace = Workspace.objects.get(id=1)
+    expense = add_expense_report_data['expenses'][0]
+
+    expense_data = {
+        'id': expense.expense_id,
+        'org_id': workspace.org_id,
+        'report_id': expense.report_id
+    }
+
+    mock_handle = mocker.patch('apps.fyle.tasks._handle_expense_ejected_from_report')
+
+    handle_expense_report_change(expense_data, 'EJECTED_FROM_REPORT')
+
+    mock_handle.assert_called_once()
+
+
+def test_delete_accounting_exports_for_report_basic(db, mocker, add_expense_report_data):
+    """
+    Test _delete_accounting_exports_for_report deletes non-exported accounting exports
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    expense = add_expense_report_data['expenses'][0]
+    report_id = expense.report_id
+
+    mock_delete = mocker.patch('apps.fyle.tasks.delete_accounting_export_and_related_data')
+
+    _delete_accounting_exports_for_report(report_id, workspace)
+
+    assert mock_delete.called
+
+
+def test_delete_accounting_exports_for_report_no_expenses(db, mocker, create_temp_workspace):
+    """
+    Test _delete_accounting_exports_for_report with no expenses in database
+    Case: Non-existent report_id
+    """
+    workspace = Workspace.objects.get(id=1)
+    report_id = 'rpNonExistent123'
+
+    _delete_accounting_exports_for_report(report_id, workspace)
+
+
+def test_delete_accounting_exports_for_report_with_active_exports(db, mocker, add_expense_report_data):
+    """
+    Test _delete_accounting_exports_for_report skips exports with active status
+    """
+    workspace = Workspace.objects.get(id=1)
+    accounting_export = add_expense_report_data['accounting_export']
+
+    accounting_export.status = 'IN_PROGRESS'
+    accounting_export.save()
+
+    report_id = accounting_export.expenses.first().report_id
+
+    mock_delete = mocker.patch('apps.fyle.tasks.delete_accounting_export_and_related_data')
+
+    _delete_accounting_exports_for_report(report_id, workspace)
+
+    assert not mock_delete.called
+
+
+def test_delete_accounting_exports_for_report_preserves_exported(db, mocker, add_expense_report_data):
+    """
+    Test _delete_accounting_exports_for_report preserves exported accounting exports
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    accounting_export = add_expense_report_data['accounting_export']
+
+    accounting_export.exported_at = datetime.now(tz=timezone.utc)
+    accounting_export.save()
+
+    report_id = accounting_export.expenses.first().report_id
+
+    mock_delete = mocker.patch('apps.fyle.tasks.delete_accounting_export_and_related_data')
+
+    _delete_accounting_exports_for_report(report_id, workspace)
+
+    assert not mock_delete.called
+
+
+def test_handle_expense_ejected_from_report_removes_from_export(db, add_expense_report_data):
+    """
+    Test _handle_expense_ejected_from_report removes expense from export
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    accounting_export = add_expense_report_data['accounting_export']
+    expenses = add_expense_report_data['expenses']
+
+    expense_to_remove = expenses[0]
+
+    expense_data = {
+        'id': expense_to_remove.expense_id,
+        'report_id': None
+    }
+
+    initial_expense_count = accounting_export.expenses.count()
+
+    _handle_expense_ejected_from_report(expense_to_remove, expense_data, workspace)
+
+    accounting_export.refresh_from_db()
+
+    assert accounting_export.expenses.count() == initial_expense_count - 1
+    assert expense_to_remove not in accounting_export.expenses.all()
+    assert AccountingExport.objects.filter(id=accounting_export.id).exists()
+
+
+def test_handle_expense_ejected_from_report_deletes_empty_export(db, add_expense_report_data):
+    """
+    Test _handle_expense_ejected_from_report deletes export when last expense is removed
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    accounting_export = add_expense_report_data['accounting_export']
+    expense = add_expense_report_data['expenses'][0]
+    accounting_export.expenses.set([expense])
+
+    expense_data = {
+        'id': expense.expense_id,
+        'report_id': None
+    }
+
+    export_id = accounting_export.id
+
+    _handle_expense_ejected_from_report(expense, expense_data, workspace)
+
+    assert not AccountingExport.objects.filter(id=export_id).exists()
+
+
+def test_handle_expense_ejected_from_report_no_export_found(db, add_expense_report_data):
+    """
+    Test _handle_expense_ejected_from_report when expense has no export
+    """
+    workspace = Workspace.objects.get(id=1)
+    expense = add_expense_report_data['expenses'][0]
+
+    # Remove expense from its export to simulate orphaned expense
+    accounting_export = add_expense_report_data['accounting_export']
+    accounting_export.expenses.remove(expense)
+
+    expense_data = {
+        'id': expense.expense_id,
+        'report_id': None
+    }
+
+    _handle_expense_ejected_from_report(expense, expense_data, workspace)
+
+
+def test_handle_expense_ejected_from_report_with_active_export(db, add_expense_report_data):
+    """
+    Test _handle_expense_ejected_from_report skips removal when export status is active
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    accounting_export = add_expense_report_data['accounting_export']
+    expense = add_expense_report_data['expenses'][0]
+    initial_count = accounting_export.expenses.count()
+
+    accounting_export.status = 'ENQUEUED'
+    accounting_export.save()
+
+    expense_data = {
+        'id': expense.expense_id,
+        'report_id': None
+    }
+
+    _handle_expense_ejected_from_report(expense, expense_data, workspace)
+
+    accounting_export.refresh_from_db()
+
+    assert accounting_export.expenses.count() == initial_count
+    assert expense in accounting_export.expenses.all()
+
+
+def test_handle_expense_report_change_ejected_expense_not_found(db, mocker, create_temp_workspace):
+    """
+    Test handle_expense_report_change when expense doesn't exist in workspace (EJECTED_FROM_REPORT)
+    """
+    workspace = Workspace.objects.get(id=1)
+
+    expense_data = {
+        'id': 'txNonExistent999',
+        'org_id': workspace.org_id,
+        'report_id': None
+    }
+
+    handle_expense_report_change(expense_data, 'EJECTED_FROM_REPORT')
+
+
+def test_handle_expense_report_change_ejected_from_exported_export(db, add_expense_report_data):
+    """
+    Test handle_expense_report_change skips when expense is part of exported export (EJECTED_FROM_REPORT)
+    """
+    workspace = Workspace.objects.get(id=1)
+    accounting_export = add_expense_report_data['accounting_export']
+    expense = add_expense_report_data['expenses'][0]
+
+    accounting_export.exported_at = datetime.now(tz=timezone.utc)
+    accounting_export.save()
+
+    expense_data = {
+        'id': expense.expense_id,
+        'org_id': workspace.org_id,
+        'report_id': None
+    }
+
+    handle_expense_report_change(expense_data, 'EJECTED_FROM_REPORT')
+
+    accounting_export.refresh_from_db()
+    assert expense in accounting_export.expenses.all()
