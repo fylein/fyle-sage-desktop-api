@@ -78,13 +78,13 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
     action = body.get('action')
     resource = body.get('resource')
     data = body.get('data')
+    org_id = data.get('org_id') if data else None
+    assert_valid_request(workspace_id=workspace_id, fyle_org_id=org_id)
 
     rabbitmq = RabbitMQConnection.get_instance('sage_desktop_exchange')
     if action in ('ADMIN_APPROVED', 'APPROVED', 'STATE_CHANGE_PAYMENT_PROCESSING', 'PAID') and data:
         report_id = data['id']
-        org_id = data['org_id']
         state = data['state']
-        assert_valid_request(workspace_id=workspace_id, org_id=org_id)
 
         payload = {
             'data': {
@@ -107,10 +107,14 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
         # No direct export for Sage 300
         pass
 
-    elif action == 'UPDATED_AFTER_APPROVAL' and data and resource == 'EXPENSE':
-        org_id = data['org_id']
-        assert_valid_request(workspace_id=workspace_id, org_id=org_id)
-        async_task('apps.fyle.tasks.update_non_exported_expenses', data)
+    elif body.get('action') == 'UPDATED_AFTER_APPROVAL' and body.get('data') and resource == 'EXPENSE':
+        async_task('apps.fyle.tasks.update_non_exported_expenses', body['data'])
+
+    elif body.get('action') in ('EJECTED_FROM_REPORT', 'ADDED_TO_REPORT') and body.get('data') and resource == 'EXPENSE':
+        expense_id = body['data']['id']
+        action = body.get('action')
+        logger.info("| Handling expense %s | Content: {WORKSPACE_ID: %s EXPENSE_ID: %s Payload: %s}", action.lower().replace('_', ' '), workspace_id, expense_id, body.get('data'))
+        async_task('apps.fyle.tasks.handle_expense_report_change', body['data'], action)
 
     elif action in (WebhookAttributeActionEnum.CREATED, WebhookAttributeActionEnum.UPDATED, WebhookAttributeActionEnum.DELETED):
         try:

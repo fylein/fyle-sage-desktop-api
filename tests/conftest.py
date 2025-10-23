@@ -684,6 +684,23 @@ def add_advanced_settings():
 
 @pytest.fixture()
 @pytest.mark.django_db(databases=['default'])
+def add_feature_config():
+    """
+    Pytest fixture to add feature config to a workspace
+    """
+    workspace_ids = [
+        1, 2, 3
+    ]
+    for workspace_id in workspace_ids:
+        FeatureConfig.objects.create(
+            workspace_id=workspace_id,
+            export_via_rabbitmq=True,
+            fyle_webhook_sync_enabled=False
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
 def create_expense_attribute():
     expense_attribute_data = fyle_fixtures['employee_expense_attributes']
     expense_attribute_data['workspace'] = Workspace.objects.get(id=1)
@@ -970,21 +987,6 @@ def add_direct_cost_objects(
 
 @pytest.fixture()
 @pytest.mark.django_db(databases=['default'])
-def add_feature_config():
-    """
-    Pytest fixture to add feature config to workspaces
-    """
-    workspace_ids = [1, 2, 3]
-    for workspace_id in workspace_ids:
-        FeatureConfig.objects.create(
-            workspace_id=workspace_id,
-            export_via_rabbitmq=True,
-            fyle_webhook_sync_enabled=False
-        )
-
-
-@pytest.fixture()
-@pytest.mark.django_db(databases=['default'])
 def add_fyle_sync_timestamp():
     """
     Pytest fixture to add FyleSyncTimestamp to workspaces
@@ -1005,3 +1007,102 @@ def mock_rabbitmq():
         mock_instance.connect.return_value = None
         mock_rabbitmq.return_value = mock_instance
         yield mock_rabbitmq
+
+
+@pytest.fixture
+def add_expense_report_data(db, create_temp_workspace):
+    """
+    Create test data for expense report change tests
+    """
+    workspace = Workspace.objects.get(id=1)  # Use workspace_id=1 like the existing tests
+
+    # Create test expenses
+    expense1 = Expense.objects.create(
+        workspace_id=workspace.id,
+        expense_id='tx_report_test_1',
+        employee_email='test@fyle.in',
+        employee_name='Test Employee',
+        category='Meals',
+        sub_category='Team Meals',
+        project='Test Project',
+        expense_number='E/2024/01/T/1',
+        claim_number='C/2024/01/R/1',
+        amount=100.0,
+        currency='USD',
+        foreign_amount=100.0,
+        foreign_currency='USD',
+        reimbursable=True,
+        billable=False,
+        state='APPROVED',
+        vendor='Test Vendor',
+        cost_center='Test Cost Center',
+        purpose='Test meal expense',
+        report_id='rp_test_report_1',
+        report_title='Test Report 1',
+        spent_at='2024-01-01T00:00:00Z',
+        approved_at='2024-01-01T00:00:00Z',
+        expense_created_at='2024-01-01T00:00:00Z',
+        expense_updated_at='2024-01-01T00:00:00Z',
+        fund_source='PERSONAL',
+        verified_at='2024-01-01T00:00:00Z',
+        custom_properties={},
+        org_id=workspace.org_id,
+        file_ids=[],
+        accounting_export_summary={}
+    )
+
+    expense2 = Expense.objects.create(
+        workspace_id=workspace.id,
+        expense_id='tx_report_test_2',
+        employee_email='test@fyle.in',
+        employee_name='Test Employee',
+        category='Travel',
+        sub_category='Flight',
+        project='Test Project',
+        expense_number='E/2024/01/T/2',
+        claim_number='C/2024/01/R/1',
+        amount=200.0,
+        currency='USD',
+        foreign_amount=200.0,
+        foreign_currency='USD',
+        reimbursable=True,
+        billable=False,
+        state='APPROVED',
+        vendor='Test Airline',
+        cost_center='Test Cost Center',
+        purpose='Test travel expense',
+        report_id='rp_test_report_1',
+        report_title='Test Report 1',
+        spent_at='2024-01-01T00:00:00Z',
+        approved_at='2024-01-01T00:00:00Z',
+        expense_created_at='2024-01-01T00:00:00Z',
+        expense_updated_at='2024-01-01T00:00:00Z',
+        fund_source='PERSONAL',
+        verified_at='2024-01-01T00:00:00Z',
+        custom_properties={},
+        org_id=workspace.org_id,
+        file_ids=[],
+        accounting_export_summary={}
+    )
+
+    # Create non-exported accounting export
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace.id,
+        fund_source='PERSONAL',
+        type='PURCHASE_INVOICE',
+        status='EXPORT_READY',
+        exported_at=None,
+        description={
+            'report_id': 'rp_test_report_1',
+            'employee_email': 'test@fyle.in',
+            'claim_number': 'C/2024/01/R/1',
+            'fund_source': 'PERSONAL'
+        }
+    )
+    accounting_export.expenses.add(expense1, expense2)
+
+    return {
+        'workspace': workspace,
+        'expenses': [expense1, expense2],
+        'accounting_export': accounting_export
+    }
