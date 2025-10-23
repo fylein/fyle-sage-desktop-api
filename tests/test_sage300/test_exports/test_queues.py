@@ -294,6 +294,7 @@ def test_skipping_direct_cost(
     add_fyle_credentials,
     add_export_settings,
     add_accounting_export_expenses,
+    add_feature_config,
     mocker
 ):
     """
@@ -355,6 +356,7 @@ def test_skipping_purchase_invoice(
     add_fyle_credentials,
     add_export_settings,
     add_accounting_export_expenses,
+    add_feature_config,
     mocker
 ):
     """
@@ -413,6 +415,7 @@ def test_check_accounting_export_with_rabbitmq_worker_purchase_invoice(
     add_fyle_credentials,
     add_export_settings,
     add_accounting_export_expenses,
+    add_feature_config,
     mocker
 ):
     workspace_id = 1
@@ -443,6 +446,7 @@ def test_check_accounting_export_with_rabbitmq_worker_direct_cost(
     add_fyle_credentials,
     add_export_settings,
     add_accounting_export_expenses,
+    add_feature_config,
     mocker
 ):
     workspace_id = 1

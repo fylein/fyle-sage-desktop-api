@@ -79,7 +79,7 @@ def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:
     resource = body.get('resource')
     data = body.get('data')
     org_id = data.get('org_id') if data else None
-    assert_valid_request(workspace_id=workspace_id, fyle_org_id=org_id)
+    assert_valid_request(workspace_id=workspace_id, org_id=org_id)
 
     rabbitmq = RabbitMQConnection.get_instance('sage_desktop_exchange')
     if action in ('ADMIN_APPROVED', 'APPROVED', 'STATE_CHANGE_PAYMENT_PROCESSING', 'PAID') and data:
