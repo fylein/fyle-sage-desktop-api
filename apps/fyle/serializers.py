@@ -32,15 +32,15 @@ class ImportFyleAttributesSerializer(serializers.Serializer):
             workspace_id = self.context['request'].parser_context.get('kwargs').get('workspace_id')
             refresh = self.context['request'].data.get('refresh')
 
+            if refresh:
+                construct_tasks_and_chain_import_fields_to_fyle(workspace_id=workspace_id)
+
             fyle_webhook_sync_enabled = FeatureConfig.get_feature_config(workspace_id=workspace_id, key='fyle_webhook_sync_enabled')
             workspace = Workspace.objects.get(pk=workspace_id)
 
             if fyle_webhook_sync_enabled and workspace.source_synced_at is not None:
                 logger.info(f"Skipping sync_dimensions for workspace {workspace_id} as webhook sync is enabled")
                 return Response(status=status.HTTP_200_OK)
-
-            if refresh:
-                construct_tasks_and_chain_import_fields_to_fyle(workspace_id=workspace_id)
 
             check_interval_and_sync_dimension(workspace_id, refresh=True if refresh else False)
 
