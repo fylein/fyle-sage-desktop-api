@@ -12,6 +12,7 @@ from fyle_accounting_mappings.models import (
     DestinationAttribute,
     EmployeeMapping,
     ExpenseAttribute,
+    FyleSyncTimestamp,
     Mapping,
     MappingSetting,
 )
@@ -27,6 +28,7 @@ from apps.sage300.models import CostCategory
 from apps.workspaces.models import (
     AdvancedSetting,
     ExportSetting,
+    FeatureConfig,
     FyleCredential,
     ImportSetting,
     Sage300Credential,
@@ -964,6 +966,32 @@ def add_direct_cost_objects(
         accounting_export=accounting_export,
         advance_setting=AdvancedSetting.objects.get(workspace_id=1)
     )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_feature_config():
+    """
+    Pytest fixture to add feature config to workspaces
+    """
+    workspace_ids = [1, 2, 3]
+    for workspace_id in workspace_ids:
+        FeatureConfig.objects.create(
+            workspace_id=workspace_id,
+            export_via_rabbitmq=True,
+            fyle_webhook_sync_enabled=False
+        )
+
+
+@pytest.fixture()
+@pytest.mark.django_db(databases=['default'])
+def add_fyle_sync_timestamp():
+    """
+    Pytest fixture to add FyleSyncTimestamp to workspaces
+    """
+    workspace_ids = [1, 2, 3]
+    for workspace_id in workspace_ids:
+        FyleSyncTimestamp.objects.create(workspace_id=workspace_id)
 
 
 @pytest.fixture(autouse=True)
