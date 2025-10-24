@@ -1,18 +1,18 @@
 import logging
 
+from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q
 from django.utils.module_loading import import_string
 from django_q.tasks import async_task
-from fyle_accounting_mappings.models import ExpenseAttribute, MappingSetting
+from fyle_accounting_mappings.models import ExpenseAttribute, FyleSyncTimestamp, MappingSetting
 from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
 from rest_framework import serializers
 
 from apps.accounting_exports.models import AccountingExportSummary
 from apps.fyle.helpers import get_cluster_domain
-
 from apps.fyle.models import DependentFieldSetting
 from apps.mappings.models import Version
 from apps.users.models import User
@@ -28,7 +28,6 @@ from apps.workspaces.triggers import AdvancedSettingsTriggers, ImportSettingsTri
 from fyle_integrations_imports.models import ImportLog
 from sage_desktop_api.utils import assert_valid
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
-from django.conf import settings
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -70,6 +69,7 @@ class WorkspaceSerializer(serializers.ModelSerializer):
                 org_id=org_id,
             )
             Version.objects.create(workspace_id=workspace.id)
+            FyleSyncTimestamp.objects.create(workspace_id=workspace.id)
 
             workspace.user.add(User.objects.get(user_id=user))
 
