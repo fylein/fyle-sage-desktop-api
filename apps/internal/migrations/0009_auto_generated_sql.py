@@ -3,45 +3,26 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-    dependencies = [('internal', '0008_auto_generated_sql')]
+    dependencies = [
+        ('internal', '0008_auto_generated_sql'),
+        ('workspaces', '0010_alter_sage300credential_is_expired_featureconfig')
+    ]
 
     operations = [
         migrations.RunSQL(
             sql="""
-                INSERT INTO fyle_sync_timestamps (
-                    workspace_id,
-                    category_synced_at,
-                    project_synced_at,
-                    cost_center_synced_at,
-                    employee_synced_at,
-                    expense_field_synced_at,
-                    corporate_card_synced_at,
-                    dependent_field_synced_at,
-                    tax_group_synced_at,
-                    created_at,
-                    updated_at
-                )
-                SELECT 
-                    w.id AS workspace_id,
-                    NULL AS category_synced_at,
-                    NULL AS project_synced_at,
-                    NULL AS cost_center_synced_at,
-                    NULL AS employee_synced_at,
-                    NULL AS expense_field_synced_at,
-                    NULL AS corporate_card_synced_at,
-                    NULL AS dependent_field_synced_at,
-                    NULL AS tax_group_synced_at,
-                    NOW() AS created_at,
-                    NOW() AS updated_at
-                FROM workspaces w
-                WHERE NOT EXISTS (
-                    SELECT 1 
-                    FROM fyle_sync_timestamps fst 
-                    WHERE fst.workspace_id = w.id
+                insert into feature_configs (workspace_id, import_via_rabbitmq, export_via_rabbitmq, fyle_webhook_sync_enabled, created_at, updated_at)
+                select id, false, false, false, now(), now()
+                from workspaces
+                where NOT EXISTS (
+                    select 1
+                    from feature_configs
+                    where workspace_id = workspaces.id
                 );
             """,
             reverse_sql="""
-                DELETE FROM fyle_sync_timestamps;
+                delete from feature_configs
+                where exists (select 1 from feature_configs where workspace_id = feature_configs.workspace_id);
             """
         )
     ]
