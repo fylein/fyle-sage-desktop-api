@@ -3,7 +3,7 @@ import json
 import pytest  # noqa
 from django.urls import reverse
 from django_q.models import Schedule
-from fyle_accounting_mappings.models import MappingSetting
+from fyle_accounting_mappings.models import FyleSyncTimestamp, MappingSetting
 
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
 from apps.workspaces.models import AdvancedSetting, ExportSetting, FeatureConfig, Sage300Credential, Workspace
@@ -15,9 +15,11 @@ from tests.test_fyle.fixtures import fixtures as data
 
 def test_post_of_workspace(api_client, test_connection):
     '''
-    Test post of workspace
+    Test post of workspace - should create FyleSyncTimestamp
     '''
     Workspace.objects.all().delete()
+    FyleSyncTimestamp.objects.all().delete()
+
     url = reverse('workspaces')
     api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
     response = api_client.post(url)
@@ -27,6 +29,8 @@ def test_post_of_workspace(api_client, test_connection):
     assert response.status_code == 201
     assert workspace.name == response.data['name']
     assert workspace.org_id == response.data['org_id']
+    fyle_sync_timestamp = FyleSyncTimestamp.objects.filter(workspace_id=workspace.id).first()
+    assert fyle_sync_timestamp is not None
 
     response = json.loads(response.content)
 
