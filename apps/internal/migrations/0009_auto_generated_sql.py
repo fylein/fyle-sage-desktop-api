@@ -11,8 +11,8 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql="""
-                insert into feature_configs (workspace_id, import_via_rabbitmq, export_via_rabbitmq, fyle_webhook_sync_enabled, created_at, updated_at)
-                select id, false, false, false, now(), now()
+                insert into feature_configs (workspace_id, export_via_rabbitmq, fyle_webhook_sync_enabled, created_at, updated_at)
+                select id, false, false, now(), now()
                 from workspaces
                 where NOT EXISTS (
                     select 1
