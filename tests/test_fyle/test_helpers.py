@@ -2,9 +2,11 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 from requests import Response
+from rest_framework.exceptions import ValidationError
 
 from apps.fyle.helpers import (
     Q,
+    assert_valid_request,
     check_interval_and_sync_dimension,
     construct_expense_filter,
     construct_expense_filter_query,
@@ -14,6 +16,7 @@ from apps.fyle.helpers import (
     post_request,
 )
 from apps.fyle.models import ExpenseFilter
+from apps.workspaces.models import Workspace
 from tests.test_fyle.fixtures import fixtures as data
 
 
@@ -525,3 +528,27 @@ def test_check_interval_and_sync_dimension(mocker):
 
     mock_sync_dimensions.assert_not_called()
     workspace.save.assert_not_called()
+
+
+@pytest.mark.django_db()
+def test_assert_valid_request(mocker):
+    mocker.patch('apps.fyle.helpers.cache.get', return_value=None)
+    mock_cache_set = mocker.patch('apps.fyle.helpers.cache.set')
+
+    workspace = mocker.MagicMock()
+    workspace.id = 1
+    workspace.org_id = 'test_org_id'
+
+    mock_workspace_get = mocker.patch('apps.fyle.helpers.Workspace.objects.get')
+    mock_workspace_get.return_value = workspace
+
+    assert_valid_request(workspace_id=1, org_id='test_org_id')
+    mock_cache_set.assert_called_once()
+
+    mock_workspace_get.side_effect = Workspace.DoesNotExist()
+
+    try:
+        assert_valid_request(workspace_id=999, org_id='non_existent_org')
+        assert False, "Should have raised ValidationError"
+    except ValidationError as e:
+        assert str(e.detail[0]) == 'Workspace not found'

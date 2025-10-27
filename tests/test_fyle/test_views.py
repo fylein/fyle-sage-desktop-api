@@ -1,15 +1,17 @@
 import json
 from unittest import mock
 
+from django.core.cache import cache
 from django.urls import reverse
+from rest_framework import status
 
 from apps.accounting_exports.models import AccountingExport
-from apps.workspaces.models import FyleCredential, Workspace
+from apps.workspaces.models import FeatureConfig, FyleCredential, Workspace
 from tests.helper import dict_compare_keys
 from tests.test_fyle.fixtures import fixtures as data
 
 
-def test_import_fyle_attributes(mocker, api_client, test_connection, create_temp_workspace, add_fyle_credentials):
+def test_import_fyle_attributes(mocker, api_client, test_connection, create_temp_workspace, add_fyle_credentials, add_feature_config):
     mocker.patch('fyle_integrations_platform_connector.fyle_integrations_platform_connector.PlatformConnector.import_fyle_dimensions', return_value=[])
     mocker.patch('apps.fyle.serializers.construct_tasks_and_chain_import_fields_to_fyle', return_value=None)
 
@@ -34,6 +36,10 @@ def test_import_fyle_attributes(mocker, api_client, test_connection, create_temp
     response = api_client.post(url, payload)
     assert response.status_code == 201
 
+    cache.clear()
+    feature_config = FeatureConfig.objects.get(workspace_id=1)
+    feature_config.fyle_webhook_sync_enabled = False
+    feature_config.save()
     fyle_credentials = FyleCredential.objects.get(workspace_id=1)
     fyle_credentials.delete()
 
@@ -143,3 +149,24 @@ def test_accounting_export_sync(
     assert response.status_code == 200
     accounting_export = AccountingExport.objects.filter(workspace_id=1, status='EXPORT_READY')
     assert accounting_export.count() == 1
+
+
+def test_webhook_callback_view(api_client, db, create_temp_workspace):
+    """
+    Test WebhookCallbackView processes webhooks correctly
+    """
+    workspace_id = 1
+    url = reverse('webhook-callback', kwargs={'workspace_id': workspace_id})
+    payload = {
+        "action": "ADMIN_APPROVED",
+        "data": {
+            "id": "rpG6L7AoSHvW",
+            "org_id": "riseabovehate1",
+            "state": "PAYMENT_PROCESSING"
+        }
+    }
+
+    with mock.patch('apps.fyle.views.async_handle_webhook_callback') as mock_handler:
+        response = api_client.post(url, payload, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        mock_handler.assert_called_once_with(payload, workspace_id)

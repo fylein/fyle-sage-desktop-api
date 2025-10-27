@@ -253,7 +253,6 @@ def async_create_admin_subcriptions(workspace_id: int) -> None:
             'PROJECT',
             'COST_CENTER',
             'EXPENSE_FIELD',
-            'DEPENDENT_EXPENSE_FIELD',
             'CORPORATE_CARD',
             'EMPLOYEE',
             'TAX_GROUP',

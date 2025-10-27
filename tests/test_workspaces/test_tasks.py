@@ -335,12 +335,26 @@ def test_async_create_admin_subcriptions(
     workspace_id = 1
     async_create_admin_subcriptions(workspace_id=workspace_id)
 
-    payload = {
-        'is_enabled': True,
-        'webhook_url': '{}/workspaces/{}/fyle/webhook_callback/'.format(settings.API_URL, workspace_id)
+    expected_payload = {
+        'data': {
+            'is_enabled': True,
+            'webhook_url': '{}/workspaces/{}/fyle/webhook_callback/'.format(settings.API_URL, workspace_id),
+            'subscribed_resources': [
+                'EXPENSE',
+                'REPORT',
+                'CATEGORY',
+                'PROJECT',
+                'COST_CENTER',
+                'EXPENSE_FIELD',
+                'CORPORATE_CARD',
+                'EMPLOYEE',
+                'TAX_GROUP',
+                'ORG_SETTING'
+            ]
+        }
     }
 
-    assert mock_api.once_called_with(payload)
+    mock_api.assert_called_once_with(expected_payload)
 
     mock_api.side_effect = Exception('Error')
     try:

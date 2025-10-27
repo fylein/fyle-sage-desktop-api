@@ -18,7 +18,7 @@ from apps.sage300.actions import update_accounting_export_summary
 from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_export, validate_failing_export
 from apps.sage300.exports.purchase_invoice.models import PurchaseInvoice, PurchaseInvoiceLineitems
 from apps.sage300.utils import SageDesktopConnector
-from apps.workspaces.models import FyleCredential, Sage300Credential
+from apps.workspaces.models import FeatureConfig, FyleCredential, Sage300Credential
 from sage_desktop_sdk.exceptions import InvalidUserCredentials
 
 logger = logging.getLogger(__name__)
@@ -92,14 +92,18 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
                 ))
 
     if len(chain_tasks) > 0:
+        fyle_webhook_sync_enabled = FeatureConfig.get_feature_config(workspace_id=workspace_id, key='fyle_webhook_sync_enabled')
+
         if run_in_rabbitmq_worker:
             # This function checks intervals and triggers sync if needed, syncing dimension for all exports is overkill
-            check_interval_and_sync_dimension(workspace_id)
+            if not fyle_webhook_sync_enabled:
+                check_interval_and_sync_dimension(workspace_id)
             task_executor = TaskChainRunner()
             task_executor.run(chain_tasks, workspace_id)
         else:
             chain = Chain()
-            chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials)
+            if not fyle_webhook_sync_enabled:
+                chain.append('apps.fyle.helpers.sync_dimensions', fyle_credentials)
             for task in chain_tasks:
                 chain.append(task.target, *task.args)
             chain.run()

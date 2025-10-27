@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from django_q.models import Schedule
-
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 
 from apps.accounting_exports.models import AccountingExport, Error
@@ -295,6 +294,7 @@ def test_skipping_direct_cost(
     add_fyle_credentials,
     add_export_settings,
     add_accounting_export_expenses,
+    add_feature_config,
     mocker
 ):
     """
@@ -356,6 +356,7 @@ def test_skipping_purchase_invoice(
     add_fyle_credentials,
     add_export_settings,
     add_accounting_export_expenses,
+    add_feature_config,
     mocker
 ):
     """
@@ -406,3 +407,65 @@ def test_skipping_purchase_invoice(
 
     assert accounting_export.status == 'ENQUEUED'
     assert accounting_export.type == 'PURCHASE_INVOICE'
+
+
+def test_check_accounting_export_with_rabbitmq_worker_purchase_invoice(
+    db,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_accounting_export_expenses,
+    add_feature_config,
+    mocker
+):
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id, type='PURCHASE_INVOICE').first()
+    accounting_export.status = 'READY'
+    accounting_export.exported_at = None
+    accounting_export.save()
+
+    mock_check_interval = mocker.patch('apps.sage300.exports.purchase_invoice.queues.check_interval_and_sync_dimension')
+    mock_task_executor = mocker.patch('apps.sage300.exports.purchase_invoice.queues.TaskChainRunner')
+
+    check_accounting_export_and_start_import(
+        accounting_export.workspace_id,
+        [accounting_export.id],
+        False,
+        0,
+        ExpenseImportSourceEnum.WEBHOOK,
+        run_in_rabbitmq_worker=True
+    )
+
+    mock_check_interval.assert_called_once_with(workspace_id)
+    mock_task_executor.assert_called()
+
+
+def test_check_accounting_export_with_rabbitmq_worker_direct_cost(
+    db,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_accounting_export_expenses,
+    add_feature_config,
+    mocker
+):
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id, type='DIRECT_COST').first()
+    accounting_export.status = 'READY'
+    accounting_export.exported_at = None
+    accounting_export.save()
+
+    mock_check_interval = mocker.patch('apps.sage300.exports.direct_cost.queues.check_interval_and_sync_dimension')
+    mock_task_executor = mocker.patch('apps.sage300.exports.direct_cost.queues.TaskChainRunner')
+
+    check_accounting_export_and_start_import_direct_cost(
+        accounting_export.workspace_id,
+        [accounting_export.id],
+        False,
+        0,
+        ExpenseImportSourceEnum.WEBHOOK,
+        run_in_rabbitmq_worker=True
+    )
+
+    mock_check_interval.assert_called_once_with(workspace_id)
+    mock_task_executor.assert_called()
