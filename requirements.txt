@@ -22,7 +22,7 @@ fyle==1.1.1
 # Reusable Fyle Packages
 fyle-rest-auth==1.8.2
 fyle-accounting-mappings==2.11.0
-fyle-integrations-platform-connector==2.7.1
+fyle-integrations-platform-connector==2.7.2
 text-unidecode==1.3
 
 
