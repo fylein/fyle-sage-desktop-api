@@ -19,6 +19,7 @@ from apps.users.models import User
 from apps.workspaces.models import (
     AdvancedSetting,
     ExportSetting,
+    FeatureConfig,
     FyleCredential,
     ImportSetting,
     Sage300Credential,
@@ -69,6 +70,7 @@ class WorkspaceSerializer(serializers.ModelSerializer):
                 org_id=org_id,
             )
             Version.objects.create(workspace_id=workspace.id)
+            FeatureConfig.objects.create(workspace_id=workspace.id)
             FyleSyncTimestamp.objects.create(workspace_id=workspace.id)
 
             workspace.user.add(User.objects.get(user_id=user))
