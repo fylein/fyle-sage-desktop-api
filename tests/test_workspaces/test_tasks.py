@@ -348,7 +348,6 @@ def test_async_create_admin_subcriptions(
                 'EXPENSE_FIELD',
                 'CORPORATE_CARD',
                 'EMPLOYEE',
-                'TAX_GROUP',
                 'ORG_SETTING'
             ]
         }
