@@ -255,7 +255,6 @@ def async_create_admin_subcriptions(workspace_id: int) -> None:
             'EXPENSE_FIELD',
             'CORPORATE_CARD',
             'EMPLOYEE',
-            'TAX_GROUP',
             'ORG_SETTING'
         ]
     }
