@@ -35,3 +35,5 @@ API to connect to Sage Desktop Products
         logs sage-desktop-api
         ```
         Confirm in the logs that the migration has been applied successfully.
+
+# Django 4.2.26 security update
