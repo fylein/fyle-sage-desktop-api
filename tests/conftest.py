@@ -162,6 +162,9 @@ def add_fyle_credentials():
             workspace_id=workspace_id,
             cluster_domain='https://dummy_cluster_domain.com',
         )
+        FyleSyncTimestamp.objects.create(
+            workspace_id=workspace_id
+        )
 
 
 @pytest.fixture()
