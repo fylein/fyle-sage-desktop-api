@@ -10,7 +10,6 @@ from apps.fyle.helpers import (
     check_interval_and_sync_dimension,
     construct_expense_filter,
     construct_expense_filter_query,
-    get_fyle_orgs,
     get_request,
     patch_request,
     post_request,
@@ -18,28 +17,6 @@ from apps.fyle.helpers import (
 from apps.fyle.models import ExpenseFilter
 from apps.workspaces.models import Workspace
 from tests.test_fyle.fixtures import fixtures as data
-
-
-def test_get_fyle_orgs(mocker):
-    mocker.patch(
-        'apps.fyle.helpers.get_request',
-        return_value={
-            'data': [
-                {
-                    'id': 1,
-                    'name': 'Fyle Org 1'
-                }
-            ]
-        }
-    )
-
-    fyle_org = get_fyle_orgs(
-        refresh_token='refresh_token',
-        cluster_domain='cluster_domain'
-    )
-
-    assert fyle_org.get('data')[0].get('id') == 1
-    assert fyle_org.get('data')[0].get('name') == 'Fyle Org 1'
 
 
 def test_get_request(mocker):

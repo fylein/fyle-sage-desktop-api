@@ -243,15 +243,6 @@ def get_expense_fields(workspace_id: int):
     return response
 
 
-def get_fyle_orgs(refresh_token: str, cluster_domain: str):
-    """
-    Get fyle orgs of a user
-    """
-    api_url = '{0}/api/orgs/'.format(cluster_domain)
-
-    return get_request(api_url, {}, refresh_token)
-
-
 def sync_dimensions(fyle_credentials: FyleCredential) -> None:
     platform = PlatformConnector(fyle_credentials)
 
