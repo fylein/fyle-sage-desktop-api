@@ -15,9 +15,8 @@ Including another URLconf
 """
 from django.urls import path
 
-from .views import UserProfileView, FyleOrgsView
+from apps.users.views import UserProfileView
 
 urlpatterns = [
-    path('profile/', UserProfileView.as_view(), name='user_profile'),
-    path('orgs/', FyleOrgsView.as_view(), name='fyle_orgs')
+    path('profile/', UserProfileView.as_view(), name='user_profile')
 ]
