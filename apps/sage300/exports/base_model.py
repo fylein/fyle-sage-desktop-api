@@ -2,15 +2,14 @@ from datetime import datetime
 from typing import Optional
 
 from django.db import models
-from django.db.models import Sum, Value, CharField
+from django.db.models import CharField, Sum, Value
 from django.db.models.functions import Concat
-
-from fyle_accounting_mappings.models import ExpenseAttribute, Mapping, MappingSetting, EmployeeMapping
+from fyle_accounting_mappings.models import EmployeeMapping, ExpenseAttribute, Mapping, MappingSetting
 
 from apps.accounting_exports.models import AccountingExport
 from apps.fyle.models import DependentFieldSetting, Expense
-from apps.workspaces.models import AdvancedSetting, FyleCredential, Workspace, ExportSetting
 from apps.sage300.models import CostCategory
+from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential, Workspace
 
 
 class BaseExportModel(models.Model):
@@ -49,13 +48,13 @@ class BaseExportModel(models.Model):
             'expense_link': expense_link
         }
 
-        purpose = ''
+        memo_parts = []
 
-        for id, field in enumerate(memo_structure):
-            if field in details:
-                purpose += details[field]
-                if id + 1 != len(memo_structure):
-                    purpose = '{0} - '.format(purpose)
+        for field in memo_structure:
+            if field in details and details[field]:
+                memo_parts.append(details[field])
+
+        purpose = ' - '.join(memo_parts)
 
         return purpose
 
