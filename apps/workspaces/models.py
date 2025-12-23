@@ -69,6 +69,7 @@ CREDIT_CARD_EXPENSES_GROUPED_BY_CHOICES = (
 CREDIT_CARD_EXPENSES_DATE_TYPE_CHOICES = (
     ('LAST_SPENT_AT', 'last_spent_at'),
     ('POSTED_AT', 'posted_at'),
+    ('CURRENT_DATE', 'current_date'),
 )
 
 EXPORT_MODE_CHOICES = (('MANUAL', 'MANUAL'), ('AUTO', 'AUTO'))
