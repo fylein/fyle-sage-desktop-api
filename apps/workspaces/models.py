@@ -104,6 +104,7 @@ class Workspace(models.Model):
         help_text='Onboarding status of the workspace'
     )
     sage300_accounts_last_synced_at = CustomDateTimeField(help_text='sage accounts last synced at time')
+    org_settings = CustomJsonField(help_text='Org Settings', default=dict)
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
 

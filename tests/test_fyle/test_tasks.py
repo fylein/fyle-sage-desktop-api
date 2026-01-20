@@ -13,6 +13,7 @@ from apps.fyle.tasks import (
     import_expenses,
     handle_expense_fund_source_change,
     handle_fund_source_changes_for_expense_ids,
+    handle_org_setting_updated,
     process_accounting_export_for_fund_source_update,
     delete_accounting_export_and_related_data,
     recreate_accounting_exports,
@@ -1491,3 +1492,59 @@ def test_handle_expense_report_change_ejected_from_exported_export(db, add_expen
 
     accounting_export.refresh_from_db()
     assert expense in accounting_export.expenses.all()
+
+
+def test_handle_org_setting_updated(db, create_temp_workspace):
+    """
+    Test handle_org_setting_updated stores regional_settings in org_settings field
+    """
+    workspace_id = 1
+    workspace = Workspace.objects.get(id=workspace_id)
+
+    workspace.org_settings = {}
+    workspace.save()
+
+    handle_org_setting_updated(
+        workspace_id=workspace_id,
+        org_settings=fyle_fixtures['org_settings']['org_settings_payload']
+    )
+
+    workspace.refresh_from_db()
+
+    assert workspace.org_settings == fyle_fixtures['org_settings']['expected_org_settings']
+    assert 'other_setting' not in workspace.org_settings
+
+
+def test_handle_org_setting_updated_empty_regional_settings(db, create_temp_workspace):
+    """
+    Test handle_org_setting_updated when regional_settings is empty or missing
+    """
+    workspace_id = 1
+    workspace = Workspace.objects.get(id=workspace_id)
+
+    handle_org_setting_updated(
+        workspace_id=workspace_id,
+        org_settings=fyle_fixtures['org_settings']['org_settings_payload_without_regional']
+    )
+
+    workspace.refresh_from_db()
+    assert workspace.org_settings == fyle_fixtures['org_settings']['expected_org_settings_empty']
+
+
+def test_handle_org_setting_updated_overwrites_existing(db, create_temp_workspace):
+    """
+    Test handle_org_setting_updated overwrites existing org_settings
+    """
+    workspace_id = 1
+    workspace = Workspace.objects.get(id=workspace_id)
+
+    workspace.org_settings = fyle_fixtures['org_settings']['expected_org_settings']
+    workspace.save()
+
+    handle_org_setting_updated(
+        workspace_id=workspace_id,
+        org_settings=fyle_fixtures['org_settings']['org_settings_payload_updated']
+    )
+
+    workspace.refresh_from_db()
+    assert workspace.org_settings == fyle_fixtures['org_settings']['expected_org_settings_updated']

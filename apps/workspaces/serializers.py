@@ -26,6 +26,7 @@ from apps.workspaces.models import (
     Workspace,
 )
 from apps.workspaces.triggers import AdvancedSettingsTriggers, ImportSettingsTrigger
+from apps.workspaces.tasks import sync_org_settings
 from fyle_integrations_imports.models import ImportLog
 from sage_desktop_api.utils import assert_valid
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
@@ -86,6 +87,8 @@ class WorkspaceSerializer(serializers.ModelSerializer):
                 workspace_id=workspace.id,
                 cluster_domain=cluster_domain
             )
+
+            sync_org_settings(workspace_id=workspace.id)
 
         return workspace
 

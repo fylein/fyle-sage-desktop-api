@@ -13,7 +13,7 @@ from apps.fyle.helpers import patch_request
 from apps.fyle.queue import queue_import_credit_card_expenses, queue_import_reimbursable_expenses
 from apps.sage300.exports.direct_cost.tasks import ExportDirectCost
 from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
-from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential
+from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential, Workspace
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,26 @@ def async_update_fyle_credentials(fyle_org_id: str, refresh_token: str):
     if fyle_credentials and refresh_token:
         fyle_credentials.refresh_token = refresh_token
         fyle_credentials.save()
+
+
+def sync_org_settings(workspace_id: int) -> None:
+    """
+    Fetch and store org settings for a workspace
+    :param workspace_id: Workspace ID
+    :return: None
+    """
+    try:
+        fyle_credential = FyleCredential.objects.get(workspace_id=workspace_id)
+        platform = PlatformConnector(fyle_credential)
+        org_settings = platform.org_settings.get()
+
+        workspace = Workspace.objects.get(id=workspace_id)
+        workspace.org_settings = {
+            'regional_settings': org_settings.get('regional_settings', {})
+        }
+        workspace.save(update_fields=['org_settings', 'updated_at'])
+    except Exception as e:
+        logger.error('Error fetching org settings for workspace %s: %s', workspace_id, str(e))
 
 
 def run_import_export(workspace_id: int, export_mode = None):
