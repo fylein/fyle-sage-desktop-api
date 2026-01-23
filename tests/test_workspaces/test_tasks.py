@@ -9,12 +9,14 @@ from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
 from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential
 from apps.workspaces.signals import run_post_save_export_settings_triggers, run_pre_save_export_settings_triggers
+from apps.workspaces.models import Workspace
 from apps.workspaces.tasks import (
     async_create_admin_subcriptions,
     async_update_fyle_credentials,
     export_to_sage300,
     run_import_export,
     schedule_sync,
+    sync_org_settings,
 )
 
 
@@ -590,3 +592,35 @@ def test_run_import_export_include_failed_exports_with_retry_flag(
     retry_export = AccountingExport.objects.get(workspace_id=workspace_id, fund_source='PERSONAL', status='FAILED', re_attempt_export=True, type='PURCHASE_INVOICE')
     expected_ids = [retry_export.id]
     assert set(accounting_export_ids) == set(expected_ids)
+
+
+def test_sync_org_settings(db, mocker, create_temp_workspace, add_fyle_credentials):
+    """
+    Test sync org settings
+    """
+    workspace_id = 1
+    workspace = Workspace.objects.get(id=workspace_id)
+    workspace.org_settings = {}
+    workspace.save()
+
+    mock_platform = mocker.patch('apps.workspaces.tasks.PlatformConnector')
+    mock_platform.return_value.org_settings.get.return_value = {
+        'regional_settings': {
+            'locale': {
+                'date_format': 'DD/MM/YYYY',
+                'timezone': 'Asia/Kolkata'
+            }
+        }
+    }
+
+    sync_org_settings(workspace_id=workspace_id)
+
+    workspace.refresh_from_db()
+    assert workspace.org_settings == {
+        'regional_settings': {
+            'locale': {
+                'date_format': 'DD/MM/YYYY',
+                'timezone': 'Asia/Kolkata'
+            }
+        }
+    }

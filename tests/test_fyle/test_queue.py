@@ -109,3 +109,26 @@ def test_async_handle_webhook_callback_added_to_report(mock_async_task, db, crea
         body['data'],
         'ADDED_TO_REPORT'
     )
+
+
+@patch('apps.fyle.queue.async_task')
+def test_async_handle_webhook_callback_org_setting_updated(mock_async_task, db, create_temp_workspace):
+    """
+    Test async_handle_webhook_callback for ORG_SETTING UPDATED action
+    """
+    body = {
+        "action": "UPDATED",
+        "resource": "ORG_SETTING",
+        "data": {
+            "org_id": "riseabovehate1",
+            "setting_key": "some_setting"
+        }
+    }
+
+    async_handle_webhook_callback(body, 1)
+
+    mock_async_task.assert_called_once_with(
+        'apps.fyle.tasks.handle_org_setting_updated',
+        1,
+        body['data']
+    )
