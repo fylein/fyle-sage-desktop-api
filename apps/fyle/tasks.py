@@ -255,13 +255,96 @@ def update_non_exported_expenses(data: Dict) -> None:
                 handle_category_changes_for_expense(expense=expense, old_category=old_category, new_category=new_category)
 
 
+def remove_accounting_export_from_category_error(workspace_id: int, accounting_export_id: int, old_category: str, expense_id: str) -> None:
+    """
+    Remove accounting export from old category's mapping error
+    :param workspace_id: Workspace ID
+    :param accounting_export_id: Accounting export ID
+    :param old_category: Old category value
+    :param expense_id: Expense ID for logging
+    """
+    old_category_expense_attribute = ExpenseAttribute.objects.filter(
+        workspace_id=workspace_id,
+        attribute_type='CATEGORY',
+        value=old_category
+    ).first()
+
+    if not old_category_expense_attribute:
+        return
+
+    error = Error.objects.filter(
+        workspace_id=workspace_id,
+        is_resolved=False,
+        type='CATEGORY_MAPPING',
+        expense_attribute=old_category_expense_attribute,
+        mapping_error_accounting_export_ids__contains=[accounting_export_id]
+    ).first()
+
+    if not error:
+        return
+
+    logger.info('Removing accounting export: %s from errors for workspace_id: %s as a result of category update for expense %s', accounting_export_id, workspace_id, expense_id)
+    error.mapping_error_accounting_export_ids.remove(accounting_export_id)
+
+    if error.mapping_error_accounting_export_ids:
+        error.updated_at = datetime.now(timezone.utc)
+        error.save(update_fields=['mapping_error_accounting_export_ids', 'updated_at'])
+    else:
+        error.delete()
+
+
+def add_accounting_export_to_category_error(workspace_id: int, accounting_export_id: int, new_category: str) -> None:
+    """
+    Add accounting export to new category's mapping error or create one if mapping is missing
+    :param workspace_id: Workspace ID
+    :param accounting_export_id: Accounting export ID
+    :param new_category: New category value
+    """
+    new_category_expense_attribute = ExpenseAttribute.objects.filter(
+        workspace_id=workspace_id,
+        attribute_type='CATEGORY',
+        value=new_category
+    ).first()
+
+    if not new_category_expense_attribute:
+        return
+
+    existing_error = Error.objects.filter(
+        workspace_id=workspace_id,
+        is_resolved=False,
+        type='CATEGORY_MAPPING',
+        expense_attribute=new_category_expense_attribute
+    ).first()
+
+    if existing_error:
+        if accounting_export_id not in existing_error.mapping_error_accounting_export_ids:
+            existing_error.mapping_error_accounting_export_ids.append(accounting_export_id)
+            existing_error.updated_at = datetime.now(timezone.utc)
+            existing_error.save(update_fields=['mapping_error_accounting_export_ids', 'updated_at'])
+        return
+
+    category_mapping = CategoryMapping.objects.filter(
+        source_category__value=new_category,
+        workspace_id=workspace_id
+    ).first()
+
+    if not category_mapping:
+        Error.objects.create(
+            workspace_id=workspace_id,
+            type='CATEGORY_MAPPING',
+            expense_attribute=new_category_expense_attribute,
+            mapping_error_accounting_export_ids=[accounting_export_id],
+            error_detail=f"{new_category_expense_attribute.display_name} mapping is missing",
+            error_title=new_category_expense_attribute.value
+        )
+
+
 def handle_category_changes_for_expense(expense: Expense, old_category: str, new_category: str) -> None:
     """
     Handle category changes for expense
     :param expense: Expense object
     :param old_category: Old category
     :param new_category: New category
-    :return: None
     """
     with transaction.atomic():
         accounting_export = AccountingExport.objects.filter(
@@ -270,64 +353,11 @@ def handle_category_changes_for_expense(expense: Expense, old_category: str, new
             exported_at__isnull=True
         ).first()
 
-        if accounting_export:
-            old_category_expense_attribute = ExpenseAttribute.objects.filter(
-                workspace_id=expense.workspace_id,
-                attribute_type='CATEGORY',
-                value=old_category
-            ).first()
+        if not accounting_export:
+            return
 
-            error = Error.objects.filter(
-                workspace_id=expense.workspace_id,
-                is_resolved=False,
-                type='CATEGORY_MAPPING',
-                expense_attribute=old_category_expense_attribute,
-                mapping_error_accounting_export_ids__contains=[accounting_export.id]
-            ).first() if old_category_expense_attribute else None
-
-            if error:
-                logger.info('Removing accounting export: %s from errors for workspace_id: %s as a result of category update for expense %s', accounting_export.id, expense.workspace_id, expense.id)
-                error.mapping_error_accounting_export_ids.remove(accounting_export.id)
-                if error.mapping_error_accounting_export_ids:
-                    error.updated_at = datetime.now(timezone.utc)
-                    error.save(update_fields=['mapping_error_accounting_export_ids', 'updated_at'])
-                else:
-                    error.delete()
-
-            new_category_expense_attribute = ExpenseAttribute.objects.filter(
-                workspace_id=expense.workspace_id,
-                attribute_type='CATEGORY',
-                value=new_category
-            ).first()
-
-            if new_category_expense_attribute:
-                updated_category_error = Error.objects.filter(
-                    workspace_id=expense.workspace_id,
-                    is_resolved=False,
-                    type='CATEGORY_MAPPING',
-                    expense_attribute=new_category_expense_attribute
-                ).first()
-
-                if updated_category_error:
-                    if accounting_export.id not in updated_category_error.mapping_error_accounting_export_ids:
-                        updated_category_error.mapping_error_accounting_export_ids.append(accounting_export.id)
-                        updated_category_error.updated_at = datetime.now(timezone.utc)
-                        updated_category_error.save(update_fields=['mapping_error_accounting_export_ids', 'updated_at'])
-                else:
-                    category_mapping = CategoryMapping.objects.filter(
-                        source_category__value=new_category,
-                        workspace_id=expense.workspace_id
-                    ).first()
-
-                    if not category_mapping:
-                        Error.objects.create(
-                            workspace_id=expense.workspace_id,
-                            type='CATEGORY_MAPPING',
-                            expense_attribute=new_category_expense_attribute,
-                            mapping_error_accounting_export_ids=[accounting_export.id],
-                            error_detail=f"{new_category_expense_attribute.display_name} mapping is missing",
-                            error_title=new_category_expense_attribute.value
-                        )
+        remove_accounting_export_from_category_error(expense.workspace_id, accounting_export.id, old_category, expense.id)
+        add_accounting_export_to_category_error(expense.workspace_id, accounting_export.id, new_category)
 
 
 def mark_expenses_as_skipped(final_query: Q, expenses_object_ids: List, workspace: Workspace) -> List[Expense]:

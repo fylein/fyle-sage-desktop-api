@@ -1646,6 +1646,54 @@ def test_handle_category_changes_for_expense_adds_to_existing_error(
     assert 888 in existing_error.mapping_error_accounting_export_ids
 
 
+def test_handle_category_changes_for_expense_no_accounting_export(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test handle_category_changes_for_expense returns early when no accounting_export exists
+    """
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='New Category')
+
+
+def test_handle_category_changes_for_expense_no_old_category_error(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker,
+    create_category_expense_attribute
+):
+    """
+    Test handle_category_changes_for_expense handles case when old category has no error
+    """
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source='PERSONAL',
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense)
+
+    create_category_expense_attribute('Old Category')
+
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='New Category')
+
+
 def test_update_non_exported_expenses_with_category_change(
     db,
     create_temp_workspace,
