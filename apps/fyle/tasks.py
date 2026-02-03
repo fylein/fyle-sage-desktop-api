@@ -252,13 +252,14 @@ def update_non_exported_expenses(data: Dict) -> None:
 
             if old_category != new_category:
                 logger.info("Category changed for expense %s from %s to %s in workspace %s", expense.id, old_category, new_category, expense.workspace_id)
-                handle_category_changes_for_expense(expense=expense, new_category=new_category)
+                handle_category_changes_for_expense(expense=expense, old_category=old_category, new_category=new_category)
 
 
-def handle_category_changes_for_expense(expense: Expense, new_category: str) -> None:
+def handle_category_changes_for_expense(expense: Expense, old_category: str, new_category: str) -> None:
     """
     Handle category changes for expense
     :param expense: Expense object
+    :param old_category: Old category
     :param new_category: New category
     :return: None
     """
@@ -270,12 +271,19 @@ def handle_category_changes_for_expense(expense: Expense, new_category: str) -> 
         ).first()
 
         if accounting_export:
+            old_category_expense_attribute = ExpenseAttribute.objects.filter(
+                workspace_id=expense.workspace_id,
+                attribute_type='CATEGORY',
+                value=old_category
+            ).first()
+
             error = Error.objects.filter(
                 workspace_id=expense.workspace_id,
                 is_resolved=False,
                 type='CATEGORY_MAPPING',
+                expense_attribute=old_category_expense_attribute,
                 mapping_error_accounting_export_ids__contains=[accounting_export.id]
-            ).first()
+            ).first() if old_category_expense_attribute else None
 
             if error:
                 logger.info('Removing accounting export: %s from errors for workspace_id: %s as a result of category update for expense %s', accounting_export.id, expense.workspace_id, expense.id)

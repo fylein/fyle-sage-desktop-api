@@ -1544,7 +1544,7 @@ def test_handle_category_changes_for_expense_removes_old_error(
         is_resolved=False
     )
 
-    handle_category_changes_for_expense(expense=expense, new_category='New Category')
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='New Category')
 
     error.refresh_from_db()
     assert accounting_export.id not in error.mapping_error_accounting_export_ids
@@ -1596,7 +1596,7 @@ def test_handle_category_changes_for_expense_deletes_empty_error(
     )
     error_id = error.id
 
-    handle_category_changes_for_expense(expense=expense, new_category='New Category')
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='New Category')
 
     assert not Error.objects.filter(id=error_id).exists()
 
@@ -1635,7 +1635,7 @@ def test_handle_category_changes_for_expense_creates_new_error(
         active=True
     )
 
-    handle_category_changes_for_expense(expense=expense, new_category='Unmapped Category')
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='Unmapped Category')
 
     new_error = Error.objects.filter(
         workspace_id=workspace_id,
@@ -1691,7 +1691,7 @@ def test_handle_category_changes_for_expense_adds_to_existing_error(
         is_resolved=False
     )
 
-    handle_category_changes_for_expense(expense=expense, new_category='Category With Error')
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='Category With Error')
 
     existing_error.refresh_from_db()
     assert accounting_export.id in existing_error.mapping_error_accounting_export_ids
