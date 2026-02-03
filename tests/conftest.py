@@ -1017,7 +1017,7 @@ def create_category_expense_attribute(create_temp_workspace):
     """
     Factory fixture to create category expense attributes with custom values
     """
-    def _create(value, workspace_id=1, display_name=None, source_id=None):
+    def _create(value, workspace_id=1, display_name=None, source_id=None) -> ExpenseAttribute:
         return ExpenseAttribute.objects.create(
             workspace_id=workspace_id,
             attribute_type='CATEGORY',
@@ -1034,7 +1034,7 @@ def create_category_mapping_error(create_temp_workspace):
     """
     Factory fixture to create category mapping errors with custom configurations
     """
-    def _create(expense_attribute, mapping_error_accounting_export_ids=None, workspace_id=1, is_resolved=False):
+    def _create(expense_attribute, mapping_error_accounting_export_ids=None, workspace_id=1, is_resolved=False) -> Error:
         return Error.objects.create(
             workspace_id=workspace_id,
             type='CATEGORY_MAPPING',
