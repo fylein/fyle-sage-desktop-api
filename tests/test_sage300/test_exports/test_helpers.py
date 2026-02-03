@@ -277,21 +277,15 @@ def test_validate_accounting_export(
 def test_get_or_create_error_with_accounting_export_creates_new(
     db,
     create_temp_workspace,
-    add_accounting_export_expenses
+    add_accounting_export_expenses,
+    create_category_expense_attribute
 ):
     """
     Test get_or_create_error_with_accounting_export creates a new error
     """
     workspace_id = 1
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
-
-    expense_attribute = ExpenseAttribute.objects.create(
-        workspace_id=workspace_id,
-        attribute_type='CATEGORY',
-        value='Test Category',
-        display_name='Test Category',
-        active=True
-    )
+    expense_attribute = create_category_expense_attribute('Test Category')
 
     error, created = Error.get_or_create_error_with_accounting_export(
         accounting_export=accounting_export,
@@ -309,7 +303,9 @@ def test_get_or_create_error_with_accounting_export_creates_new(
 def test_get_or_create_error_with_accounting_export_adds_export_id(
     db,
     create_temp_workspace,
-    add_accounting_export_expenses
+    add_accounting_export_expenses,
+    create_category_expense_attribute,
+    create_category_mapping_error
 ):
     """
     Test get_or_create_error_with_accounting_export adds accounting_export.id to existing error
@@ -319,23 +315,8 @@ def test_get_or_create_error_with_accounting_export_adds_export_id(
     first_export = accounting_exports[0]
     second_export = accounting_exports[1]
 
-    expense_attribute = ExpenseAttribute.objects.create(
-        workspace_id=workspace_id,
-        attribute_type='CATEGORY',
-        value='Test Category',
-        display_name='Test Category',
-        active=True
-    )
-
-    Error.objects.create(
-        workspace_id=workspace_id,
-        type='CATEGORY_MAPPING',
-        expense_attribute=expense_attribute,
-        mapping_error_accounting_export_ids=[first_export.id],
-        error_title='Test Category',
-        error_detail='Test Category mapping is missing',
-        is_resolved=False
-    )
+    expense_attribute = create_category_expense_attribute('Test Category')
+    create_category_mapping_error(expense_attribute, mapping_error_accounting_export_ids=[first_export.id])
 
     error, created = Error.get_or_create_error_with_accounting_export(
         accounting_export=second_export,
@@ -350,7 +331,9 @@ def test_get_or_create_error_with_accounting_export_adds_export_id(
 def test_get_or_create_error_with_accounting_export_reopens_resolved(
     db,
     create_temp_workspace,
-    add_accounting_export_expenses
+    add_accounting_export_expenses,
+    create_category_expense_attribute,
+    create_category_mapping_error
 ):
     """
     Test get_or_create_error_with_accounting_export reopens a resolved error
@@ -358,23 +341,8 @@ def test_get_or_create_error_with_accounting_export_reopens_resolved(
     workspace_id = 1
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
 
-    expense_attribute = ExpenseAttribute.objects.create(
-        workspace_id=workspace_id,
-        attribute_type='CATEGORY',
-        value='Test Category',
-        display_name='Test Category',
-        active=True
-    )
-
-    Error.objects.create(
-        workspace_id=workspace_id,
-        type='CATEGORY_MAPPING',
-        expense_attribute=expense_attribute,
-        mapping_error_accounting_export_ids=[],
-        error_title='Test Category',
-        error_detail='Test Category mapping is missing',
-        is_resolved=True
-    )
+    expense_attribute = create_category_expense_attribute('Test Category')
+    create_category_mapping_error(expense_attribute, mapping_error_accounting_export_ids=[], is_resolved=True)
 
     error, created = Error.get_or_create_error_with_accounting_export(
         accounting_export=accounting_export,
@@ -389,7 +357,9 @@ def test_get_or_create_error_with_accounting_export_reopens_resolved(
 def test_get_or_create_error_with_accounting_export_no_update_needed(
     db,
     create_temp_workspace,
-    add_accounting_export_expenses
+    add_accounting_export_expenses,
+    create_category_expense_attribute,
+    create_category_mapping_error
 ):
     """
     Test get_or_create_error_with_accounting_export when no update is needed
@@ -397,23 +367,8 @@ def test_get_or_create_error_with_accounting_export_no_update_needed(
     workspace_id = 1
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
 
-    expense_attribute = ExpenseAttribute.objects.create(
-        workspace_id=workspace_id,
-        attribute_type='CATEGORY',
-        value='Test Category',
-        display_name='Test Category',
-        active=True
-    )
-
-    Error.objects.create(
-        workspace_id=workspace_id,
-        type='CATEGORY_MAPPING',
-        expense_attribute=expense_attribute,
-        mapping_error_accounting_export_ids=[accounting_export.id],
-        error_title='Test Category',
-        error_detail='Test Category mapping is missing',
-        is_resolved=False
-    )
+    expense_attribute = create_category_expense_attribute('Test Category')
+    create_category_mapping_error(expense_attribute, mapping_error_accounting_export_ids=[accounting_export.id])
 
     error, created = Error.get_or_create_error_with_accounting_export(
         accounting_export=accounting_export,

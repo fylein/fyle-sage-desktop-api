@@ -1012,6 +1012,41 @@ def mock_rabbitmq():
         yield mock_rabbitmq
 
 
+@pytest.fixture()
+def create_category_expense_attribute(create_temp_workspace):
+    """
+    Factory fixture to create category expense attributes with custom values
+    """
+    def _create(value, workspace_id=1, display_name=None, source_id=None):
+        return ExpenseAttribute.objects.create(
+            workspace_id=workspace_id,
+            attribute_type='CATEGORY',
+            value=value,
+            display_name=display_name or value,
+            source_id=source_id or f'{value.lower().replace(" ", "_")}_1',
+            active=True
+        )
+    return _create
+
+
+@pytest.fixture()
+def create_category_mapping_error(create_temp_workspace):
+    """
+    Factory fixture to create category mapping errors with custom configurations
+    """
+    def _create(expense_attribute, mapping_error_accounting_export_ids=None, workspace_id=1, is_resolved=False):
+        return Error.objects.create(
+            workspace_id=workspace_id,
+            type='CATEGORY_MAPPING',
+            expense_attribute=expense_attribute,
+            mapping_error_accounting_export_ids=mapping_error_accounting_export_ids or [],
+            error_title=expense_attribute.value,
+            error_detail=f'{expense_attribute.display_name} mapping is missing',
+            is_resolved=is_resolved
+        )
+    return _create
+
+
 @pytest.fixture
 def add_expense_report_data(db, create_temp_workspace):
     """

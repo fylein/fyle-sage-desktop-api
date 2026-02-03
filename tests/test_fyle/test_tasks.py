@@ -1504,13 +1504,13 @@ def test_handle_category_changes_for_expense_removes_old_error(
     db,
     create_temp_workspace,
     add_export_settings,
-    mocker
+    mocker,
+    create_category_expense_attribute,
+    create_category_mapping_error
 ):
     """
     Test handle_category_changes_for_expense removes expense from old category mapping error
     """
-    from fyle_accounting_mappings.models import ExpenseAttribute
-
     workspace_id = 1
 
     category_expense_data = data['category_change_expense']
@@ -1526,23 +1526,8 @@ def test_handle_category_changes_for_expense_removes_old_error(
     )
     accounting_export.expenses.add(expense)
 
-    old_category_attribute = ExpenseAttribute.objects.create(
-        workspace_id=workspace_id,
-        attribute_type='CATEGORY',
-        value='Old Category',
-        display_name='Old Category',
-        active=True
-    )
-
-    error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='CATEGORY_MAPPING',
-        expense_attribute=old_category_attribute,
-        mapping_error_accounting_export_ids=[accounting_export.id, 999],  # 999 is another export
-        error_title='Old Category',
-        error_detail='Category mapping is missing',
-        is_resolved=False
-    )
+    old_category_attribute = create_category_expense_attribute('Old Category')
+    error = create_category_mapping_error(old_category_attribute, mapping_error_accounting_export_ids=[accounting_export.id, 999])
 
     handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='New Category')
 
@@ -1555,13 +1540,13 @@ def test_handle_category_changes_for_expense_deletes_empty_error(
     db,
     create_temp_workspace,
     add_export_settings,
-    mocker
+    mocker,
+    create_category_expense_attribute,
+    create_category_mapping_error
 ):
     """
     Test handle_category_changes_for_expense deletes error when no accounting exports remain
     """
-    from fyle_accounting_mappings.models import ExpenseAttribute
-
     workspace_id = 1
 
     category_expense_data = data['category_change_expense']
@@ -1577,23 +1562,8 @@ def test_handle_category_changes_for_expense_deletes_empty_error(
     )
     accounting_export.expenses.add(expense)
 
-    old_category_attribute = ExpenseAttribute.objects.create(
-        workspace_id=workspace_id,
-        attribute_type='CATEGORY',
-        value='Old Category',
-        display_name='Old Category',
-        active=True
-    )
-
-    error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='CATEGORY_MAPPING',
-        expense_attribute=old_category_attribute,
-        mapping_error_accounting_export_ids=[accounting_export.id],
-        error_title='Old Category',
-        error_detail='Category mapping is missing',
-        is_resolved=False
-    )
+    old_category_attribute = create_category_expense_attribute('Old Category')
+    error = create_category_mapping_error(old_category_attribute, mapping_error_accounting_export_ids=[accounting_export.id])
     error_id = error.id
 
     handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='New Category')
@@ -1605,13 +1575,12 @@ def test_handle_category_changes_for_expense_creates_new_error(
     db,
     create_temp_workspace,
     add_export_settings,
-    mocker
+    mocker,
+    create_category_expense_attribute
 ):
     """
     Test handle_category_changes_for_expense creates error for unmapped new category
     """
-    from fyle_accounting_mappings.models import ExpenseAttribute
-
     workspace_id = 1
 
     category_expense_data = data['category_change_expense']
@@ -1627,13 +1596,7 @@ def test_handle_category_changes_for_expense_creates_new_error(
     )
     accounting_export.expenses.add(expense)
 
-    new_category_attribute = ExpenseAttribute.objects.create(
-        workspace_id=workspace_id,
-        attribute_type='CATEGORY',
-        value='Unmapped Category',
-        display_name='Unmapped Category',
-        active=True
-    )
+    new_category_attribute = create_category_expense_attribute('Unmapped Category')
 
     handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='Unmapped Category')
 
@@ -1651,13 +1614,13 @@ def test_handle_category_changes_for_expense_adds_to_existing_error(
     db,
     create_temp_workspace,
     add_export_settings,
-    mocker
+    mocker,
+    create_category_expense_attribute,
+    create_category_mapping_error
 ):
     """
     Test handle_category_changes_for_expense adds to existing error for new category
     """
-    from fyle_accounting_mappings.models import ExpenseAttribute
-
     workspace_id = 1
 
     category_expense_data = data['category_change_expense']
@@ -1673,23 +1636,8 @@ def test_handle_category_changes_for_expense_adds_to_existing_error(
     )
     accounting_export.expenses.add(expense)
 
-    new_category_attribute = ExpenseAttribute.objects.create(
-        workspace_id=workspace_id,
-        attribute_type='CATEGORY',
-        value='Category With Error',
-        display_name='Category With Error',
-        active=True
-    )
-
-    existing_error = Error.objects.create(
-        workspace_id=workspace_id,
-        type='CATEGORY_MAPPING',
-        expense_attribute=new_category_attribute,
-        mapping_error_accounting_export_ids=[888],
-        error_title='Category With Error',
-        error_detail='Category mapping is missing',
-        is_resolved=False
-    )
+    new_category_attribute = create_category_expense_attribute('Category With Error')
+    existing_error = create_category_mapping_error(new_category_attribute, mapping_error_accounting_export_ids=[888])
 
     handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='Category With Error')
 
