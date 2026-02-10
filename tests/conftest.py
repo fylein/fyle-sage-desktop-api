@@ -1013,38 +1013,43 @@ def mock_rabbitmq():
 
 
 @pytest.fixture()
-def create_category_expense_attribute(create_temp_workspace):
+def add_category_expense_attribute(create_temp_workspace):
     """
-    Factory fixture to create category expense attributes with custom values
+    Fixture to create category expense attributes
     """
-    def _create(value, workspace_id=1, display_name=None, source_id=None) -> ExpenseAttribute:
-        return ExpenseAttribute.objects.create(
-            workspace_id=workspace_id,
-            attribute_type='CATEGORY',
-            value=value,
-            display_name=display_name or value,
-            source_id=source_id or f'{value.lower().replace(" ", "_")}_1',
-            active=True
-        )
-    return _create
+    ExpenseAttribute.objects.create(
+        workspace_id=1,
+        attribute_type='CATEGORY',
+        value='Test Category',
+        display_name='Test Category',
+        source_id='test_category_1',
+        active=True
+    )
+    ExpenseAttribute.objects.create(
+        workspace_id=1,
+        attribute_type='CATEGORY',
+        value='Test Category 2',
+        display_name='Test Category 2',
+        source_id='test_category_2',
+        active=True
+    )
 
 
 @pytest.fixture()
-def create_category_mapping_error(create_temp_workspace):
+def add_category_mapping_error(add_category_expense_attribute):
     """
-    Factory fixture to create category mapping errors with custom configurations
+    Fixture to create a category mapping error linked to the first category expense attribute
     """
-    def _create(expense_attribute, mapping_error_accounting_export_ids=None, workspace_id=1, is_resolved=False) -> Error:
-        return Error.objects.create(
-            workspace_id=workspace_id,
-            type='CATEGORY_MAPPING',
-            expense_attribute=expense_attribute,
-            mapping_error_accounting_export_ids=mapping_error_accounting_export_ids or [],
-            error_title=expense_attribute.value,
-            error_detail=f'{expense_attribute.display_name} mapping is missing',
-            is_resolved=is_resolved
-        )
-    return _create
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=1, attribute_type='CATEGORY').first()
+    Error.objects.create(
+        workspace_id=1,
+        type='CATEGORY_MAPPING',
+        expense_attribute=expense_attribute,
+        mapping_error_accounting_export_ids=[],
+        error_title=expense_attribute.value,
+        error_detail=f'{expense_attribute.display_name} mapping is missing',
+        is_resolved=False
+    )
 
 
 @pytest.fixture

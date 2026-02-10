@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from django.urls import reverse
 from django_q.models import Schedule
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+from fyle_accounting_mappings.models import ExpenseAttribute
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 
@@ -1505,8 +1506,7 @@ def test_handle_category_changes_for_expense_removes_old_error(
     create_temp_workspace,
     add_export_settings,
     mocker,
-    create_category_expense_attribute,
-    create_category_mapping_error
+    add_category_mapping_error
 ):
     """
     Test handle_category_changes_for_expense removes expense from old category mapping error
@@ -1526,10 +1526,12 @@ def test_handle_category_changes_for_expense_removes_old_error(
     )
     accounting_export.expenses.add(expense)
 
-    old_category_attribute = create_category_expense_attribute('Old Category')
-    error = create_category_mapping_error(old_category_attribute, mapping_error_accounting_export_ids=[accounting_export.id, 999])
+    old_category_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+    error = Error.objects.filter(workspace_id=workspace_id, type='CATEGORY_MAPPING').first()
+    error.mapping_error_accounting_export_ids = [accounting_export.id, 999]
+    error.save(update_fields=['mapping_error_accounting_export_ids'])
 
-    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='New Category')
+    handle_category_changes_for_expense(expense=expense, old_category=old_category_attribute.value, new_category='New Category')
 
     error.refresh_from_db()
     assert accounting_export.id not in error.mapping_error_accounting_export_ids
@@ -1541,8 +1543,7 @@ def test_handle_category_changes_for_expense_deletes_empty_error(
     create_temp_workspace,
     add_export_settings,
     mocker,
-    create_category_expense_attribute,
-    create_category_mapping_error
+    add_category_mapping_error
 ):
     """
     Test handle_category_changes_for_expense deletes error when no accounting exports remain
@@ -1562,11 +1563,13 @@ def test_handle_category_changes_for_expense_deletes_empty_error(
     )
     accounting_export.expenses.add(expense)
 
-    old_category_attribute = create_category_expense_attribute('Old Category')
-    error = create_category_mapping_error(old_category_attribute, mapping_error_accounting_export_ids=[accounting_export.id])
+    old_category_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+    error = Error.objects.filter(workspace_id=workspace_id, type='CATEGORY_MAPPING').first()
+    error.mapping_error_accounting_export_ids = [accounting_export.id]
+    error.save(update_fields=['mapping_error_accounting_export_ids'])
     error_id = error.id
 
-    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='New Category')
+    handle_category_changes_for_expense(expense=expense, old_category=old_category_attribute.value, new_category='New Category')
 
     assert not Error.objects.filter(id=error_id).exists()
 
@@ -1576,7 +1579,7 @@ def test_handle_category_changes_for_expense_creates_new_error(
     create_temp_workspace,
     add_export_settings,
     mocker,
-    create_category_expense_attribute
+    add_category_expense_attribute
 ):
     """
     Test handle_category_changes_for_expense creates error for unmapped new category
@@ -1596,9 +1599,9 @@ def test_handle_category_changes_for_expense_creates_new_error(
     )
     accounting_export.expenses.add(expense)
 
-    new_category_attribute = create_category_expense_attribute('Unmapped Category')
+    new_category_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
 
-    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='Unmapped Category')
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category=new_category_attribute.value)
 
     new_error = Error.objects.filter(
         workspace_id=workspace_id,
@@ -1607,7 +1610,7 @@ def test_handle_category_changes_for_expense_creates_new_error(
     ).first()
     assert new_error is not None
     assert accounting_export.id in new_error.mapping_error_accounting_export_ids
-    assert new_error.error_title == 'Unmapped Category'
+    assert new_error.error_title == new_category_attribute.value
 
 
 def test_handle_category_changes_for_expense_adds_to_existing_error(
@@ -1615,8 +1618,7 @@ def test_handle_category_changes_for_expense_adds_to_existing_error(
     create_temp_workspace,
     add_export_settings,
     mocker,
-    create_category_expense_attribute,
-    create_category_mapping_error
+    add_category_mapping_error
 ):
     """
     Test handle_category_changes_for_expense adds to existing error for new category
@@ -1636,10 +1638,12 @@ def test_handle_category_changes_for_expense_adds_to_existing_error(
     )
     accounting_export.expenses.add(expense)
 
-    new_category_attribute = create_category_expense_attribute('Category With Error')
-    existing_error = create_category_mapping_error(new_category_attribute, mapping_error_accounting_export_ids=[888])
+    new_category_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+    existing_error = Error.objects.filter(workspace_id=workspace_id, type='CATEGORY_MAPPING').first()
+    existing_error.mapping_error_accounting_export_ids = [888]
+    existing_error.save(update_fields=['mapping_error_accounting_export_ids'])
 
-    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='Category With Error')
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category=new_category_attribute.value)
 
     existing_error.refresh_from_db()
     assert accounting_export.id in existing_error.mapping_error_accounting_export_ids
@@ -1669,7 +1673,7 @@ def test_handle_category_changes_for_expense_no_old_category_error(
     create_temp_workspace,
     add_export_settings,
     mocker,
-    create_category_expense_attribute
+    add_category_expense_attribute
 ):
     """
     Test handle_category_changes_for_expense handles case when old category has no error
@@ -1689,9 +1693,9 @@ def test_handle_category_changes_for_expense_no_old_category_error(
     )
     accounting_export.expenses.add(expense)
 
-    create_category_expense_attribute('Old Category')
+    old_category_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
 
-    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='New Category')
+    handle_category_changes_for_expense(expense=expense, old_category=old_category_attribute.value, new_category='New Category')
 
 
 def test_update_non_exported_expenses_with_category_change(
