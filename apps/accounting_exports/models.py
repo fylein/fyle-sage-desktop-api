@@ -5,8 +5,8 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Count
-from fyle_accounting_mappings.models import ExpenseAttribute
 from fyle_accounting_library.fyle_platform.constants import IMPORTED_FROM_CHOICES
+from fyle_accounting_mappings.models import ExpenseAttribute
 
 from apps.fyle.models import Expense
 from apps.workspaces.models import BaseForeignWorkspaceModel, BaseModel, ExportSetting
@@ -34,6 +34,19 @@ EXPORT_MODE_CHOICES = (
     ('MANUAL', 'MANUAL'),
     ('AUTO', 'AUTO')
 )
+
+
+def get_error_type_mapping(attribute_type: str) -> str:
+    """
+    Get error type mapping for attribute type
+    :param attribute_type: Attribute type
+    :return: Error type
+    """
+    error_type_mapping = {
+        'CATEGORY': 'CATEGORY_MAPPING',
+        'EMPLOYEE': 'EMPLOYEE_MAPPING'
+    }
+    return error_type_mapping.get(attribute_type, 'CATEGORY_MAPPING')
 
 
 def _group_expenses(expenses: List[Expense], export_setting: ExportSetting, fund_source: str):
@@ -169,17 +182,57 @@ class Error(BaseForeignWorkspaceModel):
         ExpenseAttribute, on_delete=models.PROTECT,
         null=True, help_text='Reference to Expense Attribute'
     )
+    mapping_error_accounting_export_ids = ArrayField(
+        base_field=models.IntegerField(),
+        default=list,
+        help_text='List of accounting export IDs with mapping errors'
+    )
     repetition_count = models.IntegerField(help_text='repetition count for the error', default=0)
     is_resolved = BooleanFalseField(help_text='Is resolved')
     error_title = StringNotNullField(help_text='Error title')
     error_detail = TextNotNullField(help_text='Error detail')
 
-    def increase_repetition_count_by_one(self):
+    def increase_repetition_count_by_one(self, is_created: bool = False):
         """
         Increase the repetition count by 1.
         """
-        self.repetition_count += 1
-        self.save()
+        if not is_created:
+            self.repetition_count += 1
+            self.save()
+
+    @staticmethod
+    def get_or_create_error_with_accounting_export(accounting_export, expense_attribute):
+        """
+        Get or create an Error record and ensure that the accounting_export.id
+        is present in mapping_error_accounting_export_ids (without duplicates).
+        """
+        error_type = get_error_type_mapping(expense_attribute.attribute_type)
+        error_detail = f"{expense_attribute.display_name} mapping is missing"
+
+        error, created = Error.objects.get_or_create(
+            workspace_id=accounting_export.workspace_id,
+            expense_attribute=expense_attribute,
+            defaults={
+                'type': error_type,
+                'error_detail': error_detail,
+                'error_title': expense_attribute.value,
+                'is_resolved': False,
+                'mapping_error_accounting_export_ids': [accounting_export.id],
+            }
+        )
+
+        if not created:
+            update_fields = []
+            if accounting_export.id not in error.mapping_error_accounting_export_ids:
+                error.mapping_error_accounting_export_ids = list(set(error.mapping_error_accounting_export_ids + [accounting_export.id]))
+                update_fields.append('mapping_error_accounting_export_ids')
+            if error.is_resolved:
+                error.is_resolved = False
+                update_fields.append('is_resolved')
+            if update_fields:
+                error.save(update_fields=update_fields)
+
+        return error, created
 
     class Meta:
         db_table = 'errors'
