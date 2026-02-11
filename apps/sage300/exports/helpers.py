@@ -1,10 +1,17 @@
 import itertools
+import logging
 from datetime import datetime, timedelta, timezone
 
+from fyle.platform.exceptions import InternalServerError, InvalidTokenError
 from fyle_accounting_mappings.models import CategoryMapping, EmployeeMapping, ExpenseAttribute, Mapping
+from fyle_integrations_platform_connector import PlatformConnector
 
 from apps.accounting_exports.models import AccountingExport, Error
+from apps.workspaces.models import FyleCredential
 from sage_desktop_api.exceptions import BulkError
+
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def get_employee_expense_attribute(value: str, workspace_id: int) -> ExpenseAttribute:
@@ -18,6 +25,41 @@ def get_employee_expense_attribute(value: str, workspace_id: int) -> ExpenseAttr
         value=value,
         workspace_id=workspace_id
     ).first()
+
+
+def sync_inactive_employee(accounting_export: AccountingExport) -> ExpenseAttribute:
+    try:
+        fyle_credentials = FyleCredential.objects.get(workspace_id=accounting_export.workspace_id)
+        platform = PlatformConnector(fyle_credentials=fyle_credentials)
+
+        fyle_employee = platform.employees.get_employee_by_email(accounting_export.description.get('employee_email'))
+        if len(fyle_employee):
+            fyle_employee = fyle_employee[0]
+            attribute = {
+                'attribute_type': 'EMPLOYEE',
+                'display_name': 'Employee',
+                'value': fyle_employee['user']['email'],
+                'source_id': fyle_employee['id'],
+                'active': True if fyle_employee['is_enabled'] and fyle_employee['has_accepted_invite'] else False,
+                'detail': {
+                    'user_id': fyle_employee['user_id'],
+                    'employee_code': fyle_employee['code'],
+                    'full_name': fyle_employee['user']['full_name'],
+                    'location': fyle_employee['location'],
+                    'department': fyle_employee['department']['name'] if fyle_employee['department'] else None,
+                    'department_id': fyle_employee['department_id'],
+                    'department_code': fyle_employee['department']['code'] if fyle_employee['department'] else None
+                }
+            }
+            ExpenseAttribute.bulk_create_or_update_expense_attributes([attribute], 'EMPLOYEE', accounting_export.workspace_id, True)
+            return get_employee_expense_attribute(accounting_export.description.get('employee_email'), accounting_export.workspace_id)
+    except (InvalidTokenError, InternalServerError) as e:
+        logger.info('Invalid Fyle refresh token or internal server error for workspace %s: %s', accounting_export.workspace_id, str(e))
+        return None
+
+    except Exception as e:
+        logger.error('Error syncing inactive employee for workspace_id %s: %s', accounting_export.workspace_id, str(e))
+        return None
 
 
 def get_filtered_mapping(
@@ -93,6 +135,9 @@ def __validate_employee_mapping(accounting_export: AccountingExport):
     employee_email = accounting_export.description.get('employee_email')
 
     employee_attribute = get_employee_expense_attribute(employee_email, accounting_export.workspace_id)
+
+    if not employee_attribute:
+        employee_attribute = sync_inactive_employee(accounting_export)
 
     mapping = EmployeeMapping.objects.filter(
         source_employee=employee_attribute,
