@@ -83,7 +83,6 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
                     args=[workspace_id]
                 ))
 
-    # Run TaskChainRunner OUTSIDE transaction.atomic() to prevent rollback issues
     if len(chain_tasks) > 0:
         fyle_webhook_sync_enabled = FeatureConfig.get_feature_config(workspace_id=workspace_id, key='fyle_webhook_sync_enabled')
 
