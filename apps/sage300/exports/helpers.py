@@ -109,7 +109,7 @@ def __validate_employee_mapping(accounting_export: AccountingExport):
         })
 
         if employee_attribute:
-            Error.objects.update_or_create(
+            error, _ = Error.objects.update_or_create(
                 workspace_id=accounting_export.workspace_id,
                 expense_attribute=employee_attribute,
                 defaults={
@@ -119,6 +119,8 @@ def __validate_employee_mapping(accounting_export: AccountingExport):
                     'is_resolved': False
                 }
             )
+
+            error.increase_repetition_count_by_one()
 
         row = row + 1
 

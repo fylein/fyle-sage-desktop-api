@@ -4,10 +4,10 @@ from datetime import datetime, timedelta
 from django.db.models import Q
 from django.utils import timezone
 from django_q.models import OrmQ, Schedule
-from django_q.tasks import async_task
 
 from apps.accounting_exports.models import AccountingExport
 from apps.workspaces.models import Workspace
+from workers.helpers import publish_to_rabbitmq, RoutingKeyEnum, WorkerActionEnum
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -74,4 +74,11 @@ def re_export_stuck_exports():
         schedule = schedules.filter(args=str(workspace.id)).first()
         if not schedule or schedule.next_run >= timezone.now() + timedelta(minutes=60):
             logger.info('Scheduling re-export for workspace %s', workspace.id)
-            async_task('apps.workspaces.tasks.run_import_export', workspace.id)
+            payload = {
+                'workspace_id': workspace.id,
+                'action': WorkerActionEnum.BACKGROUND_SCHEDULE_EXPORT.value,
+                'data': {
+                    'workspace_id': workspace.id
+                }
+            }
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)

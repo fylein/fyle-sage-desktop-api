@@ -19,6 +19,7 @@ from apps.sage300.exports.helpers import resolve_errors_for_exported_accounting_
 from apps.sage300.utils import SageDesktopConnector
 from apps.workspaces.models import FeatureConfig, FyleCredential, Sage300Credential
 from sage_desktop_sdk.exceptions import InvalidUserCredentials
+from workers.helpers import publish_to_rabbitmq, RoutingKeyEnum, WorkerActionEnum
 
 logger = logging.getLogger(__name__)
 logger.level = logging.INFO
@@ -82,6 +83,7 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
                     args=[workspace_id]
                 ))
 
+    # Run TaskChainRunner OUTSIDE transaction.atomic() to prevent rollback issues
     if len(chain_tasks) > 0:
         fyle_webhook_sync_enabled = FeatureConfig.get_feature_config(workspace_id=workspace_id, key='fyle_webhook_sync_enabled')
 
@@ -121,6 +123,22 @@ def create_schedule_for_polling(workspace_id: int):
 
 def poll_operation_status(workspace_id: int):
     """
+    Publish poll operation status to RabbitMQ for processing in P1 export worker.
+    :param workspace_id: workspace id
+    :return: None
+    """
+    payload = {
+        'workspace_id': workspace_id,
+        'action': WorkerActionEnum.POLL_DIRECT_COST_STATUS.value,
+        'data': {
+            'workspace_id': workspace_id
+        }
+    }
+    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
+
+
+def trigger_poll_operation_status(workspace_id: int):
+    """
     Polls the operation status for queued accounting exports and updates their status accordingly.
 
     Args:
@@ -130,7 +148,7 @@ def poll_operation_status(workspace_id: int):
         None
     """
 
-    # Retrieve all queued accounting exports for purchase invoices
+    # Retrieve all queued accounting exports for direct costs
     accounting_exports = AccountingExport.objects.filter(status='EXPORT_QUEUED', workspace_id=workspace_id, type='DIRECT_COST').all()
 
     if not accounting_exports:
