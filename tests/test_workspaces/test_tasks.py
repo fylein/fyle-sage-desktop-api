@@ -11,7 +11,7 @@ from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredentia
 from apps.workspaces.signals import run_post_save_export_settings_triggers, run_pre_save_export_settings_triggers
 from apps.workspaces.models import Workspace
 from apps.workspaces.tasks import (
-    async_create_admin_subcriptions,
+    async_create_admin_subscriptions,
     async_update_fyle_credentials,
     export_to_sage300,
     run_import_export,
@@ -324,7 +324,7 @@ def test_export_to_sage300(
     assert accounting_summary.last_exported_at is not None
 
 
-def test_async_create_admin_subcriptions(
+def test_async_create_admin_subscriptions(
     db,
     mocker,
     create_temp_workspace,
@@ -335,7 +335,7 @@ def test_async_create_admin_subcriptions(
         return_value={}
     )
     workspace_id = 1
-    async_create_admin_subcriptions(workspace_id=workspace_id)
+    async_create_admin_subscriptions(workspace_id=workspace_id)
 
     expected_payload = {
         'data': {
@@ -359,12 +359,12 @@ def test_async_create_admin_subcriptions(
 
     mock_api.side_effect = Exception('Error')
     try:
-        async_create_admin_subcriptions(workspace_id=workspace_id)
+        async_create_admin_subscriptions(workspace_id=workspace_id)
     except Exception as e:
         assert str(e) == 'Error'
 
 
-def test_async_create_admin_subcriptions_2(
+def test_async_create_admin_subscriptions_2(
     db,
     mocker,
     create_temp_workspace,

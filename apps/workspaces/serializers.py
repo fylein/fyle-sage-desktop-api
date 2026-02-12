@@ -5,7 +5,6 @@ from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Q
 from django.utils.module_loading import import_string
-from django_q.tasks import async_task
 from fyle_accounting_mappings.models import ExpenseAttribute, FyleSyncTimestamp, MappingSetting
 from fyle_rest_auth.helpers import get_fyle_admin
 from fyle_rest_auth.models import AuthToken
@@ -28,6 +27,7 @@ from apps.workspaces.models import (
 from apps.workspaces.triggers import AdvancedSettingsTriggers, ImportSettingsTrigger
 from apps.workspaces.tasks import sync_org_settings
 from fyle_integrations_imports.models import ImportLog
+from workers.helpers import publish_to_rabbitmq, RoutingKeyEnum, WorkerActionEnum
 from sage_desktop_api.utils import assert_valid
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 
@@ -482,7 +482,16 @@ class AdvancedSettingSerializer(serializers.ModelSerializer):
         if workspace.onboarding_state == 'ADVANCED_SETTINGS':
             workspace.onboarding_state = 'COMPLETE'
             workspace.save()
-            async_task('apps.workspaces.tasks.async_create_admin_subcriptions', workspace.id)
+
+            payload = {
+                'workspace_id': workspace.id,
+                'action': WorkerActionEnum.CREATE_ADMIN_SUBSCRIPTION.value,
+                'data': {
+                    'workspace_id': workspace.id
+                }
+            }
+            publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.UTILITY.value)
+
             AdvancedSettingsTriggers.post_to_integration_settings(workspace_id, True)
 
         return advanced_setting
