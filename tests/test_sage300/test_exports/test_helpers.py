@@ -159,7 +159,7 @@ def test_validate_employee_mapping_3(
     assert bulk_errors[0]['message'] == 'Employee Mapping not found'
 
     assert error.type == 'EMPLOYEE_MAPPING'
-    assert error.error_detail == 'Employee mapping is missing'
+    assert 'mapping is missing' in error.error_detail
     assert error.is_resolved == False
 
 
@@ -220,6 +220,7 @@ def test_validate_category_mapping_2(
     expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id).first()
     expense_attribute.attribute_type = 'CATEGORY'
     expense_attribute.value = 'Accounts Payable'
+    expense_attribute.display_name = 'Accounts Payable'
     expense_attribute.save()
 
     category_mapping = CategoryMapping.objects.filter(workspace_id=workspace_id).first()
@@ -235,7 +236,7 @@ def test_validate_category_mapping_2(
     assert bulk_errors[0]['message'] == 'Category Mapping not found'
 
     assert error.type == 'CATEGORY_MAPPING'
-    assert error.error_detail == 'Category mapping is missing'
+    assert 'mapping is missing' in error.error_detail
     assert error.is_resolved == False
 
 
@@ -391,7 +392,9 @@ def test_sync_inactive_employee(
     add_accounting_export_expenses,
     create_expense_attribute
 ):
-    """Covers lines 33, 35-38, 54-55 (happy path) and 57-58 (InvalidTokenError)"""
+    """
+    Test sync_inactive_employee
+    """
     workspace_id = 1
     accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
     accounting_export.description = {'employee_email': 'inactive_user@fyle.in'}
@@ -421,7 +424,7 @@ def test_sync_inactive_employee(
     assert result is not None
     assert result.value == 'inactive_user@fyle.in'
 
-    # InvalidTokenError path (lines 57-58)
+    # InvalidTokenError path
     mocker.patch('apps.sage300.exports.helpers.FyleCredential.objects.get', side_effect=InvalidTokenError('Invalid token'))
     assert sync_inactive_employee(accounting_export) is None
 

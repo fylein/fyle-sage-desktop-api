@@ -469,3 +469,113 @@ def test_check_accounting_export_with_rabbitmq_worker_direct_cost(
 
     mock_check_interval.assert_called_once_with(workspace_id)
     mock_task_executor.assert_called()
+
+
+def test_skip_export_with_mapping_errors_purchase_invoice(
+    db,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_accounting_export_expenses,
+    add_feature_config,
+    mocker
+):
+    """
+    Test that exports are skipped when accounting export has mapping errors
+    """
+    from fyle_accounting_mappings.models import ExpenseAttribute
+
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id, type='PURCHASE_INVOICE').first()
+    accounting_export.status = 'READY'
+    accounting_export.exported_at = None
+    accounting_export.save()
+
+    category_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='CATEGORY',
+        value='Unmapped Category',
+        display_name='Unmapped Category',
+        active=True
+    )
+
+    Error.objects.create(
+        workspace_id=workspace_id,
+        type='CATEGORY_MAPPING',
+        expense_attribute=category_attribute,
+        mapping_error_accounting_export_ids=[accounting_export.id],
+        error_title='Unmapped Category',
+        error_detail='Category mapping is missing',
+        is_resolved=False
+    )
+
+    mocker.patch('apps.sage300.exports.purchase_invoice.tasks.create_purchase_invoice')
+    mocker.patch('apps.fyle.helpers.sync_dimensions')
+    mock_chain_run = mocker.patch('django_q.tasks.Chain.run')
+
+    check_accounting_export_and_start_import(
+        accounting_export.workspace_id,
+        [accounting_export.id],
+        False,
+        0,
+        ExpenseImportSourceEnum.DIRECT_EXPORT
+    )
+
+    accounting_export.refresh_from_db()
+    assert accounting_export.status == 'READY'
+    mock_chain_run.assert_not_called()
+
+
+def test_skip_export_with_mapping_errors_direct_cost(
+    db,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_accounting_export_expenses,
+    add_feature_config,
+    mocker
+):
+    """
+    Test that exports are skipped when accounting export has mapping errors
+    """
+    from fyle_accounting_mappings.models import ExpenseAttribute
+
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id, type='DIRECT_COST').first()
+    accounting_export.status = 'READY'
+    accounting_export.exported_at = None
+    accounting_export.save()
+
+    category_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='CATEGORY',
+        value='Unmapped Category DC',
+        display_name='Unmapped Category DC',
+        active=True
+    )
+
+    Error.objects.create(
+        workspace_id=workspace_id,
+        type='CATEGORY_MAPPING',
+        expense_attribute=category_attribute,
+        mapping_error_accounting_export_ids=[accounting_export.id],
+        error_title='Unmapped Category DC',
+        error_detail='Category mapping is missing',
+        is_resolved=False
+    )
+
+    mocker.patch('apps.sage300.exports.direct_cost.tasks.create_direct_cost')
+    mocker.patch('apps.fyle.helpers.sync_dimensions')
+    mock_chain_run = mocker.patch('django_q.tasks.Chain.run')
+
+    check_accounting_export_and_start_import_direct_cost(
+        accounting_export.workspace_id,
+        [accounting_export.id],
+        False,
+        0,
+        ExpenseImportSourceEnum.DIRECT_EXPORT
+    )
+
+    accounting_export.refresh_from_db()
+    assert accounting_export.status == 'READY'
+    mock_chain_run.assert_not_called()

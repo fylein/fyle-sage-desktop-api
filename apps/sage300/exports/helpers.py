@@ -109,18 +109,8 @@ def __validate_category_mapping(accounting_export: AccountingExport):
             })
 
             if category_attribute:
-                error, _ = Error.objects.update_or_create(
-                    workspace_id=accounting_export.workspace_id,
-                    expense_attribute=category_attribute,
-                    defaults={
-                        'type': 'CATEGORY_MAPPING',
-                        'error_title': category_attribute.value,
-                        'error_detail': 'Category mapping is missing',
-                        'is_resolved': False
-                    }
-                )
-
-                error.increase_repetition_count_by_one()
+                error, created = Error.get_or_create_error_with_accounting_export(accounting_export, category_attribute)
+                error.increase_repetition_count_by_one(created)
 
         row = row + 1
 
@@ -154,16 +144,8 @@ def __validate_employee_mapping(accounting_export: AccountingExport):
         })
 
         if employee_attribute:
-            Error.objects.update_or_create(
-                workspace_id=accounting_export.workspace_id,
-                expense_attribute=employee_attribute,
-                defaults={
-                    'type': 'EMPLOYEE_MAPPING',
-                    'error_title': employee_attribute.value,
-                    'error_detail': 'Employee mapping is missing',
-                    'is_resolved': False
-                }
-            )
+            error, created = Error.get_or_create_error_with_accounting_export(accounting_export, employee_attribute)
+            error.increase_repetition_count_by_one(created)
 
         row = row + 1
 
@@ -195,12 +177,33 @@ def resolve_errors_for_exported_accounting_export(accounting_export: AccountingE
     Error.objects.filter(workspace_id=accounting_export.workspace_id, accounting_export=accounting_export, is_resolved=False).update(is_resolved=True, updated_at=datetime.now(timezone.utc))
 
 
-def validate_failing_export(is_auto_export: bool, interval_hours: int, error: Error):
+def validate_failing_export(is_auto_export: bool, interval_hours: int, error: Error, accounting_export: AccountingExport = None) -> tuple:
     """
     Validate failing export
     :param is_auto_export: Is auto export
     :param interval_hours: Interval hours
     :param error: Error
+    :param accounting_export: AccountingExport object
+    :return: Tuple of (should_skip, is_mapping_error)
     """
-    # If auto export is enabled and interval hours is set and error repetition count is greater than 100, export only once a day
-    return is_auto_export and interval_hours and error and error.repetition_count > 100 and datetime.now().replace(tzinfo=timezone.utc) - error.updated_at <= timedelta(hours=24)
+    should_skip_repetition = (
+        is_auto_export
+        and interval_hours
+        and error
+        and error.repetition_count > 100
+        and datetime.now().replace(tzinfo=timezone.utc) - error.updated_at <= timedelta(hours=24)
+    )
+
+    if should_skip_repetition:
+        return True, False
+
+    if accounting_export:
+        mapping_error = Error.objects.filter(
+            workspace_id=accounting_export.workspace_id,
+            mapping_error_accounting_export_ids__contains=[accounting_export.id],
+            is_resolved=False
+        ).first()
+        if mapping_error:
+            return True, True
+
+    return False, False

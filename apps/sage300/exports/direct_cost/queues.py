@@ -46,9 +46,12 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
         chain_tasks = []
         for index, accounting_export_group in enumerate(accounting_exports):
             error = errors.filter(workspace_id=workspace_id, accounting_export=accounting_export_group, is_resolved=False).first()
-            skip_export = validate_failing_export(is_auto_export, interval_hours, error)
+            skip_export, is_mapping_error = validate_failing_export(is_auto_export, interval_hours, error, accounting_export_group)
             if skip_export:
-                logger.info('Skipping expense group %s as it has %s errors for workspace_id %s', accounting_export_group.id, error.repetition_count, workspace_id)
+                if is_mapping_error:
+                    logger.info('Skipping accounting export %s as it has mapping errors for workspace_id %s', accounting_export_group.id, workspace_id)
+                else:
+                    logger.info('Skipping expense group %s as it has %s errors for workspace_id %s', accounting_export_group.id, error.repetition_count, workspace_id)
                 continue
 
             accounting_export, _ = AccountingExport.objects.update_or_create(
