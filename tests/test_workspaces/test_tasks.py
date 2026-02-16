@@ -15,9 +15,11 @@ from apps.workspaces.tasks import (
     async_update_fyle_credentials,
     export_to_sage300,
     run_import_export,
+    trigger_run_import_export,
     schedule_sync,
     sync_org_settings,
 )
+from workers.helpers import WorkerActionEnum, RoutingKeyEnum
 
 
 def test_async_update_fyle_credentials(
@@ -38,14 +40,33 @@ def test_async_update_fyle_credentials(
     assert fyle_credentials.refresh_token == "refresh_token"
 
 
-def test_run_import_export_with_reimbursable_expense(
+def test_run_import_export_publishes_to_rabbitmq(
+    db,
+    mocker,
+    create_temp_workspace
+):
+    """Test that run_import_export publishes the correct payload to RabbitMQ"""
+    workspace_id = 1
+    mock_publish = mocker.patch('apps.workspaces.tasks.publish_to_rabbitmq')
+
+    run_import_export(workspace_id=workspace_id)
+
+    mock_publish.assert_called_once()
+    call_kwargs = mock_publish.call_args[1]
+    assert call_kwargs['payload']['workspace_id'] == workspace_id
+    assert call_kwargs['payload']['action'] == WorkerActionEnum.RUN_SYNC_SCHEDULE.value
+    assert call_kwargs['routing_key'] == RoutingKeyEnum.EXPORT_P1.value
+
+
+def test_trigger_run_import_export_with_reimbursable_expense(
     db,
     mocker,
     create_temp_workspace,
     add_fyle_credentials,
     add_export_settings,
     add_advanced_settings,
-    add_accounting_export_expenses
+    add_accounting_export_expenses,
+    add_feature_config
 ):
     workspace_id = 1
     accounting_summary, created = AccountingExportSummary.objects.get_or_create(
@@ -76,7 +97,7 @@ def test_run_import_export_with_reimbursable_expense(
         'trigger_export'
     )
 
-    run_import_export(workspace_id=workspace_id)
+    trigger_run_import_export(workspace_id=workspace_id)
 
     accounting_summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
 
@@ -92,14 +113,15 @@ def test_run_import_export_with_reimbursable_expense(
     assert accounting_summary.last_exported_at is not None
 
 
-def test_run_import_export_with_credit_card_expense(
+def test_trigger_run_import_export_with_credit_card_expense(
     db,
     mocker,
     create_temp_workspace,
     add_fyle_credentials,
     add_export_settings,
     add_advanced_settings,
-    add_accounting_export_expenses
+    add_accounting_export_expenses,
+    add_feature_config
 ):
     workspace_id = 1
     accounting_summary, created = AccountingExportSummary.objects.get_or_create(
@@ -133,7 +155,7 @@ def test_run_import_export_with_credit_card_expense(
         'trigger_export'
     )
 
-    run_import_export(workspace_id=workspace_id)
+    trigger_run_import_export(workspace_id=workspace_id)
 
     accounting_summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
 
@@ -265,7 +287,8 @@ def test_export_to_sage300(
     add_fyle_credentials,
     add_export_settings,
     add_advanced_settings,
-    add_accounting_export_expenses
+    add_accounting_export_expenses,
+    add_feature_config
 ):
     workspace_id = 1
     AccountingExportSummary.objects.create(workspace_id=workspace_id)
@@ -388,7 +411,7 @@ def test_async_create_admin_subscriptions_2(
     reverse('webhook-callback', kwargs={'workspace_id': workspace_id})
 
 
-def test_run_import_export_exclude_failed_exports_reimbursable(
+def test_trigger_run_import_export_exclude_failed_exports_reimbursable(
     db,
     mocker,
     create_temp_workspace,
@@ -396,10 +419,11 @@ def test_run_import_export_exclude_failed_exports_reimbursable(
     add_export_settings,
     add_advanced_settings,
     add_accounting_export_summary,
-    add_basic_retry_exports
+    add_basic_retry_exports,
+    add_feature_config
 ):
     """
-    Test run_import_export excludes failed reimbursable exports with re_attempt_export=False
+    Test trigger_run_import_export excludes failed reimbursable exports with re_attempt_export=False
     """
     workspace_id = 1
 
@@ -418,7 +442,7 @@ def test_run_import_export_exclude_failed_exports_reimbursable(
     mock_export_instance = mocker.Mock()
     mocker.patch('apps.workspaces.tasks.ExportPurchaseInvoice', return_value=mock_export_instance)
 
-    run_import_export(workspace_id=workspace_id)
+    trigger_run_import_export(workspace_id=workspace_id)
 
     mock_export_instance.trigger_export.assert_called_once()
     call_args = mock_export_instance.trigger_export.call_args
@@ -437,7 +461,7 @@ def test_run_import_export_exclude_failed_exports_reimbursable(
     assert failed_export.re_attempt_export == False
 
 
-def test_run_import_export_exclude_failed_exports_credit_card(
+def test_trigger_run_import_export_exclude_failed_exports_credit_card(
     db,
     mocker,
     create_temp_workspace,
@@ -445,10 +469,11 @@ def test_run_import_export_exclude_failed_exports_credit_card(
     add_export_settings,
     add_advanced_settings,
     add_accounting_export_summary,
-    add_basic_credit_card_exports
+    add_basic_credit_card_exports,
+    add_feature_config
 ):
     """
-    Test run_import_export excludes failed credit card exports with re_attempt_export=False
+    Test trigger_run_import_export excludes failed credit card exports with re_attempt_export=False
     """
     workspace_id = 1
 
@@ -475,7 +500,7 @@ def test_run_import_export_exclude_failed_exports_credit_card(
     mock_export_instance = mocker.Mock()
     mocker.patch('apps.workspaces.tasks.ExportDirectCost', return_value=mock_export_instance)
 
-    run_import_export(workspace_id=workspace_id)
+    trigger_run_import_export(workspace_id=workspace_id)
 
     mock_export_instance.trigger_export.assert_called_once()
     call_args = mock_export_instance.trigger_export.call_args
@@ -495,7 +520,7 @@ def test_run_import_export_exclude_failed_exports_credit_card(
     assert failed_export.re_attempt_export == False
 
 
-def test_run_import_export_no_exports_when_all_failed_no_retry(
+def test_trigger_run_import_export_no_exports_when_all_failed_no_retry(
     db,
     mocker,
     create_temp_workspace,
@@ -503,10 +528,11 @@ def test_run_import_export_no_exports_when_all_failed_no_retry(
     add_export_settings,
     add_advanced_settings,
     add_accounting_export_summary,
-    add_basic_retry_exports
+    add_basic_retry_exports,
+    add_feature_config
 ):
     """
-    Test run_import_export doesn't trigger export when all exports are failed with re_attempt_export=False
+    Test trigger_run_import_export doesn't trigger export when all exports are failed with re_attempt_export=False
     """
     workspace_id = 1
 
@@ -535,7 +561,7 @@ def test_run_import_export_no_exports_when_all_failed_no_retry(
     mock_export_instance = mocker.Mock()
     mocker.patch('apps.workspaces.tasks.ExportPurchaseInvoice', return_value=mock_export_instance)
 
-    run_import_export(workspace_id=workspace_id)
+    trigger_run_import_export(workspace_id=workspace_id)
 
     mock_export_instance.trigger_export.assert_not_called()
 
@@ -547,7 +573,7 @@ def test_run_import_export_no_exports_when_all_failed_no_retry(
     assert failed_export.re_attempt_export == False
 
 
-def test_run_import_export_include_failed_exports_with_retry_flag(
+def test_trigger_run_import_export_include_failed_exports_with_retry_flag(
     db,
     mocker,
     create_temp_workspace,
@@ -555,10 +581,11 @@ def test_run_import_export_include_failed_exports_with_retry_flag(
     add_export_settings,
     add_advanced_settings,
     add_accounting_export_summary,
-    add_basic_retry_exports
+    add_basic_retry_exports,
+    add_feature_config
 ):
     """
-    Test run_import_export includes failed exports when re_attempt_export=True
+    Test trigger_run_import_export includes failed exports when re_attempt_export=True
     """
     workspace_id = 1
 
@@ -583,7 +610,7 @@ def test_run_import_export_include_failed_exports_with_retry_flag(
     mock_export_instance = mocker.Mock()
     mocker.patch('apps.workspaces.tasks.ExportPurchaseInvoice', return_value=mock_export_instance)
 
-    run_import_export(workspace_id=workspace_id)
+    trigger_run_import_export(workspace_id=workspace_id)
 
     mock_export_instance.trigger_export.assert_called_once()
     call_args = mock_export_instance.trigger_export.call_args

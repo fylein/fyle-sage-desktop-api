@@ -1,139 +1,68 @@
 import pytest
-from datetime import datetime, timezone
 
-from apps.sage300.actions import sync_dimensions, refresh_sage_dimension, get_sage_connector
-from apps.workspaces.models import Workspace
-from workers.helpers import WorkerActionEnum, RoutingKeyEnum
+from apps.accounting_exports.models import AccountingExport, AccountingExportSummary
+from apps.sage300.actions import update_accounting_export_summary
 
 
 @pytest.mark.django_db
-def test_get_sage_connector(db, add_sage300_creds):
-    """Test get_sage_connector returns SageDesktopConnector"""
-    from apps.sage300.utils import SageDesktopConnector
-
-    connector = get_sage_connector(workspace_id=1)
-
-    assert isinstance(connector, SageDesktopConnector)
-    assert connector.workspace_id == 1
-
-
-@pytest.mark.django_db
-def test_sync_dimensions_first_sync(db, mocker, add_sage300_creds, create_temp_workspace):
-    """Test sync_dimensions performs full sync when destination_synced_at is None"""
-    workspace_id = 1
-
-    # Ensure destination_synced_at is None
-    workspace = Workspace.objects.get(id=workspace_id)
-    workspace.destination_synced_at = None
-    workspace.save()
-
-    # Mock connector methods
-    mock_connector = mocker.Mock()
-    mocker.patch('apps.sage300.actions.get_sage_connector', return_value=mock_connector)
-
-    sync_dimensions(workspace_id)
-
-    # Verify all sync methods were called
-    mock_connector.sync_accounts.assert_called_once()
-    mock_connector.sync_vendors.assert_called_once()
-    mock_connector.sync_jobs.assert_called_once()
-    mock_connector.sync_commitments.assert_called_once()
-    mock_connector.sync_standard_categories.assert_called_once()
-    mock_connector.sync_standard_cost_codes.assert_called_once()
-
-    # Verify workspace was updated
-    workspace.refresh_from_db()
-    assert workspace.destination_synced_at is not None
-
-
-@pytest.mark.django_db
-def test_sync_dimensions_recent_sync(db, mocker, add_sage300_creds, create_temp_workspace):
-    """Test sync_dimensions skips sync when recently synced (within 1 day)"""
-    workspace_id = 1
-
-    # Set destination_synced_at to recent time
-    workspace = Workspace.objects.get(id=workspace_id)
-    workspace.destination_synced_at = datetime.now(timezone.utc)
-    workspace.save()
-
-    # Mock connector methods
-    mock_connector = mocker.Mock()
-    mocker.patch('apps.sage300.actions.get_sage_connector', return_value=mock_connector)
-
-    sync_dimensions(workspace_id)
-
-    # Verify sync methods were NOT called (recent sync)
-    mock_connector.sync_accounts.assert_not_called()
-    mock_connector.sync_vendors.assert_not_called()
-
-
-@pytest.mark.django_db
-def test_sync_dimensions_old_sync(db, mocker, add_sage300_creds, create_temp_workspace):
-    """Test sync_dimensions performs sync when last sync was > 1 day ago"""
-    from datetime import timedelta
-
-    workspace_id = 1
-
-    # Set destination_synced_at to 2 days ago
-    workspace = Workspace.objects.get(id=workspace_id)
-    workspace.destination_synced_at = datetime.now(timezone.utc) - timedelta(days=2)
-    workspace.save()
-
-    # Mock connector methods
-    mock_connector = mocker.Mock()
-    mocker.patch('apps.sage300.actions.get_sage_connector', return_value=mock_connector)
-
-    sync_dimensions(workspace_id)
-
-    # Verify all sync methods were called
-    mock_connector.sync_accounts.assert_called_once()
-    mock_connector.sync_vendors.assert_called_once()
-    mock_connector.sync_jobs.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_refresh_sage_dimension_with_export_settings(
+def test_update_accounting_export_summary(
     db,
-    mocker,
-    add_sage300_creds,
     create_temp_workspace,
-    add_export_settings
+    add_accounting_export_expenses,
+    add_accounting_export_summary
 ):
-    """Test refresh_sage_dimension publishes to RabbitMQ when export settings exist"""
+    """Test update_accounting_export_summary updates counts correctly"""
     workspace_id = 1
 
-    mock_connector = mocker.Mock()
-    mocker.patch('apps.sage300.actions.get_sage_connector', return_value=mock_connector)
+    # Clear last_exported_at so all COMPLETE exports are counted
+    AccountingExportSummary.objects.filter(workspace_id=workspace_id).update(last_exported_at=None)
 
-    mock_publish = mocker.patch('apps.sage300.actions.publish_to_rabbitmq')
+    AccountingExport.objects.filter(
+        workspace_id=workspace_id, type='PURCHASE_INVOICE'
+    ).update(status='FAILED')
 
-    refresh_sage_dimension(workspace_id)
+    AccountingExport.objects.filter(
+        workspace_id=workspace_id, type='DIRECT_COST'
+    ).update(status='COMPLETE')
 
-    # Verify RabbitMQ publish was called
-    assert mock_publish.called
-    call_args = mock_publish.call_args
-    payload = call_args[1]['payload']
-    assert payload['action'] == WorkerActionEnum.IMPORT_DIMENSIONS_TO_FYLE.value
-    assert payload['workspace_id'] == workspace_id
-    assert call_args[1]['routing_key'] == RoutingKeyEnum.IMPORT.value
+    result = update_accounting_export_summary(workspace_id)
+
+    assert result.failed_accounting_export_count == 1
+    assert result.successful_accounting_export_count == 1
+    assert result.total_accounting_export_count == 2
 
 
 @pytest.mark.django_db
-def test_refresh_sage_dimension_without_export_settings(
+def test_update_accounting_export_summary_excludes_fetch_types(
     db,
-    mocker,
-    add_sage300_creds,
+    create_temp_workspace,
+    add_accounting_export_expenses,
+    add_accounting_export_summary
+):
+    """Test that FETCHING_* types are excluded from counts"""
+    workspace_id = 1
+
+    AccountingExport.objects.filter(
+        workspace_id=workspace_id
+    ).exclude(
+        type__in=['FETCHING_REIMBURSABLE_EXPENSES', 'FETCHING_CREDIT_CARD_EXPENSES']
+    ).delete()
+
+    AccountingExport.objects.filter(
+        workspace_id=workspace_id, type__startswith='FETCHING'
+    ).update(status='FAILED')
+
+    result = update_accounting_export_summary(workspace_id)
+
+    assert result.failed_accounting_export_count == 0
+    assert result.total_accounting_export_count == 0
+
+
+@pytest.mark.django_db
+def test_update_accounting_export_summary_not_found(
+    db,
     create_temp_workspace
 ):
-    """Test refresh_sage_dimension does not publish when no export settings"""
-    workspace_id = 1
-
-    mock_connector = mocker.Mock()
-    mocker.patch('apps.sage300.actions.get_sage_connector', return_value=mock_connector)
-
-    mock_publish = mocker.patch('apps.sage300.actions.publish_to_rabbitmq')
-
-    refresh_sage_dimension(workspace_id)
-
-    # Verify RabbitMQ publish was NOT called (no export settings)
-    mock_publish.assert_not_called()
+    """Test update_accounting_export_summary raises when summary doesn't exist"""
+    with pytest.raises(AccountingExportSummary.DoesNotExist):
+        update_accounting_export_summary(workspace_id=1)

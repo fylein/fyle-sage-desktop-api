@@ -1004,7 +1004,7 @@ def mock_rabbitmq():
     """
     Mock RabbitMQ
     """
-    with mock.patch('apps.fyle.queue.RabbitMQConnection.get_instance') as mock_rabbitmq:
+    with mock.patch('workers.helpers.RabbitMQConnection.get_instance') as mock_rabbitmq:
         mock_instance = mock.Mock()
         mock_instance.publish.return_value = None
         mock_instance.connect.return_value = None
