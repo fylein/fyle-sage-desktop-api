@@ -114,7 +114,6 @@ def check_accounting_export_and_start_import(workspace_id: int, accounting_expor
 def create_schedule_for_polling(workspace_id: int):
     """
     Create Schedule for running operation status polling
-    Only creates schedule if there are exports in EXPORT_QUEUED status
 
     Returns:
         None
