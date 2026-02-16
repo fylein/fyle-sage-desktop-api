@@ -11,6 +11,7 @@ from apps.fyle.tasks import (
     re_run_skip_export_rule,
     update_non_exported_expenses,
     import_expenses,
+    import_credit_card_expenses,
     handle_expense_fund_source_change,
     handle_fund_source_changes_for_expense_ids,
     handle_org_setting_updated,
@@ -1548,3 +1549,39 @@ def test_handle_org_setting_updated_overwrites_existing(db, create_temp_workspac
 
     workspace.refresh_from_db()
     assert workspace.org_settings == fyle_fixtures['org_settings']['expected_org_settings_updated']
+
+
+def test_import_credit_card_expenses(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_accounting_export_expenses,
+    add_export_settings,
+    add_fyle_credentials,
+    add_advanced_settings,
+    add_accounting_export_summary
+):
+    """
+    Test import_credit_card_expenses calls import_expenses with CCC params
+    """
+    workspace_id = 1
+
+    mocker.patch(
+        'fyle_integrations_platform_connector.apis.Expenses.get',
+        return_value=data['expenses']
+    )
+
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+
+    import_credit_card_expenses(
+        workspace_id=workspace_id,
+        accounting_export=accounting_export,
+        imported_from=ExpenseImportSourceEnum.DIRECT_EXPORT
+    )
+
+    # Also test with integer ID (RabbitMQ compatibility path)
+    import_credit_card_expenses(
+        workspace_id=workspace_id,
+        accounting_export=accounting_export.id,
+        imported_from=ExpenseImportSourceEnum.DIRECT_EXPORT
+    )

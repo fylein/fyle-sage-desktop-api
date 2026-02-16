@@ -1,6 +1,7 @@
 import pytest
 from fyle_accounting_mappings.models import MappingSetting
 
+from apps.fyle.models import DependentFieldSetting
 from apps.mappings.queue import initiate_import_to_fyle
 from apps.workspaces.models import ImportSetting
 
@@ -103,3 +104,73 @@ def test_initiate_import_to_fyle_with_vendors(
     assert task_settings['import_vendors_as_merchants'] is not None
     assert task_settings['import_vendors_as_merchants']['destination_field'] == 'VENDOR'
     assert task_settings['import_vendors_as_merchants']['prepend_code_to_name'] is True
+
+
+@pytest.mark.django_db
+def test_initiate_import_to_fyle_no_import_settings(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_sage300_creds
+):
+    """Test initiate_import_to_fyle returns early when no import settings exist"""
+    workspace_id = 1
+
+    mock_chain = mocker.patch('apps.mappings.queue.chain_import_fields_to_fyle')
+
+    initiate_import_to_fyle(workspace_id)
+
+    mock_chain.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_initiate_import_to_fyle_with_dependent_fields(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_sage300_creds,
+    add_import_settings,
+    add_dependent_field_setting
+):
+    """Test initiate_import_to_fyle sets custom_properties and import_dependent_fields when dependent fields enabled"""
+    workspace_id = 1
+
+    mock_chain = mocker.patch('apps.mappings.queue.chain_import_fields_to_fyle')
+    mocker.patch('apps.mappings.queue.is_job_sync_allowed', return_value=True)
+
+    MappingSetting.objects.create(
+        workspace_id=workspace_id,
+        source_field='PROJECT',
+        destination_field='JOB',
+        import_to_fyle=True
+    )
+
+    initiate_import_to_fyle(workspace_id)
+
+    mock_chain.assert_called_once()
+    task_settings = mock_chain.call_args[0][1]
+
+    assert task_settings['custom_properties'] is not None
+    assert task_settings['custom_properties']['func'] == 'apps.mappings.tasks.sync_dependent_fields'
+    assert task_settings['import_dependent_fields'] is not None
+    assert task_settings['import_dependent_fields']['func'] == 'apps.sage300.dependent_fields.import_dependent_fields_to_fyle'
+
+
+@pytest.mark.django_db
+def test_initiate_import_to_fyle_exception(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_sage300_creds,
+    add_import_settings
+):
+    """Test initiate_import_to_fyle raises exception when chain_import_fields_to_fyle fails"""
+    workspace_id = 1
+
+    mocker.patch(
+        'apps.mappings.queue.chain_import_fields_to_fyle',
+        side_effect=Exception('Test error')
+    )
+
+    with pytest.raises(Exception, match='Test error'):
+        initiate_import_to_fyle(workspace_id)

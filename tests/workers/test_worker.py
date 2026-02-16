@@ -187,6 +187,33 @@ def test_handle_exception_with_retry(export_worker):
             assert failed_event.payload['retry_count'] == 1
 
 
+@pytest.mark.django_db
+def test_handle_exception_max_retries(export_worker):
+    """Test exception handling when max retries is reached"""
+    routing_key = 'test.routing.key.max'
+    payload_dict = {
+        'data': {'some': 'data'},
+        'workspace_id': 456,
+        'retry_count': 1
+    }
+
+    with patch.object(export_worker.qconnector, 'publish') as mock_publish:
+        with patch.object(export_worker.qconnector, 'reject_message') as mock_reject:
+            try:
+                raise Exception('Max retry error')
+            except Exception as error:
+                export_worker.handle_exception(routing_key, payload_dict, error, 2)
+
+            # Should NOT publish retry message (max retries reached)
+            mock_publish.assert_not_called()
+            # Should reject the message without requeue
+            mock_reject.assert_called_once_with(2, requeue=False)
+
+            # Verify retry_count was incremented to 2
+            failed_event = FailedEvent.objects.get(routing_key=routing_key, workspace_id=456)
+            assert failed_event.payload['retry_count'] == 2
+
+
 def test_shutdown(export_worker):
     """Test worker shutdown"""
     with patch.object(export_worker, 'shutdown', wraps=export_worker.shutdown) as mock_shutdown:

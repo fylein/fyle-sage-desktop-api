@@ -347,6 +347,51 @@ def test_export_to_sage300(
     assert accounting_summary.last_exported_at is not None
 
 
+def test_export_to_sage300_with_ccc(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_fyle_credentials,
+    add_export_settings,
+    add_advanced_settings,
+    add_accounting_export_expenses,
+    add_feature_config
+):
+    """Test export_to_sage300 with credit card expense export type set"""
+    workspace_id = 1
+    AccountingExportSummary.objects.create(workspace_id=workspace_id)
+
+    advanced_settings = AdvancedSetting.objects.get(workspace_id=workspace_id)
+    advanced_settings.interval_hours = 5
+    advanced_settings.save()
+
+    export_settings = ExportSetting.objects.get(workspace_id=workspace_id)
+    export_settings.reimbursable_expenses_export_type = None
+    export_settings.credit_card_expense_export_type = 'DIRECT_COST'
+    export_settings.save()
+
+    # Set up CCC accounting export as unexported
+    ccc_export = AccountingExport.objects.filter(
+        workspace_id=workspace_id, fund_source='CCC'
+    ).first()
+    ccc_export.status = 'EXPORT_READY'
+    ccc_export.exported_at = None
+    ccc_export.save()
+
+    # Patch at the import location in workspaces.tasks
+    mock_export_direct_cost = mocker.patch('apps.workspaces.tasks.ExportDirectCost')
+    mock_export_purchase_invoice = mocker.patch('apps.workspaces.tasks.ExportPurchaseInvoice')
+
+    export_to_sage300(workspace_id=workspace_id, triggered_by=ExpenseImportSourceEnum.DIRECT_EXPORT)
+
+    mock_export_direct_cost.return_value.trigger_export.assert_called_once()
+    call_kwargs = mock_export_direct_cost.return_value.trigger_export.call_args[1]
+    assert call_kwargs['run_in_rabbitmq_worker'] is True
+
+    accounting_summary = AccountingExportSummary.objects.get(workspace_id=workspace_id)
+    assert accounting_summary.last_exported_at is not None
+
+
 def test_async_create_admin_subscriptions(
     db,
     mocker,
