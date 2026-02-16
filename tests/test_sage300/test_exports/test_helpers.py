@@ -1,18 +1,16 @@
+from fyle.platform.exceptions import InvalidTokenError
+from fyle_accounting_mappings.models import CategoryMapping, EmployeeMapping, ExpenseAttribute, Mapping
+
+from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.exports.helpers import (
-    get_employee_expense_attribute,
-    get_filtered_mapping,
     __validate_category_mapping,
     __validate_employee_mapping,
+    get_employee_expense_attribute,
+    get_filtered_mapping,
+    resolve_errors_for_exported_accounting_export,
+    sync_inactive_employee,
     validate_accounting_export,
-    resolve_errors_for_exported_accounting_export
 )
-from fyle_accounting_mappings.models import (
-    CategoryMapping,
-    EmployeeMapping,
-    ExpenseAttribute,
-    Mapping
-)
-from apps.accounting_exports.models import AccountingExport, Error
 from sage_desktop_api.exceptions import BulkError
 
 
@@ -275,3 +273,158 @@ def test_validate_accounting_export(
         )
     except BulkError as e:
         assert str(e) == "'Mappings are missing'"
+
+
+def test_get_or_create_error_with_accounting_export_creates_new(
+    db,
+    create_temp_workspace,
+    add_accounting_export_expenses,
+    add_category_expense_attribute
+):
+    """
+    Test get_or_create_error_with_accounting_export creates a new error
+    """
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+
+    error, created = Error.get_or_create_error_with_accounting_export(
+        accounting_export=accounting_export,
+        expense_attribute=expense_attribute
+    )
+
+    assert created is True
+    assert error.type == 'CATEGORY_MAPPING'
+    assert error.error_detail == f'{expense_attribute.display_name} mapping is missing'
+    assert error.error_title == expense_attribute.value
+    assert error.is_resolved is False
+    assert accounting_export.id in error.mapping_error_accounting_export_ids
+
+
+def test_get_or_create_error_with_accounting_export_adds_export_id(
+    db,
+    create_temp_workspace,
+    add_accounting_export_expenses,
+    add_category_mapping_error
+):
+    """
+    Test get_or_create_error_with_accounting_export adds accounting_export.id to existing error
+    """
+    workspace_id = 1
+    accounting_exports = AccountingExport.objects.filter(workspace_id=workspace_id)[:2]
+    first_export = accounting_exports[0]
+    second_export = accounting_exports[1]
+
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+    error = Error.objects.filter(workspace_id=workspace_id, type='CATEGORY_MAPPING').first()
+    error.mapping_error_accounting_export_ids = [first_export.id]
+    error.save(update_fields=['mapping_error_accounting_export_ids'])
+
+    error, created = Error.get_or_create_error_with_accounting_export(
+        accounting_export=second_export,
+        expense_attribute=expense_attribute
+    )
+
+    assert created is False
+    assert first_export.id in error.mapping_error_accounting_export_ids
+    assert second_export.id in error.mapping_error_accounting_export_ids
+
+
+def test_get_or_create_error_with_accounting_export_reopens_resolved(
+    db,
+    create_temp_workspace,
+    add_accounting_export_expenses,
+    add_category_mapping_error
+):
+    """
+    Test get_or_create_error_with_accounting_export reopens a resolved error
+    """
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+    error = Error.objects.filter(workspace_id=workspace_id, type='CATEGORY_MAPPING').first()
+    error.is_resolved = True
+    error.save(update_fields=['is_resolved'])
+
+    error, created = Error.get_or_create_error_with_accounting_export(
+        accounting_export=accounting_export,
+        expense_attribute=expense_attribute
+    )
+
+    assert created is False
+    assert error.is_resolved is False
+    assert accounting_export.id in error.mapping_error_accounting_export_ids
+
+
+def test_get_or_create_error_with_accounting_export_no_update_needed(
+    db,
+    create_temp_workspace,
+    add_accounting_export_expenses,
+    add_category_mapping_error
+):
+    """
+    Test get_or_create_error_with_accounting_export when no update is needed
+    """
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+
+    expense_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+    error = Error.objects.filter(workspace_id=workspace_id, type='CATEGORY_MAPPING').first()
+    error.mapping_error_accounting_export_ids = [accounting_export.id]
+    error.save(update_fields=['mapping_error_accounting_export_ids'])
+
+    error, created = Error.get_or_create_error_with_accounting_export(
+        accounting_export=accounting_export,
+        expense_attribute=expense_attribute
+    )
+
+    assert created is False
+    assert error.is_resolved is False
+    assert error.mapping_error_accounting_export_ids == [accounting_export.id]
+
+
+def test_sync_inactive_employee(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_accounting_export_expenses,
+    create_expense_attribute
+):
+    """Covers lines 33, 35-38, 54-55 (happy path) and 57-58 (InvalidTokenError)"""
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+    accounting_export.description = {'employee_email': 'inactive_user@fyle.in'}
+    accounting_export.save()
+
+    mock_fyle_employee = [{
+        'id': 'ouHnjo38H12',
+        'user_id': 'usabcdef1234',
+        'user': {'email': 'inactive_user@fyle.in', 'full_name': 'Inactive User'},
+        'code': 'EMP001',
+        'is_enabled': False,
+        'has_accepted_invite': True,
+        'location': 'San Francisco',
+        'department': {'name': 'Engineering', 'code': 'ENG'},
+        'department_id': 'deptHnjo38H12'
+    }]
+
+    mocker.patch('apps.sage300.exports.helpers.FyleCredential.objects.get')
+    mock_platform = mocker.patch('apps.sage300.exports.helpers.PlatformConnector')
+    mock_platform.return_value.employees.get_employee_by_email.return_value = mock_fyle_employee
+    mocker.patch('apps.sage300.exports.helpers.ExpenseAttribute.bulk_create_or_update_expense_attributes')
+
+    ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', value='inactive_user@fyle.in', workspace_id=workspace_id).delete()
+    ExpenseAttribute.objects.create(workspace_id=workspace_id, attribute_type='EMPLOYEE', display_name='Employee', value='inactive_user@fyle.in', source_id='ouHnjo38H12', active=False)
+
+    result = sync_inactive_employee(accounting_export)
+    assert result is not None
+    assert result.value == 'inactive_user@fyle.in'
+
+    # InvalidTokenError path (lines 57-58)
+    mocker.patch('apps.sage300.exports.helpers.FyleCredential.objects.get', side_effect=InvalidTokenError('Invalid token'))
+    assert sync_inactive_employee(accounting_export) is None
+
+    # Generic exception path
+    mocker.patch('apps.sage300.exports.helpers.FyleCredential.objects.get', side_effect=ValueError('bad value'))
+    assert sync_inactive_employee(accounting_export) is None
