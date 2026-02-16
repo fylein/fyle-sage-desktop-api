@@ -1,14 +1,13 @@
 from fyle.platform.exceptions import InvalidTokenError
+from fyle_accounting_library.fyle_platform.actions import get_employee_expense_attribute, sync_inactive_employee
 from fyle_accounting_mappings.models import CategoryMapping, EmployeeMapping, ExpenseAttribute, Mapping
 
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.exports.helpers import (
     __validate_category_mapping,
     __validate_employee_mapping,
-    get_employee_expense_attribute,
     get_filtered_mapping,
     resolve_errors_for_exported_accounting_export,
-    sync_inactive_employee,
     validate_accounting_export,
 )
 from sage_desktop_api.exceptions import BulkError
@@ -412,22 +411,22 @@ def test_sync_inactive_employee(
         'department_id': 'deptHnjo38H12'
     }]
 
-    mocker.patch('apps.sage300.exports.helpers.FyleCredential.objects.get')
-    mock_platform = mocker.patch('apps.sage300.exports.helpers.PlatformConnector')
+    mocker.patch('fyle_accounting_library.fyle_platform.actions.FyleCredential.objects.get')
+    mock_platform = mocker.patch('fyle_accounting_library.fyle_platform.actions.PlatformConnector')
     mock_platform.return_value.employees.get_employee_by_email.return_value = mock_fyle_employee
-    mocker.patch('apps.sage300.exports.helpers.ExpenseAttribute.bulk_create_or_update_expense_attributes')
+    mocker.patch('fyle_accounting_library.fyle_platform.actions.ExpenseAttribute.bulk_create_or_update_expense_attributes')
 
     ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', value='inactive_user@fyle.in', workspace_id=workspace_id).delete()
     ExpenseAttribute.objects.create(workspace_id=workspace_id, attribute_type='EMPLOYEE', display_name='Employee', value='inactive_user@fyle.in', source_id='ouHnjo38H12', active=False)
 
-    result = sync_inactive_employee(accounting_export)
+    result = sync_inactive_employee('inactive_user@fyle.in', workspace_id)
     assert result is not None
     assert result.value == 'inactive_user@fyle.in'
 
     # InvalidTokenError path
-    mocker.patch('apps.sage300.exports.helpers.FyleCredential.objects.get', side_effect=InvalidTokenError('Invalid token'))
-    assert sync_inactive_employee(accounting_export) is None
+    mocker.patch('fyle_accounting_library.fyle_platform.actions.FyleCredential.objects.get', side_effect=InvalidTokenError('Invalid token'))
+    assert sync_inactive_employee('inactive_user@fyle.in', workspace_id) is None
 
     # Generic exception path
-    mocker.patch('apps.sage300.exports.helpers.FyleCredential.objects.get', side_effect=ValueError('bad value'))
-    assert sync_inactive_employee(accounting_export) is None
+    mocker.patch('fyle_accounting_library.fyle_platform.actions.FyleCredential.objects.get', side_effect=ValueError('bad value'))
+    assert sync_inactive_employee('inactive_user@fyle.in', workspace_id) is None
