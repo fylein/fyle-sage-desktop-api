@@ -380,7 +380,7 @@ def test_export_to_sage300_with_ccc(
 
     # Patch at the import location in workspaces.tasks
     mock_export_direct_cost = mocker.patch('apps.workspaces.tasks.ExportDirectCost')
-    mock_export_purchase_invoice = mocker.patch('apps.workspaces.tasks.ExportPurchaseInvoice')
+    mocker.patch('apps.workspaces.tasks.ExportPurchaseInvoice')
 
     export_to_sage300(workspace_id=workspace_id, triggered_by=ExpenseImportSourceEnum.DIRECT_EXPORT)
 

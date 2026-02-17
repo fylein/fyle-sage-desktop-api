@@ -1,7 +1,6 @@
 import pytest
 from fyle_accounting_mappings.models import MappingSetting
 
-from apps.fyle.models import DependentFieldSetting
 from apps.mappings.queue import initiate_import_to_fyle
 from apps.workspaces.models import ImportSetting
 
