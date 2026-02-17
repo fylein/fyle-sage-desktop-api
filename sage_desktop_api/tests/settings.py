@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'django_q',
     'fyle_rest_auth',
     'fyle_accounting_mappings',
+    'fyle_accounting_library.fyle_platform',
+    'fyle_accounting_library.rabbitmq',
     'fyle_integrations_imports',
 
 

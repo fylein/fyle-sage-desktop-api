@@ -47,5 +47,8 @@ FYLE_EXPENSE_SYSTEM_FIELDS = [
 SYNC_METHODS = {
     'ACCOUNT': 'accounts',
     'VENDOR': 'vendors',
-    'JOB': 'jobs'
+    'JOB': 'jobs',
+    'COMMITMENT': 'commitments',
+    'STANDARD_CATEGORY': 'standard_categories',
+    'STANDARD_COST_CODE': 'standard_cost_codes'
 }

@@ -1,6 +1,5 @@
-from apps.workspaces.models import ImportSetting
-from fyle_accounting_mappings.models import MappingSetting
 from apps.mappings.tasks import sync_dependent_fields, sync_sage300_attributes, construct_tasks_and_chain_import_fields_to_fyle
+from workers.helpers import WorkerActionEnum, RoutingKeyEnum
 
 
 def test_sync_sage300_attributes(
@@ -50,27 +49,19 @@ def test_sync_dependent_fields(db, mocker, create_temp_workspace, add_sage300_cr
     assert mocked_sync_fn.call_count == 3
 
 
-def test_construct_tasks_and_chain_import_fields_to_fyle(db, mocker, create_temp_workspace, add_import_settings, add_sage300_creds, add_dependent_field_setting):
+def test_construct_tasks_and_chain_import_fields_to_fyle(db, mocker, create_temp_workspace):
     """
-    Test construct tasks and chain import fields to fyle
+    Test construct tasks and chain import fields to fyle publishes to RabbitMQ
     """
     workspace_id = 1
-    ImportSetting.objects.filter(workspace_id=workspace_id).update(
-        import_categories=True,
-        import_vendors_as_merchants=True
-    )
-    MappingSetting.objects.create(
-        source_field='PROJECT',
-        destination_field='JOB',
-        workspace_id=workspace_id,
-        import_to_fyle=True,
-        is_custom=False
-    )
 
-    mock_chain_fn = mocker.patch(
-        'apps.mappings.tasks.chain_import_fields_to_fyle'
-    )
+    mock_publish = mocker.patch('apps.mappings.tasks.publish_to_rabbitmq')
 
     construct_tasks_and_chain_import_fields_to_fyle(workspace_id=workspace_id)
 
-    assert mock_chain_fn.call_count == 1
+    mock_publish.assert_called_once()
+    call_kwargs = mock_publish.call_args[1]
+    assert call_kwargs['payload']['workspace_id'] == workspace_id
+    assert call_kwargs['payload']['action'] == WorkerActionEnum.IMPORT_DIMENSIONS_TO_FYLE.value
+    assert call_kwargs['payload']['data']['workspace_id'] == workspace_id
+    assert call_kwargs['routing_key'] == RoutingKeyEnum.IMPORT.value

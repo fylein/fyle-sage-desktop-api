@@ -788,3 +788,42 @@ def test_feature_config_get_feature_config(db, mocker, create_temp_workspace, ad
     assert result == False
     cache_mock.get.assert_called_once()
     cache_mock.set.assert_not_called()
+
+
+def test_advanced_settings_onboarding_complete(api_client, test_connection, mocker):
+    """
+    Test that advanced settings creation publishes to RabbitMQ when onboarding completes
+    """
+    url = reverse('workspaces')
+    api_client.credentials(HTTP_AUTHORIZATION='Bearer {}'.format(test_connection.access_token))
+    response = api_client.post(url)
+    workspace_id = response.data['id']
+
+    # Set onboarding state to ADVANCED_SETTINGS
+    workspace = Workspace.objects.get(id=workspace_id)
+    workspace.onboarding_state = 'ADVANCED_SETTINGS'
+    workspace.save()
+
+    mock_publish = mocker.patch('apps.workspaces.serializers.publish_to_rabbitmq')
+    mocker.patch('apps.workspaces.serializers.AdvancedSettingsTriggers.post_to_integration_settings')
+
+    url = reverse('advanced-settings', kwargs={'workspace_id': workspace_id})
+    payload = {
+        'expense_memo_structure': ['employee_email', 'merchant', 'purpose', 'report_number'],
+        'schedule_is_enabled': False,
+        'interval_hours': 12,
+        'emails_selected': json.dumps([]),
+        'auto_create_vendor': True,
+        'sync_sage_300_to_fyle_payments': False
+    }
+
+    response = api_client.post(url, payload)
+    assert response.status_code == 201
+
+    workspace.refresh_from_db()
+    assert workspace.onboarding_state == 'COMPLETE'
+
+    mock_publish.assert_called_once()
+    call_kwargs = mock_publish.call_args[1]
+    assert call_kwargs['payload']['workspace_id'] == workspace_id
+    assert call_kwargs['payload']['action'] == 'UTILITY.CREATE_ADMIN_SUBSCRIPTION'
