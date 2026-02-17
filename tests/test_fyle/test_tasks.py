@@ -1,32 +1,35 @@
 from datetime import datetime, timezone
+
 from django.urls import reverse
 from django_q.models import Schedule
-from rest_framework.exceptions import ValidationError
-from rest_framework import status
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
+from fyle_accounting_mappings.models import ExpenseAttribute
+from rest_framework import status
+from rest_framework.exceptions import ValidationError
 
-from .fixtures import fixtures as data
-from tests.test_fyle.fixtures import fixtures as fyle_fixtures
+from apps.accounting_exports.models import AccountingExport, AccountingExportSummary, Error
+from apps.fyle.models import Expense, ExpenseFilter
 from apps.fyle.tasks import (
-    re_run_skip_export_rule,
-    update_non_exported_expenses,
-    import_expenses,
-    import_credit_card_expenses,
+    _delete_accounting_exports_for_report,
+    _handle_expense_ejected_from_report,
+    cleanup_scheduled_task,
+    delete_accounting_export_and_related_data,
+    handle_category_changes_for_expense,
     handle_expense_fund_source_change,
+    handle_expense_report_change,
     handle_fund_source_changes_for_expense_ids,
     handle_org_setting_updated,
+    import_credit_card_expenses,
+    import_expenses,
     process_accounting_export_for_fund_source_update,
-    delete_accounting_export_and_related_data,
+    re_run_skip_export_rule,
     recreate_accounting_exports,
     schedule_task_for_expense_group_fund_source_change,
-    cleanup_scheduled_task,
-    handle_expense_report_change,
-    _delete_accounting_exports_for_report,
-    _handle_expense_ejected_from_report
+    update_non_exported_expenses,
 )
-from apps.fyle.models import Expense, ExpenseFilter
-from apps.workspaces.models import Workspace, ExportSetting
-from apps.accounting_exports.models import AccountingExport, AccountingExportSummary, Error
+from apps.workspaces.models import ExportSetting, Workspace
+from tests.test_fyle.fixtures import fixtures as data
+from tests.test_fyle.fixtures import fixtures as fyle_fixtures
 
 
 def test_update_non_exported_expenses(db, create_temp_workspace, mocker, api_client):
@@ -775,7 +778,11 @@ def test_update_non_exported_expenses_fund_source_change(
 
     # Mock FyleExpenses constructor to avoid complex field requirements
     mock_fyle_expenses = mocker.patch('apps.fyle.tasks.FyleExpenses.construct_expense_object')
-    mock_fyle_expenses.return_value = [{'source_account_type': updated_expense_data['source_account_type']}]
+    mock_fyle_expenses.return_value = [{
+        'source_account_type': updated_expense_data['source_account_type'],
+        'category': updated_expense_data['category'],
+        'sub_category': updated_expense_data.get('sub_category')
+    }]
 
     # Mock Expense.create_expense_objects to simulate expense update
     mock_create_expense = mocker.patch('apps.fyle.tasks.Expense.create_expense_objects')
@@ -1493,6 +1500,474 @@ def test_handle_expense_report_change_ejected_from_exported_export(db, add_expen
 
     accounting_export.refresh_from_db()
     assert expense in accounting_export.expenses.all()
+
+
+def test_handle_category_changes_for_expense_removes_old_error(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker,
+    add_category_mapping_error
+):
+    """
+    Test handle_category_changes_for_expense removes expense from old category mapping error
+    """
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source='PERSONAL',
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense)
+
+    old_category_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+    error = Error.objects.filter(workspace_id=workspace_id, type='CATEGORY_MAPPING').first()
+    error.mapping_error_accounting_export_ids = [accounting_export.id, 999]
+    error.save(update_fields=['mapping_error_accounting_export_ids'])
+
+    handle_category_changes_for_expense(expense=expense, old_category=old_category_attribute.value, new_category='New Category')
+
+    error.refresh_from_db()
+    assert accounting_export.id not in error.mapping_error_accounting_export_ids
+    assert 999 in error.mapping_error_accounting_export_ids
+
+
+def test_handle_category_changes_for_expense_deletes_empty_error(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker,
+    add_category_mapping_error
+):
+    """
+    Test handle_category_changes_for_expense deletes error when no accounting exports remain
+    """
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source='PERSONAL',
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense)
+
+    old_category_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+    error = Error.objects.filter(workspace_id=workspace_id, type='CATEGORY_MAPPING').first()
+    error.mapping_error_accounting_export_ids = [accounting_export.id]
+    error.save(update_fields=['mapping_error_accounting_export_ids'])
+    error_id = error.id
+
+    handle_category_changes_for_expense(expense=expense, old_category=old_category_attribute.value, new_category='New Category')
+
+    assert not Error.objects.filter(id=error_id).exists()
+
+
+def test_handle_category_changes_for_expense_creates_new_error(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker,
+    add_category_expense_attribute
+):
+    """
+    Test handle_category_changes_for_expense creates error for unmapped new category
+    """
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source='PERSONAL',
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense)
+
+    new_category_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category=new_category_attribute.value)
+
+    new_error = Error.objects.filter(
+        workspace_id=workspace_id,
+        type='CATEGORY_MAPPING',
+        expense_attribute=new_category_attribute
+    ).first()
+    assert new_error is not None
+    assert accounting_export.id in new_error.mapping_error_accounting_export_ids
+    assert new_error.error_title == new_category_attribute.value
+
+
+def test_handle_category_changes_for_expense_adds_to_existing_error(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker,
+    add_category_mapping_error
+):
+    """
+    Test handle_category_changes_for_expense adds to existing error for new category
+    """
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source='PERSONAL',
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense)
+
+    new_category_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+    existing_error = Error.objects.filter(workspace_id=workspace_id, type='CATEGORY_MAPPING').first()
+    existing_error.mapping_error_accounting_export_ids = [888]
+    existing_error.save(update_fields=['mapping_error_accounting_export_ids'])
+
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category=new_category_attribute.value)
+
+    existing_error.refresh_from_db()
+    assert accounting_export.id in existing_error.mapping_error_accounting_export_ids
+    assert 888 in existing_error.mapping_error_accounting_export_ids
+
+
+def test_handle_category_changes_for_expense_no_accounting_export(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test handle_category_changes_for_expense returns early when no accounting_export exists
+    """
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    handle_category_changes_for_expense(expense=expense, old_category='Old Category', new_category='New Category')
+
+
+def test_handle_category_changes_for_expense_no_old_category_error(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker,
+    add_category_expense_attribute
+):
+    """
+    Test handle_category_changes_for_expense handles case when old category has no error
+    """
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source='PERSONAL',
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense)
+
+    old_category_attribute = ExpenseAttribute.objects.filter(workspace_id=workspace_id, attribute_type='CATEGORY').first()
+
+    handle_category_changes_for_expense(expense=expense, old_category=old_category_attribute.value, new_category='New Category')
+
+
+def test_update_non_exported_expenses_with_category_change(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test update_non_exported_expenses detects and handles category change
+    """
+    workspace_id = 1
+
+    original_expense_data = data['category_change_expense']
+    org_id = original_expense_data['org_id']
+
+    workspace = Workspace.objects.get(id=workspace_id)
+    workspace.org_id = org_id
+    workspace.save()
+
+    expense_created, _ = Expense.objects.update_or_create(
+        org_id=org_id,
+        expense_id=original_expense_data['id'],
+        workspace_id=workspace_id,
+        defaults={
+            'fund_source': original_expense_data['fund_source'],
+            'category': original_expense_data['category'],
+            'sub_category': original_expense_data['sub_category'],
+            'amount': original_expense_data['amount'],
+            'currency': original_expense_data['currency'],
+            'employee_email': original_expense_data['employee_email'],
+            'report_id': original_expense_data['report_id']
+        }
+    )
+
+    # Create an accounting export for this expense
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source=original_expense_data['fund_source'],
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense_created)
+
+    mock_handle_category_changes = mocker.patch('apps.fyle.tasks.handle_category_changes_for_expense')
+
+    updated_expense_data = data['updated_category_expense']
+    mock_fyle_expenses = mocker.patch('apps.fyle.tasks.FyleExpenses.construct_expense_object')
+    mock_fyle_expenses.return_value = [{
+        'source_account_type': updated_expense_data['source_account_type'],
+        'category': updated_expense_data['category'],
+        'sub_category': updated_expense_data['sub_category']
+    }]
+
+    mocker.patch('apps.fyle.tasks.Expense.create_expense_objects')
+
+    update_non_exported_expenses(updated_expense_data)
+
+    mock_handle_category_changes.assert_called_once()
+    call_kwargs = mock_handle_category_changes.call_args[1]
+    assert call_kwargs['new_category'] == 'New Category'
+
+
+def test_update_non_exported_expenses_no_category_change(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test update_non_exported_expenses does not call handler when category unchanged
+    """
+    workspace_id = 1
+
+    original_expense_data = data['category_change_expense']
+    org_id = original_expense_data['org_id']
+
+    workspace = Workspace.objects.get(id=workspace_id)
+    workspace.org_id = org_id
+    workspace.save()
+
+    expense_created, _ = Expense.objects.update_or_create(
+        org_id=org_id,
+        expense_id=original_expense_data['id'],
+        workspace_id=workspace_id,
+        defaults={
+            'fund_source': original_expense_data['fund_source'],
+            'category': original_expense_data['category'],
+            'sub_category': original_expense_data['sub_category'],
+            'amount': original_expense_data['amount'],
+            'currency': original_expense_data['currency'],
+            'employee_email': original_expense_data['employee_email'],
+            'report_id': original_expense_data['report_id']
+        }
+    )
+
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source=original_expense_data['fund_source'],
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense_created)
+
+    mock_handle_category_changes = mocker.patch('apps.fyle.tasks.handle_category_changes_for_expense')
+
+    mock_fyle_expenses = mocker.patch('apps.fyle.tasks.FyleExpenses.construct_expense_object')
+    mock_fyle_expenses.return_value = [{
+        'source_account_type': original_expense_data['source_account_type'],
+        'category': original_expense_data['category'],
+        'sub_category': original_expense_data['sub_category']
+    }]
+
+    mocker.patch('apps.fyle.tasks.Expense.create_expense_objects')
+
+    update_non_exported_expenses(original_expense_data)
+
+    mock_handle_category_changes.assert_not_called()
+
+
+def test_validate_failing_export_mapping_errors_returns_true(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test validate_failing_export returns (True, True) when mapping error exists
+    """
+    from fyle_accounting_mappings.models import ExpenseAttribute
+
+    from apps.sage300.exports.helpers import validate_failing_export
+
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source='PERSONAL',
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense)
+
+    category_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='CATEGORY',
+        value='Test Category',
+        display_name='Test Category',
+        active=True
+    )
+
+    Error.objects.create(
+        workspace_id=workspace_id,
+        type='CATEGORY_MAPPING',
+        expense_attribute=category_attribute,
+        mapping_error_accounting_export_ids=[accounting_export.id],
+        error_title='Test Category',
+        error_detail='Category mapping is missing',
+        is_resolved=False
+    )
+
+    skip_export, is_mapping_error = validate_failing_export(
+        is_auto_export=False,
+        interval_hours=0,
+        error=None,
+        accounting_export=accounting_export
+    )
+
+    assert skip_export is True
+    assert is_mapping_error is True
+
+
+def test_validate_failing_export_mapping_errors_returns_false(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test validate_failing_export returns (False, False) when no mapping error exists
+    """
+    from apps.sage300.exports.helpers import validate_failing_export
+
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source='PERSONAL',
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense)
+
+    skip_export, is_mapping_error = validate_failing_export(
+        is_auto_export=False,
+        interval_hours=0,
+        error=None,
+        accounting_export=accounting_export
+    )
+
+    assert skip_export is False
+    assert is_mapping_error is False
+
+
+def test_validate_failing_export_mapping_errors_ignores_resolved(
+    db,
+    create_temp_workspace,
+    add_export_settings,
+    mocker
+):
+    """
+    Test validate_failing_export ignores resolved mapping errors
+    """
+    from fyle_accounting_mappings.models import ExpenseAttribute
+
+    from apps.sage300.exports.helpers import validate_failing_export
+
+    workspace_id = 1
+
+    category_expense_data = data['category_change_expense']
+    expense_objects = Expense.create_expense_objects([category_expense_data], workspace_id)
+    expense = expense_objects[0]
+
+    accounting_export = AccountingExport.objects.create(
+        workspace_id=workspace_id,
+        type='PURCHASE_INVOICE',
+        fund_source='PERSONAL',
+        status='EXPORT_READY',
+        description={'test': 'data'}
+    )
+    accounting_export.expenses.add(expense)
+
+    category_attribute = ExpenseAttribute.objects.create(
+        workspace_id=workspace_id,
+        attribute_type='CATEGORY',
+        value='Test Category',
+        display_name='Test Category',
+        active=True
+    )
+
+    Error.objects.create(
+        workspace_id=workspace_id,
+        type='CATEGORY_MAPPING',
+        expense_attribute=category_attribute,
+        mapping_error_accounting_export_ids=[accounting_export.id],
+        error_title='Test Category',
+        error_detail='Category mapping is missing',
+        is_resolved=True
+    )
+
+    skip_export, is_mapping_error = validate_failing_export(
+        is_auto_export=False,
+        interval_hours=0,
+        error=None,
+        accounting_export=accounting_export
+    )
+
+    assert skip_export is False
+    assert is_mapping_error is False
 
 
 def test_handle_org_setting_updated(db, create_temp_workspace):
