@@ -1,10 +1,11 @@
+from fyle.platform.exceptions import InvalidTokenError
+from fyle_accounting_library.fyle_platform.actions import get_employee_expense_attribute, sync_inactive_employee
 from fyle_accounting_mappings.models import CategoryMapping, EmployeeMapping, ExpenseAttribute, Mapping
 
 from apps.accounting_exports.models import AccountingExport, Error
 from apps.sage300.exports.helpers import (
     __validate_category_mapping,
     __validate_employee_mapping,
-    get_employee_expense_attribute,
     get_filtered_mapping,
     resolve_errors_for_exported_accounting_export,
     validate_accounting_export,
@@ -381,3 +382,51 @@ def test_get_or_create_error_with_accounting_export_no_update_needed(
     assert created is False
     assert error.is_resolved is False
     assert error.mapping_error_accounting_export_ids == [accounting_export.id]
+
+
+def test_sync_inactive_employee(
+    db,
+    mocker,
+    create_temp_workspace,
+    add_accounting_export_expenses,
+    create_expense_attribute
+):
+    """
+    Test sync_inactive_employee
+    """
+    workspace_id = 1
+    accounting_export = AccountingExport.objects.filter(workspace_id=workspace_id).first()
+    accounting_export.description = {'employee_email': 'inactive_user@fyle.in'}
+    accounting_export.save()
+
+    mock_fyle_employee = [{
+        'id': 'ouHnjo38H12',
+        'user_id': 'usabcdef1234',
+        'user': {'email': 'inactive_user@fyle.in', 'full_name': 'Inactive User'},
+        'code': 'EMP001',
+        'is_enabled': False,
+        'has_accepted_invite': True,
+        'location': 'San Francisco',
+        'department': {'name': 'Engineering', 'code': 'ENG'},
+        'department_id': 'deptHnjo38H12'
+    }]
+
+    mocker.patch('fyle_accounting_library.fyle_platform.actions.FyleCredential.objects.get')
+    mock_platform = mocker.patch('fyle_accounting_library.fyle_platform.actions.PlatformConnector')
+    mock_platform.return_value.employees.get_employee_by_email.return_value = mock_fyle_employee
+    mocker.patch('fyle_accounting_library.fyle_platform.actions.ExpenseAttribute.bulk_create_or_update_expense_attributes')
+
+    ExpenseAttribute.objects.filter(attribute_type='EMPLOYEE', value='inactive_user@fyle.in', workspace_id=workspace_id).delete()
+    ExpenseAttribute.objects.create(workspace_id=workspace_id, attribute_type='EMPLOYEE', display_name='Employee', value='inactive_user@fyle.in', source_id='ouHnjo38H12', active=False)
+
+    result = sync_inactive_employee('inactive_user@fyle.in', workspace_id)
+    assert result is not None
+    assert result.value == 'inactive_user@fyle.in'
+
+    # InvalidTokenError path
+    mocker.patch('fyle_accounting_library.fyle_platform.actions.FyleCredential.objects.get', side_effect=InvalidTokenError('Invalid token'))
+    assert sync_inactive_employee('inactive_user@fyle.in', workspace_id) is None
+
+    # Generic exception path
+    mocker.patch('fyle_accounting_library.fyle_platform.actions.FyleCredential.objects.get', side_effect=ValueError('bad value'))
+    assert sync_inactive_employee('inactive_user@fyle.in', workspace_id) is None

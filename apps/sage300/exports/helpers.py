@@ -1,23 +1,15 @@
 import itertools
+import logging
 from datetime import datetime, timedelta, timezone
 
+from fyle_accounting_library.fyle_platform.actions import get_employee_expense_attribute, sync_inactive_employee
 from fyle_accounting_mappings.models import CategoryMapping, EmployeeMapping, ExpenseAttribute, Mapping
 
 from apps.accounting_exports.models import AccountingExport, Error
 from sage_desktop_api.exceptions import BulkError
 
-
-def get_employee_expense_attribute(value: str, workspace_id: int) -> ExpenseAttribute:
-    """
-    Get employee expense attribute
-    :param value: value
-    :param workspace_id: workspace id
-    """
-    return ExpenseAttribute.objects.filter(
-        attribute_type='EMPLOYEE',
-        value=value,
-        workspace_id=workspace_id
-    ).first()
+logger = logging.getLogger(__name__)
+logger.level = logging.INFO
 
 
 def get_filtered_mapping(
@@ -83,6 +75,9 @@ def __validate_employee_mapping(accounting_export: AccountingExport):
     employee_email = accounting_export.description.get('employee_email')
 
     employee_attribute = get_employee_expense_attribute(employee_email, accounting_export.workspace_id)
+
+    if not employee_attribute:
+        employee_attribute = sync_inactive_employee(employee_email, accounting_export.workspace_id)
 
     mapping = EmployeeMapping.objects.filter(
         source_employee=employee_attribute,
