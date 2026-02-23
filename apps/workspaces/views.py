@@ -20,8 +20,8 @@ from apps.workspaces.serializers import (
     WorkspaceAdminSerializer,
     WorkspaceSerializer,
 )
-from apps.workspaces.tasks import export_to_sage300
 from fyle_integrations_imports.models import ImportLog
+from workers.helpers import publish_to_rabbitmq, RoutingKeyEnum, WorkerActionEnum
 from sage_desktop_api.utils import assert_valid, invalidate_sage300_credentials
 from sage_desktop_sdk.exceptions import InvalidUserCredentials
 
@@ -136,7 +136,17 @@ class TriggerExportsView(generics.GenericAPIView):
     """
 
     def post(self, request, *args, **kwargs):
-        export_to_sage300(workspace_id=kwargs['workspace_id'], triggered_by=ExpenseImportSourceEnum.DASHBOARD_SYNC)
+        workspace_id = kwargs['workspace_id']
+
+        payload = {
+            'workspace_id': workspace_id,
+            'action': WorkerActionEnum.DASHBOARD_SYNC.value,
+            'data': {
+                'workspace_id': workspace_id,
+                'triggered_by': ExpenseImportSourceEnum.DASHBOARD_SYNC
+            }
+        }
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P0.value)
 
         return Response(
             status=status.HTTP_200_OK

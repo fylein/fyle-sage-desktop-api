@@ -9,14 +9,34 @@ from apps.sage300.exports.direct_cost.queues import (
 )
 from apps.sage300.exports.direct_cost.queues import create_schedule_for_polling as create_schedule_for_polling_direct_cost
 from apps.sage300.exports.direct_cost.queues import poll_operation_status as poll_operation_status_direct_cost
+from apps.sage300.exports.direct_cost.queues import trigger_poll_operation_status as trigger_poll_operation_status_direct_cost
 from apps.sage300.exports.purchase_invoice.queues import (
     check_accounting_export_and_start_import,
     create_schedule_for_polling,
     poll_operation_status,
+    trigger_poll_operation_status,
 )
+from workers.helpers import WorkerActionEnum, RoutingKeyEnum
 
 
-def test_poll_operation_status_purchase_invoice(
+def test_poll_operation_status_purchase_invoice_publishes_to_rabbitmq(
+    db,
+    mocker,
+    create_temp_workspace
+):
+    """Test that poll_operation_status publishes the correct payload to RabbitMQ"""
+    mock_publish = mocker.patch('apps.sage300.exports.purchase_invoice.queues.publish_to_rabbitmq')
+
+    poll_operation_status(workspace_id=1)
+
+    mock_publish.assert_called_once()
+    call_kwargs = mock_publish.call_args[1]
+    assert call_kwargs['payload']['workspace_id'] == 1
+    assert call_kwargs['payload']['action'] == WorkerActionEnum.POLL_PURCHASE_INVOICE_STATUS.value
+    assert call_kwargs['routing_key'] == RoutingKeyEnum.EXPORT_P1.value
+
+
+def test_trigger_poll_operation_status_purchase_invoice(
     db,
     mocker,
     create_temp_workspace,
@@ -25,7 +45,7 @@ def test_poll_operation_status_purchase_invoice(
     add_accounting_export_expenses
 ):
     """
-    function to test poll operation status
+    Test trigger_poll_operation_status for purchase invoice
     """
     operation_status = {
         "Id": "e0d57177-2700-49a1-a933-b0c900bf1c4e",
@@ -59,7 +79,7 @@ def test_poll_operation_status_purchase_invoice(
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
     assert accounting_export.status == 'EXPORT_QUEUED'
 
-    poll_operation_status(workspace_id=1)
+    trigger_poll_operation_status(workspace_id=1)
 
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE').first()
     assert accounting_export.status == 'COMPLETE'
@@ -70,7 +90,7 @@ def test_poll_operation_status_purchase_invoice(
     accounting_export.status = 'EXPORT_QUEUED'
     accounting_export.save()
 
-    poll_operation_status(workspace_id=1)
+    trigger_poll_operation_status(workspace_id=1)
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='PURCHASE_INVOICE')
     assert accounting_export.count() == 1
     assert accounting_export.first().status == 'FAILED'
@@ -151,7 +171,24 @@ def test_create_schedule_for_polling_purchase_invoice(
     assert schedule is not None
 
 
-def test_direct_cost_poll_operation_status(
+def test_poll_operation_status_direct_cost_publishes_to_rabbitmq(
+    db,
+    mocker,
+    create_temp_workspace
+):
+    """Test that poll_operation_status publishes the correct payload to RabbitMQ"""
+    mock_publish = mocker.patch('apps.sage300.exports.direct_cost.queues.publish_to_rabbitmq')
+
+    poll_operation_status_direct_cost(workspace_id=1)
+
+    mock_publish.assert_called_once()
+    call_kwargs = mock_publish.call_args[1]
+    assert call_kwargs['payload']['workspace_id'] == 1
+    assert call_kwargs['payload']['action'] == WorkerActionEnum.POLL_DIRECT_COST_STATUS.value
+    assert call_kwargs['routing_key'] == RoutingKeyEnum.EXPORT_P1.value
+
+
+def test_trigger_poll_operation_status_direct_cost(
     db,
     mocker,
     create_temp_workspace,
@@ -160,7 +197,7 @@ def test_direct_cost_poll_operation_status(
     add_accounting_export_expenses
 ):
     """
-    function to test poll operation status
+    Test trigger_poll_operation_status for direct cost
     """
     operation_status = {
         "Id": "e0d57177-2700-49a1-a933-b0c900bf1c4e",
@@ -194,7 +231,7 @@ def test_direct_cost_poll_operation_status(
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='DIRECT_COST').first()
     assert accounting_export.status == 'EXPORT_QUEUED'
 
-    poll_operation_status_direct_cost(workspace_id=1)
+    trigger_poll_operation_status_direct_cost(workspace_id=1)
 
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='DIRECT_COST').first()
     assert accounting_export.status == 'COMPLETE'
@@ -206,7 +243,7 @@ def test_direct_cost_poll_operation_status(
     accounting_export.status = 'EXPORT_QUEUED'
     accounting_export.save()
 
-    poll_operation_status_direct_cost(workspace_id=1)
+    trigger_poll_operation_status_direct_cost(workspace_id=1)
     accounting_export = AccountingExport.objects.filter(workspace_id=1, type='DIRECT_COST')
 
     assert accounting_export.count() == 1
