@@ -14,6 +14,7 @@ from apps.fyle.queue import queue_import_credit_card_expenses, queue_import_reim
 from apps.sage300.exports.direct_cost.tasks import ExportDirectCost
 from apps.sage300.exports.purchase_invoice.tasks import ExportPurchaseInvoice
 from apps.workspaces.models import AdvancedSetting, ExportSetting, FyleCredential, Workspace
+from workers.helpers import publish_to_rabbitmq, RoutingKeyEnum, WorkerActionEnum
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,23 @@ def sync_org_settings(workspace_id: int) -> None:
         logger.error('Error fetching org settings for workspace %s: %s', workspace_id, str(e))
 
 
-def run_import_export(workspace_id: int, export_mode = None):
+def run_import_export(workspace_id: int) -> None:
+    """
+    Publish run_import_export to RabbitMQ for processing in P1 export worker
+    :param workspace_id: workspace id
+    :return: None
+    """
+    payload = {
+        'workspace_id': workspace_id,
+        'action': WorkerActionEnum.RUN_SYNC_SCHEDULE.value,
+        'data': {
+            'workspace_id': workspace_id
+        }
+    }
+    publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
+
+
+def trigger_run_import_export(workspace_id: int, export_mode = None):
     """
     Run process to export to sage300
 
@@ -89,7 +106,7 @@ def run_import_export(workspace_id: int, export_mode = None):
             if len(accounting_export_ids):
                 is_expenses_exported = True
                 export = export_map[export_settings.reimbursable_expenses_export_type]
-                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
+                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE, run_in_rabbitmq_worker=True)
 
     # For Credit Card Expenses
     if export_settings.credit_card_expense_export_type:
@@ -112,9 +129,13 @@ def run_import_export(workspace_id: int, export_mode = None):
             if len(accounting_export_ids):
                 is_expenses_exported = True
                 export = export_map[export_settings.credit_card_expense_export_type]
-                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE)
+                export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=ExpenseImportSourceEnum.BACKGROUND_SCHEDULE, run_in_rabbitmq_worker=True)
 
     if is_expenses_exported:
+        # Refresh from DB to avoid overwriting counts that were updated
+        # by the synchronous TaskChainRunner during export processing
+        accounting_summary.refresh_from_db()
+
         accounting_summary.last_exported_at = last_exported_at
         accounting_summary.export_mode = export_mode or 'MANUAL'
 
@@ -229,7 +250,7 @@ def export_to_sage300(workspace_id: int, triggered_by: ExpenseImportSourceEnum, 
             is_expenses_exported = True
             # Get the appropriate export class and trigger the export
             export = export_map[export_settings.reimbursable_expenses_export_type]
-            export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by, run_in_rabbitmq_worker=triggered_by == ExpenseImportSourceEnum.WEBHOOK)
+            export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by, run_in_rabbitmq_worker=True)
 
     # Check and export credit card expenses if configured
     if export_settings.credit_card_expense_export_type:
@@ -242,10 +263,13 @@ def export_to_sage300(workspace_id: int, triggered_by: ExpenseImportSourceEnum, 
             is_expenses_exported = True
             # Get the appropriate export class and trigger the export
             export = export_map[export_settings.credit_card_expense_export_type]
-            export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by, run_in_rabbitmq_worker=triggered_by == ExpenseImportSourceEnum.WEBHOOK)
+            export.trigger_export(workspace_id=workspace_id, accounting_export_ids=accounting_export_ids, is_auto_export=is_auto_export, interval_hours=interval_hours, triggered_by=triggered_by, run_in_rabbitmq_worker=True)
 
     # Update the accounting summary if expenses are exported
     if is_expenses_exported:
+        # Refresh from DB to avoid overwriting counts that were updated
+        # by the synchronous TaskChainRunner during export processing
+        accounting_summary.refresh_from_db()
 
         if advance_settings.schedule_is_enabled:
             accounting_summary.next_export_at = last_exported_at + timedelta(hours=advance_settings.interval_hours)
@@ -255,7 +279,7 @@ def export_to_sage300(workspace_id: int, triggered_by: ExpenseImportSourceEnum, 
         accounting_summary.save()
 
 
-def async_create_admin_subcriptions(workspace_id: int) -> None:
+def async_create_admin_subscriptions(workspace_id: int) -> None:
     """
     Create admin subscriptions
     :param workspace_id: workspace id
