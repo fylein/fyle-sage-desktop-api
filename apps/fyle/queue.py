@@ -42,10 +42,10 @@ def queue_import_reimbursable_expenses(workspace_id: int, synchronous: bool = Fa
                 'imported_from': imported_from
             }
         }
-        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
         return
 
-    import_reimbursable_expenses(workspace_id, accounting_export, imported_from)
+    import_reimbursable_expenses(workspace_id, accounting_export.id, imported_from)
 
 
 def queue_import_credit_card_expenses(workspace_id: int, synchronous: bool = False, imported_from: ExpenseImportSourceEnum = None):
@@ -72,10 +72,10 @@ def queue_import_credit_card_expenses(workspace_id: int, synchronous: bool = Fal
                 'imported_from': imported_from
             }
         }
-        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.IMPORT.value)
+        publish_to_rabbitmq(payload=payload, routing_key=RoutingKeyEnum.EXPORT_P1.value)
         return
 
-    import_credit_card_expenses(workspace_id, accounting_export, imported_from)
+    import_credit_card_expenses(workspace_id, accounting_export.id, imported_from)
 
 
 def async_handle_webhook_callback(body: dict, workspace_id: int) -> None:

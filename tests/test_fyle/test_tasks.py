@@ -2050,13 +2050,6 @@ def test_import_credit_card_expenses(
 
     import_credit_card_expenses(
         workspace_id=workspace_id,
-        accounting_export=accounting_export,
-        imported_from=ExpenseImportSourceEnum.DIRECT_EXPORT
-    )
-
-    # Also test with integer ID (RabbitMQ compatibility path)
-    import_credit_card_expenses(
-        workspace_id=workspace_id,
         accounting_export=accounting_export.id,
         imported_from=ExpenseImportSourceEnum.DIRECT_EXPORT
     )

@@ -194,13 +194,10 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
 def import_reimbursable_expenses(workspace_id, accounting_export, imported_from: ExpenseImportSourceEnum):
     """
     Import reimbursable expenses from Fyle
-    :param accounting_export: Accounting Export object or ID
+    :param accounting_export: AccountingExport ID
     :param workspace_id: workspace id
     """
-    # Handle both object and ID for RabbitMQ compatibility
-    if isinstance(accounting_export, int):
-        accounting_export = AccountingExport.objects.get(id=accounting_export)
-
+    accounting_export = AccountingExport.objects.get(id=accounting_export)
     import_expenses(workspace_id=workspace_id, accounting_export=accounting_export, source_account_type='PERSONAL_CASH_ACCOUNT', fund_source_key='PERSONAL', imported_from=imported_from)
 
 
@@ -208,12 +205,10 @@ def import_reimbursable_expenses(workspace_id, accounting_export, imported_from:
 def import_credit_card_expenses(workspace_id, accounting_export, imported_from: ExpenseImportSourceEnum):
     """
     Import credit card expenses from Fyle
-    :param accounting_export: AccountingExport object or ID
+    :param accounting_export: AccountingExport ID
     :param workspace_id: workspace id
     """
-    # Handle both object and ID for RabbitMQ compatibility
-    if isinstance(accounting_export, int):
-        accounting_export = AccountingExport.objects.get(id=accounting_export)
+    accounting_export = AccountingExport.objects.get(id=accounting_export)
 
     import_expenses(workspace_id=workspace_id, accounting_export=accounting_export, source_account_type='PERSONAL_CORPORATE_CREDIT_CARD_ACCOUNT', fund_source_key='CCC', imported_from=imported_from)
 
