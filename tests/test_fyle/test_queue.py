@@ -206,7 +206,7 @@ def test_queue_import_reimbursable_expenses_async(mocker, db, create_temp_worksp
     payload = call_args[1]['payload']
     assert payload['action'] == WorkerActionEnum.IMPORT_REIMBURSABLE_EXPENSES.value
     assert payload['workspace_id'] == 1
-    assert call_args[1]['routing_key'] == RoutingKeyEnum.IMPORT.value
+    assert call_args[1]['routing_key'] == RoutingKeyEnum.EXPORT_P1.value
 
 
 @pytest.mark.django_db
@@ -232,4 +232,4 @@ def test_queue_import_credit_card_expenses_async(mocker, db, create_temp_workspa
     payload = call_args[1]['payload']
     assert payload['action'] == WorkerActionEnum.IMPORT_CREDIT_CARD_EXPENSES.value
     assert payload['workspace_id'] == 1
-    assert call_args[1]['routing_key'] == RoutingKeyEnum.IMPORT.value
+    assert call_args[1]['routing_key'] == RoutingKeyEnum.EXPORT_P1.value

@@ -21,32 +21,36 @@ logger.level = logging.INFO
 def handle_exceptions(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        workspace_id = args[0] if args else kwargs.get('workspace_id')
+        accounting_export_id = args[1] if len(args) > 1 else kwargs.get('accounting_export')
+        accounting_export = AccountingExport.objects.get(id=accounting_export_id)
+
         try:
             return func(*args, **kwargs)
         except FyleCredential.DoesNotExist:
-            logger.info('Fyle credentials not found %s', args[0])  # args[1] is workspace_id
-            args[1].detail = {'message': 'Fyle credentials do not exist in workspace'}
-            args[1].status = 'FAILED'
-            args[1].save()
+            logger.info('Fyle credentials not found %s', workspace_id)
+            accounting_export.detail = {'message': 'Fyle credentials do not exist in workspace'}
+            accounting_export.status = 'FAILED'
+            accounting_export.save()
 
         except NoPrivilegeError:
             logger.info('Invalid Fyle Credentials / Admin is disabled')
-            args[1].detail = {'message': 'Invalid Fyle Credentials / Admin is disabled'}
-            args[1].status = 'FAILED'
-            args[1].save()
+            accounting_export.detail = {'message': 'Invalid Fyle Credentials / Admin is disabled'}
+            accounting_export.status = 'FAILED'
+            accounting_export.save()
 
         except RetryException:
             logger.info('Fyle Retry Exception occured')
-            args[1].detail = {'message': 'Fyle Retry Exception occured'}
-            args[1].status = 'FATAL'
-            args[1].save()
+            accounting_export.detail = {'message': 'Fyle Retry Exception occured'}
+            accounting_export.status = 'FATAL'
+            accounting_export.save()
 
         except Exception:
             error = traceback.format_exc()
-            args[1].detail = {'error': error}
-            args[1].status = 'FATAL'
-            args[1].save()
-            logger.exception('Something unexpected happened workspace_id: %s %s', args[0], args[1].detail)
+            accounting_export.detail = {'error': error}
+            accounting_export.status = 'FATAL'
+            accounting_export.save()
+            logger.exception('Something unexpected happened workspace_id: %s %s', workspace_id, accounting_export.detail)
 
     return wrapper
 

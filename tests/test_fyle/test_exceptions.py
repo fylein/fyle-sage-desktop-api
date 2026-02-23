@@ -21,8 +21,9 @@ def test_handle_exceptions(
     def test_func(workspace_id, accounting_export):
         raise FyleCredential.DoesNotExist('Fyle credentials not found')
 
-    test_func(1, accounting_export)
+    test_func(workspace_id, accounting_export.id)
 
+    accounting_export.refresh_from_db()
     assert accounting_export.status == 'FAILED'
     assert accounting_export.detail == {'message': 'Fyle credentials do not exist in workspace'}
 
@@ -30,8 +31,9 @@ def test_handle_exceptions(
     def test_func(workspace_id, accounting_export):
         raise NoPrivilegeError('No privilege to access the resource')
 
-    test_func(1, accounting_export)
+    test_func(workspace_id, accounting_export.id)
 
+    accounting_export.refresh_from_db()
     assert accounting_export.status == 'FAILED'
     assert accounting_export.detail == {'message': 'Invalid Fyle Credentials / Admin is disabled'}
 
@@ -39,8 +41,9 @@ def test_handle_exceptions(
     def test_func(workspace_id, accounting_export):
         raise RetryException('Retry Exception')
 
-    test_func(1, accounting_export)
+    test_func(workspace_id, accounting_export.id)
 
+    accounting_export.refresh_from_db()
     assert accounting_export.status == 'FATAL'
     assert accounting_export.detail == {'message': 'Fyle Retry Exception occured'}
 
@@ -48,6 +51,7 @@ def test_handle_exceptions(
     def test_func(workspace_id, accounting_export):
         raise Exception('Random Exception')
 
-    test_func(1, accounting_export)
+    test_func(workspace_id, accounting_export.id)
 
+    accounting_export.refresh_from_db()
     assert accounting_export.status == 'FATAL'
