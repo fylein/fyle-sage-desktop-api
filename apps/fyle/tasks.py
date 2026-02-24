@@ -14,7 +14,6 @@ from django.db.models import Count, Q
 from django.utils.module_loading import import_string
 from django_q.models import Schedule
 from django_q.tasks import schedule
-from fyle_accounting_library.fyle_platform.branding import feature_configuration
 from fyle_accounting_library.fyle_platform.enums import ExpenseImportSourceEnum
 from fyle_accounting_library.fyle_platform.helpers import (
     filter_expenses_based_on_state,
@@ -185,7 +184,7 @@ def import_expenses(workspace_id, accounting_export: AccountingExport = None, so
         is_real_time_export_enabled = AdvancedSetting.objects.filter(workspace_id=workspace.id, is_real_time_export_enabled=True).exists()
 
         # Allow real time export if it's supported for the branded app and setting is enabled
-        if is_real_time_export_enabled and feature_configuration.feature.real_time_export_1hr_orgs:
+        if is_real_time_export_enabled:
             logger.info('Exporting expenses for workspace %s with report id %s, triggered by %s', workspace.id, report_id, imported_from)
             import_string('apps.workspaces.tasks.export_to_sage300')(workspace_id=workspace_id, triggered_by=triggered_by, accounting_export_filters={'expenses__report_id': report_id})
 
