@@ -5,6 +5,7 @@ from django.db import models
 from django_q.models import Schedule
 from fyle_accounting_library.fyle_platform.enums import CacheKeyEnum
 
+from apps.workspaces.enums import LocalCacheKeyEnum
 from sage_desktop_api.models.fields import (
     BooleanFalseField,
     BooleanTrueField,
@@ -282,6 +283,7 @@ class FeatureConfig(models.Model):
     id = models.AutoField(primary_key=True)
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     export_via_rabbitmq = models.BooleanField(default=False, help_text='Enable export via rabbitmq')
+    is_job_status_sync_enabled = models.BooleanField(default=True, help_text='Use Sage 300 CRE job status for filtering jobs during sync')
     fyle_webhook_sync_enabled = models.BooleanField(default=True, help_text='Enable fyle attribute webhook sync')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
@@ -292,16 +294,16 @@ class FeatureConfig(models.Model):
         Get cached feature config value for workspace
         Cache for 48 hours (172800 seconds)
         :param workspace_id: workspace id
-        :param key: feature config key (export_via_rabbitmq, import_via_rabbitmq, fyle_webhook_sync_enabled)
+        :param key: feature config key (export_via_rabbitmq, import_via_rabbitmq, fyle_webhook_sync_enabled, is_job_status_sync_enabled)
         :return: Boolean value for the requested feature
         """
         cache_key_map = {
             'export_via_rabbitmq': CacheKeyEnum.FEATURE_CONFIG_EXPORT_VIA_RABBITMQ,
-            'fyle_webhook_sync_enabled': CacheKeyEnum.FEATURE_CONFIG_FYLE_WEBHOOK_SYNC_ENABLED
+            'fyle_webhook_sync_enabled': CacheKeyEnum.FEATURE_CONFIG_FYLE_WEBHOOK_SYNC_ENABLED,
+            'is_job_status_sync_enabled': LocalCacheKeyEnum.FEATURE_CONFIG_IS_JOB_STATUS_SYNC_ENABLED,
         }
 
-        cache_key_enum = cache_key_map.get(key)
-        cache_key = cache_key_enum.value.format(workspace_id=workspace_id)
+        cache_key = cache_key_map[key].value.format(workspace_id=workspace_id)
         cached_value = cache.get(cache_key)
 
         if cached_value is not None:

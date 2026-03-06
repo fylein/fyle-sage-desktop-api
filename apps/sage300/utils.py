@@ -8,7 +8,7 @@ from fyle_accounting_mappings.models import DestinationAttribute, MappingSetting
 from apps.mappings.exceptions import handle_import_exceptions_v2
 from apps.mappings.models import Version
 from apps.sage300.models import CostCategory
-from apps.workspaces.models import ImportSetting, Sage300Credential
+from apps.workspaces.models import FeatureConfig, ImportSetting, Sage300Credential
 from sage_desktop_sdk.sage_desktop_sdk import SageDesktopSDK
 
 logger = logging.getLogger(__name__)
@@ -174,11 +174,16 @@ class SageDesktopConnector:
                         for _item in items:
                             attribute_class = self._get_attribute_class(attribute_type)
                             item = import_string(f'sage_desktop_sdk.core.schema.read_only.{attribute_class}').from_dict(_item)
-                            if (
-                                (attribute_type == 'COST_CODE' and item.job_id not in distinct_job_ids)
-                                or (attribute_type in ['COST_CODE', 'JOB'] and not item.is_active)
-                            ):
+                            if attribute_type == 'COST_CODE' and (item.job_id not in distinct_job_ids or not item.is_active):
                                 continue
+
+                            if attribute_type == 'JOB':
+                                # Syncing Based on Job Status instead of is_active flag when flag is enabled
+                                is_sync_job_status_enabled = FeatureConfig.get_feature_config(workspace_id, 'is_job_status_sync_enabled')
+                                if is_sync_job_status_enabled and item.status != 2:
+                                    continue
+                                if not is_sync_job_status_enabled and not item.is_active:
+                                    continue
                             destination_attr = self._add_to_destination_attributes(item, attribute_type, display_name, field_names, vendor_type_mapping)
                             if destination_attr:
                                 attribute_processed_count += 1

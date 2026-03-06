@@ -241,7 +241,8 @@ def test_sync_jobs(
     db,
     mocker,
     create_temp_workspace,
-    add_sage300_creds
+    add_sage300_creds,
+    add_feature_config
 ):
     workspace_id = 1
     sage_creds = Sage300Credential.get_active_sage300_credentials(workspace_id)
@@ -732,7 +733,7 @@ def sync_instance(
     return sage_connector
 
 
-def test_sync_data_with_generator(sync_instance, mocker):
+def test_sync_data_with_generator(sync_instance, mocker, add_feature_config):
     # Mock dependencies
     mock_mapping_setting = mocker.patch('apps.sage300.utils.MappingSetting')
     mock_bulk_create = mocker.patch('apps.sage300.utils.DestinationAttribute.bulk_create_or_update_destination_attributes')
@@ -744,7 +745,9 @@ def test_sync_data_with_generator(sync_instance, mocker):
     mock_mapping_setting.objects.filter.return_value.first.return_value = MagicMock(is_custom=False, source_field='PROJECT', destination_field='JOB')
     mock_get_attribute_class.return_value = 'Job'
     mock_update_latest_version.return_value = None
-    mock_import_string.return_value.from_dict.return_value = MagicMock()
+    mock_item = MagicMock()
+    mock_item.is_active = False
+    mock_import_string.return_value.from_dict.return_value = mock_item
 
     # Mock data generator
     data_gen = iter([iter([{'key': 'value'}])])
@@ -756,12 +759,13 @@ def test_sync_data_with_generator(sync_instance, mocker):
     mock_bulk_create.assert_called_once()
     called_args = mock_bulk_create.call_args[0]
 
+    assert called_args[0] == []
     assert called_args[1] == 'JOB'
     assert called_args[2] == 1
     assert mock_bulk_create.call_args[1]['attribute_disable_callback_path'] == 'fyle_integrations_imports.modules.projects.disable_projects'  # ATTRIBUTE_CALLBACK_MAP['PROJECT']
 
 
-def test_sync_data_with_generator_case_2(sync_instance, mocker):
+def test_sync_data_with_generator_case_2(sync_instance, mocker, add_feature_config):
     """
     Upper Sync Limit reached
     """
@@ -776,7 +780,13 @@ def test_sync_data_with_generator_case_2(sync_instance, mocker):
     mock_mapping_setting.objects.filter.return_value.first.return_value = MagicMock(is_custom=False, source_field='PROJECT', destination_field='JOB')
     mock_get_attribute_class.return_value = 'Job'
     mock_update_latest_version.return_value = None
-    mock_import_string.return_value.from_dict.return_value = MagicMock()
+
+    mock_item = MagicMock()
+    mock_item.status = 1
+    mock_item.is_active = True
+    mock_import_string.return_value.from_dict.return_value = mock_item
+
+    mocker.patch('apps.sage300.utils.FeatureConfig.get_feature_config', return_value=True)
 
     # Mock data generator
     data_gen = iter([iter([{'key': 'value'}])])
