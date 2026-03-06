@@ -179,7 +179,7 @@ class SageDesktopConnector:
 
                             if attribute_type == 'JOB':
                                 is_sync_job_status_enabled = FeatureConfig.get_feature_config(workspace_id, 'is_job_status_sync_enabled')
-                                if is_sync_job_status_enabled and item.status != '2':
+                                if is_sync_job_status_enabled and item.status != 2:
                                     continue
                                 if not is_sync_job_status_enabled and not item.is_active:
                                     continue
