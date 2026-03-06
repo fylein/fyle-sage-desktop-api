@@ -698,7 +698,8 @@ def add_feature_config():
         FeatureConfig.objects.create(
             workspace_id=workspace_id,
             export_via_rabbitmq=True,
-            fyle_webhook_sync_enabled=False
+            fyle_webhook_sync_enabled=False,
+            is_job_status_sync_enabled=False
         )
 
 
