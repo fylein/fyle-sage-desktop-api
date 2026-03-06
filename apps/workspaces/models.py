@@ -282,6 +282,7 @@ class FeatureConfig(models.Model):
     id = models.AutoField(primary_key=True)
     workspace = models.OneToOneField(Workspace, on_delete=models.PROTECT, help_text='Reference to Workspace model')
     export_via_rabbitmq = models.BooleanField(default=False, help_text='Enable export via rabbitmq')
+    is_job_status_sync_enabled = models.BooleanField(default=False, help_text='Use Sage 300 CRE job status for filtering jobs during sync')
     fyle_webhook_sync_enabled = models.BooleanField(default=True, help_text='Enable fyle attribute webhook sync')
     created_at = models.DateTimeField(auto_now_add=True, help_text='Created at datetime')
     updated_at = models.DateTimeField(auto_now=True, help_text='Updated at datetime')
@@ -292,7 +293,7 @@ class FeatureConfig(models.Model):
         Get cached feature config value for workspace
         Cache for 48 hours (172800 seconds)
         :param workspace_id: workspace id
-        :param key: feature config key (export_via_rabbitmq, import_via_rabbitmq, fyle_webhook_sync_enabled)
+        :param key: feature config key (export_via_rabbitmq, import_via_rabbitmq, fyle_webhook_sync_enabled, is_job_status_sync_enabled)
         :return: Boolean value for the requested feature
         """
         cache_key_map = {
@@ -301,7 +302,10 @@ class FeatureConfig(models.Model):
         }
 
         cache_key_enum = cache_key_map.get(key)
-        cache_key = cache_key_enum.value.format(workspace_id=workspace_id)
+        if cache_key_enum:
+            cache_key = cache_key_enum.value.format(workspace_id=workspace_id)
+        else:
+            cache_key = f'feature_config:{key}:{workspace_id}'
         cached_value = cache.get(cache_key)
 
         if cached_value is not None:
